@@ -32,7 +32,7 @@ var posEvaled = 0
 
 function CheckIfStillSearching(){
     elapsedTime = performance.now() - startTime
-    searching = (thinkingTime > elapsedTime) 
+    searching = (thinkingTime > elapsedTime)
     //console.log(elapsedTime, searching)
 }
 
@@ -74,38 +74,23 @@ function ChessEngine(){
 }
 
 function Eval(){
+    /**
+     * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
+     * spelaren sin tur det er.
+     */
     posEvaled ++
-    //let terminal = board.IsTerminal() 
-    //if (terminal[0]){
-    //    return terminal[1]
-    //}
 
+    // tell materiale
     let materialScore = 0
     for (let i = 0; i < 64; i++){
-        //Finner brikke type (inga brikke får vidare)
+        // Finner brikke type (inga brikke får vidare)
         const piece = board.square[i]
         if (piece == 0) continue
         
-        // forteikn
+        // forteikn 
         const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-        /*
-        const pawnDir = Piece.CheckPieceColor(piece, true) ? 1 : -1
-        supportPawnPush = 0
-        if ((piece & 0b111) == Piece.pawn) supportPawnPush = Math.floor(i / 8) * pawnDir
-        
-        //Fordel for posisjon
-        const pieceType = piece & 0b0111
-        //console.log(pieceType)
-        const map = ChessHelper.mapFromPieceType[pieceType]
-        //console.log(map)
-        const lookUpIndex = (sign < 0) ? ChessHelper.mirroredBoard[i] : i
-        //console.log(lookUpIndex)
 
-        const positionBonus = map[lookUpIndex] + 100
-        //console.log(positionBonus)
-        */
-
-        materialScore += sign * Piece.pieceValues[piece & 0b111] //* positionBonus
+        materialScore += sign * Piece.pieceValues[piece & 0b111]
     }
 
     return materialScore
@@ -171,8 +156,8 @@ function Search(depth, alpha, beta){
     CheckIfStillSearching()
     if (! searching) return 0
     
+    // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()
-    let legalMoves = MoveOrder(UnsortedlegalMoves)
     
     //Ingen lovlege trekk, sjekk etter sjakkmatt / sjakk patt
     if (legalMoves.length == 0){    
@@ -186,11 +171,12 @@ function Search(depth, alpha, beta){
         //Stalemate
         return 0
     }
+    // sorter trekk etter kor bra du GJETTAR at trekket er
+    let legalMoves = MoveOrder(UnsortedlegalMoves)
 
-    //Evaluer om du har nådd maks søkedybde
+    //Evaluer når du har nådd maks søkedybde
     if (depth == 0){
         const score = Eval()
-        //console.log(board.moves, String(alpha), eval)
         return score //SearchAllCaptures(alpha, beta)
     } 
     

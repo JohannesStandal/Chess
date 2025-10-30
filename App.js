@@ -2,6 +2,9 @@ const gameScene = document.getElementById("game")
 const menuScene = document.getElementById("menu")
 const resultScene = document.getElementById("result")
 
+const processELEMENT = document.getElementById("process")
+
+
 const scenes = [menuScene, gameScene, resultScene]
 
 function RenderScene(key){
