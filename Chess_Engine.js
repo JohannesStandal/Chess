@@ -189,9 +189,9 @@ function Search(depth, alpha, beta){
 
     //Evaluer om du har nådd maks søkedybde
     if (depth == 0){
-        const eval = Eval()
+        const score = Eval()
         //console.log(board.moves, String(alpha), eval)
-        return eval //SearchAllCaptures(alpha, beta)
+        return score //SearchAllCaptures(alpha, beta)
     } 
     
     //Lagre beste poengsum og beste trekk
