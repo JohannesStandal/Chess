@@ -1,0 +1,38 @@
+<head>
+    <meta charset="utf8">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="App.css">
+</head>
+
+<body>
+    <div id="menu" class="container">
+        <h1> Sjakk Program</h1>
+        <button onclick="StartGame('5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1')"> Start Spel</button>
+    </div>
+    <div id="game" class="container">
+        <h1> Sjakk engine </h1>
+        <div id="main"></div>
+        <button onclick="EndGame('Motstandar vant, du trakk deg')"> Gi opp </button>
+    </div>
+
+
+    <div id="result" class="requestBox">
+        <p id="resultMessage"> </p>
+        <button onclick="Rematch()"> Omkamp </button>    
+        <button onclick="RenderScene(0)"> Tilbake </button>
+    </div>
+</body>
+
+
+<script src="piece.js"></script>
+<script src="Chess_Helper.js"></script>
+<script src="chessboard.js"></script>
+
+<script src="App.js"></script>
+<script src="UI.js"></script>
+
+<script src="Chess_Engine.js"></script>
+<script src="Tests.js"></script>
+
+
+<script src="index.js"></script>

@@ -1,0 +1,58 @@
+:root {
+    --size: 650px;
+    --squareColor1: rgb(255, 241, 204);
+    --squareColor2: rgb(110, 129, 61);
+}
+
+#main {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 0px;
+    width: var(--size);
+    height: var(--size);
+    margin: 0 auto 0 auto;
+    color: black;
+}
+
+.square {
+    display: flex;
+    justify-content: center;
+    width: calc(var(--size) / 8 - 16);
+    height: calc(var(--size) / 8 - 16);
+    border: 1px solid black;
+}
+
+.square img {
+    pointer-events: none;
+    user-select: none;
+    position: relative;
+    transition: 0.2s;
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+}
+
+.white {
+    background-color: var(--squareColor1);
+}
+
+.brown {
+    background-color: var(--squareColor2);
+}
+
+.yellow {
+    background-color: rgb(242, 207, 6);
+}
+
+.blue {
+    background-color: rgb(44, 157, 255);
+}
+
+.red {
+    background-color: rgb(255, 55, 55);
+}
+
+.yellow img {
+    top: -10px;
+}
