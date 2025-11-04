@@ -119,8 +119,6 @@ function MoveOrder(moves){
     // Trinn 3: Del opp igjen i to separate arrays
     sortedMoves = combined.map(pair => pair[0]);
 
-   
-
     return sortedMoves
 }
 
@@ -160,7 +158,7 @@ function Search(depth, alpha, beta){
     const UnsortedlegalMoves = board.GenerateLegalMoves()
     
     //Ingen lovlege trekk, sjekk etter sjakkmatt / sjakk patt
-    if (legalMoves.length == 0){    
+    if (UnsortedlegalMoves.length == 0){    
         //Checkmate
         if (board.InCheck()){
             console.log("Checkmate Found", orginalDepth - depth, "ply")
