@@ -3,24 +3,6 @@
 
 const zobrist_hash_values = {
     9: [
-        0x1c80317fa3b1799dn, 0xbdd640fb06671ad1n, 0x3eb13b9046685257n, 0x23b8c1e9392456den,
-        0x1a3d1fa7bc8960a9n, 0xbd9c66b3ad3c2d6dn, 0x8b9d2434e465e150n, 0x972a846916419f82n,
-        0x822e8f36c031199n, 0x17fc695a07a0ca6en, 0x3b8faa1837f8a88bn, 0x9a1de644815ef6d1n,
-        0x8fadc1a606cb0fb3n, 0xb74d0fb132e70629n, 0xb38a088ca65ed389n, 0x6b65a6a48b8148f6n,
-        0x72ff5d2a386ecbe0n, 0x4737819096da1dacn, 0xde8a774bcf36d58bn, 0xc241330b01a9e71fn,
-        0x28df6ec4ce4a2bbdn, 0x6c307511b2b9437an, 0x47229389571aa876n, 0x371ecd7b27cd8130n,
-        0xc37459eef50bea63n, 0x1a2a73ed562b0f79n, 0x6142ea7d17be3111n, 0x5be6128e18c26797n,
-        0x580d7b71d8f56413n, 0x43b7a3a69a8dca03n, 0xb1f9163ce9ff57fn, 0x759cde66bacfb3d0n,
-        0x1ff49b7889463e85n, 0xec1b8ca1f91e1d4cn, 0x142c3fe860e7a113n, 0x4b0dbb418d5288f1n,
-        0xa0ee89aed453dd32n, 0xe2acf72f9e574f7an, 0x5c941cf0dc98d2c1n, 0x3139d32c93cd59bfn,
-        0x11ce5dd2b45ed1f0n, 0xa9488d990bbb2599n, 0xc5e7ce8a3a578a8en, 0xfc377a4c4a15544dn,
-        0xdaf61a26146d3f31n, 0xddd1dfb23b982ef8n, 0x614ff3d719db3ad0n, 0x7412b29347294739n,
-        0xd58842dea2bc372fn, 0x29a3b2e95d65a441n, 0x5af305535ec42e08n, 0xab9099a435a240aen,
-        0xb3aa7efe4458a885n, 0xaefcfad8efc89849n, 0x12476f57a5e5a5abn, 0xa28defe39bf00273n,
-        0x88bd64072bcfbe01n, 0x3eabedcbbaa80dd4n, 0x7656af7229d4beefn, 0x451b4cf36123fdf7n,
-        0xece66fa2fd5166e6n, 0xb02b61c4a3d70628n, 0x3838b3268e944239n, 0x5304317faf42e12fn,
-    ],
-    14: [
         0xc4b032ccd7c524a5n, 0xe51f30dc6a7ee39n, 0xd261a7ab3aa2e4f9n, 0xce177b4e0837b8a3n,
         0x66b2bc5b50c187fcn, 0x10f1bc81448aaa9en, 0xe9c349e03602f8acn, 0x9132b63ef16287e4n,
         0xb7c93acfe059a0een, 0x366eb16f508ebad7n, 0x7fcd9eb1a7cad415n, 0xe27a984d654821d0n,
@@ -38,7 +20,7 @@ const zobrist_hash_values = {
         0x295b4715c333e861n, 0xf4188f3f8a14be62n, 0xec24a3c5c754108fn, 0xeb2263dd87c5421en,
         0x99546eb400257ad1n, 0x7d15438552fbe43bn, 0x1ca35cfb04fc6d82n, 0x5cec4eb5edd96831n,
     ],
-    13: [
+    10: [
         0xfc3e058be0f3eab0n, 0xce88cb2dd4e80839n, 0x3d4cbf374eb93effn, 0x3da9c2a90ed42f1an,
         0x913e4de2e0c53cb8n, 0x14296c07f26b4776n, 0xbb5e4bcf15ed6269n, 0xd0e6e6607c69dee1n,
         0xfa5d310011b7e948n, 0x885f6e66c2b6d2c5n, 0x2031d750c40db9b4n, 0xa8e56e0c20de435dn,
@@ -56,7 +38,7 @@ const zobrist_hash_values = {
         0xba6c34ab6712303an, 0xccf3a17156dc8907n, 0x1bf90e27dc96925en, 0x310c0c003fa7f104n,
         0x894a05e430b187efn, 0x23e2fcb472d8567dn, 0x2ef912766c006f61n, 0x766ecb15474ebc19n,
     ],
-    12: [
+    11: [
         0xdfde4fbf3ff350bfn, 0x134c6c92ec5b227cn, 0xceda8bbb71710434n, 0xdb20a56edc815fe7n,
         0x19108be58ce21ea3n, 0xa6f2f7b80cf35b58n, 0x8a63f881ffd0f9d5n, 0x3c72ba8d605e770n,
         0x17e011b7f8102383n, 0xc0e9ab30ed2662e9n, 0x3c835dc0d9441fa5n, 0x680ac07a2a935d62n,
@@ -74,7 +56,7 @@ const zobrist_hash_values = {
         0xa53f8a28abf3e3fcn, 0x750cab754ccc9bc2n, 0xedd4253b50f0fd0an, 0xef8c485bc07a30f2n,
         0x2627f7312922f83n, 0x9f044aed75523327n, 0x902059e4ff9ab5c2n, 0x19985f15ff002d4dn,
     ],
-    11: [
+    12: [
         0x89a2688b12c136e0n, 0x8181a8cc369147ebn, 0x21e8ac6843e42cafn, 0x5958a499eeea163en,
         0x119c4ea3e1805081n, 0x3e896c64e117dac3n, 0x48f4ef125e9953d2n, 0x702cdd20286218b8n,
         0x8b10550cd5704f32n, 0x4d71c366b41b3143n, 0xfbddcf7c9c96e9ecn, 0xce9e1a11fcbb4e59n,
@@ -92,7 +74,7 @@ const zobrist_hash_values = {
         0xaabc25fa3fe12e47n, 0x5a8aaeca1a50aec3n, 0x8f5486b7c7b5b2bcn, 0xdfed2c43e256a6dcn,
         0xf94d62046808593fn, 0xbfddc3d99ee3ac2an, 0xecfedb992790cebdn, 0x3c9ad14cee0caeb5n,
     ],
-    10: [
+    13: [
         0x2999b735dd56cc94n, 0xccc56569f9e8a369n, 0x2d534dd0cf8ebc5an, 0x698c206fe1a47e10n,
         0x2dea94930658663an, 0xecab3301bc8f7d29n, 0xc84a7b28550a1b46n, 0x696608aaee49f329n,
         0xab7f089acd5f4822n, 0xbc2cbb0ddd334cc7n, 0x3f87e362cf8d446an, 0x28c13091444d610bn,
@@ -110,7 +92,7 @@ const zobrist_hash_values = {
         0xebb7a385aa0b7b14n, 0x9f871ce75487fd4fn, 0xa9d3c2e6505cc686n, 0x1fe771d6d9178793n,
         0xe6697833b841d0a0n, 0x81d2c7de4ce1eb90n, 0xaab97e494f2d4796n, 0x5380b904688c7015n,
     ],
-    17: [
+    14: [
         0xb27c40266703b636n, 0x8dedf9fb4bb00f20n, 0x311c6eb62095eef6n, 0xaa38d0a16ba25efen,
         0x610faa3ff0bbac67n, 0xbf85bf0ead64b56cn, 0x2c8d0e44e71e43a6n, 0x91b0e1d99d9262afn,
         0x67f48ad54d0b0d1an, 0xd56f03508c459ce2n, 0x4dcabfb7001a9a8bn, 0x35ce884149732d6cn,
@@ -128,25 +110,8 @@ const zobrist_hash_values = {
         0x87f8424daae65fc1n, 0x8f15ba58fce68504n, 0x513a7052986f9025n, 0xc1581092f335cba3n,
         0x714c7df4e4347d51n, 0xd0a444329cd6c852n, 0xe45b712eb8225688n, 0x6d3ee1dc81392443n,
     ],
-    22: [
-        0xe827a1b9d4a02e53n, 0x722764e68c41561bn, 0x28be9288e5af6e39n, 0xdc8aee30be6033f7n,
-        0x7337c59979844388n, 0xc074718e425a609fn, 0xd701410d3f4b1a70n, 0x46fde062a33dc7afn,
-        0xc715b2b9c40c5d91n, 0x7c0e8cd88573e793n, 0x3d3f3799a07295e9n, 0x709b7d97464c04afn,
-        0xb6aae05b13d5f2f7n, 0x3c07c57449257af1n, 0x55fa1ab8458f1f19n, 0xe49d681d51d87c64n,
-        0x14a0bccb8a476a87n, 0x269cd696236c7b87n, 0x620e99d33b33f3d8n, 0x271e3ee2b1a6b1f1n,
-        0x36c59dacb4d7e28en, 0x6a34c85410714d51n, 0x54b4a48268586eban, 0x7746d0ba8ae8905bn,
-        0xff0a55c6a702e2fn, 0xd5385b0e34f3193cn, 0x63b4c08b6b8e869fn, 0xc51155ffe7a37e81n,
-        0xf2311f1795863a76n, 0x5000bc6b20dcb6en, 0xe172b725db52ca58n, 0x9360715fc3fe0183n,
-        0x7a1b58066160a6b4n, 0xf1578470018267c4n, 0x4c71e0fe5a0cdd7cn, 0x63d62a39c0e3befdn,
-        0xe4429ebbda7b9095n, 0xd5f25073f41402b1n, 0x89c8d2ab6b44fa8dn, 0xbc10fa52bf5d2fdfn,
-        0xccc429038bcf53a1n, 0xe5d6f6e69a6ec2f5n, 0x7cfc9b793875394cn, 0x45df16b6382c043fn,
-        0x7c5308bf6f92f25en, 0x638c254c076e2bban, 0xab3b4d37560c95een, 0xcc530e36addc3e13n,
-        0xb963f37f67814c1fn, 0xd72b61082a405f12n, 0xeb67146a77a6e17cn, 0xfb10987f20ac3703n,
-        0x88bc539c9f4c3b79n, 0xe82c7d7b06e745f9n, 0x978648f864de82e6n, 0xa9ba5a27907bfe36n,
-        0x157d94a106f028ffn, 0x6db99102a48b3dben, 0xdde9f86322bd3388n, 0x2e85cb217631de9dn,
-        0x42999aa40cdf742bn, 0x53cd6268610cf373n, 0x74672cd9362f5e5cn, 0x56666f9f53ac2ab9n,
-    ],
-    21: [
+    
+    17: [
         0xe1301617c2dff335n, 0x473bd358610e6a64n, 0xf3821cfdc083b73an, 0x6bebac31d4f8fd72n,
         0xd5bcb8d04094ddedn, 0x7866076514f7ce8dn, 0xbfc00dc804f64d86n, 0xd557b618a175dfen,
         0xf3b1025bfff9f585n, 0x39669fa759970043n, 0x1190f938a66fd7f7n, 0xf510ab53c7fee39fn,
@@ -164,7 +129,7 @@ const zobrist_hash_values = {
         0xe43e4288a2b5b498n, 0x75b17a55d4262982n, 0x272a6d8eb5122df8n, 0x2d174fc96f7c15ean,
         0x859131d2bbda0242n, 0xa6846099f7294951n, 0x9dac6e8345241ea6n, 0xeb6c1016cee624d0n,
     ],
-    20: [
+    18: [
         0xc64ee6e389c5b31an, 0x7701f7bb7bc67e1fn, 0xd36357b66f81cf4fn, 0x97ac6aa8bb2488a3n,
         0x52828d8044b591f7n, 0x3ed8c56cda09dfa0n, 0xef43613cd4aac9a3n, 0x4767d76c162f8a24n,
         0x7367c28de1b294den, 0xc01f36bf3e6dd58bn, 0x91e1aa9676f72255n, 0xab0e664e9c3eb2d5n,
@@ -200,7 +165,7 @@ const zobrist_hash_values = {
         0xcdccc33aa9434aa0n, 0x32a447b2ef04e57dn, 0x1d61fac36cd5e859n, 0x398d1ca68b6870b5n,
         0x26242b40a5cb63a2n, 0x44007d5ae88da719n, 0x246998e8d39e198bn, 0xf44704f1247ea4en,
     ],
-    18: [
+    20: [
         0xcae9b4a72a79ea68n, 0x9854ce4e4ebfa5c3n, 0xd3016989bfbbb17fn, 0xebd3461691b78d8en,
         0x706c5c5649e2623dn, 0x77fc97031fd5a423n, 0x4dd8eb85b04d3376n, 0x670acc5cb321bf21n,
         0x45b1ed25f1533ae8n, 0x8a3c3b5e801ef1dan, 0x7010f7197e695d0dn, 0x9918ee461497d658n,
@@ -217,5 +182,41 @@ const zobrist_hash_values = {
         0x764414fd8ae769edn, 0xde051a669ca97d2n, 0x84b871bb300568d2n, 0x9f64eeed5c9d927dn,
         0x7f9d3e64c1a6423bn, 0x71299889a01ac992n, 0xd366dfcc28ebd70n, 0x445dcc38341c6494n,
         0x218a15368c99a894n, 0x49bc473fed7bf656n, 0xe17f29e170286046n, 0x7c16128db2c08394n,
+    ],
+    21: [
+        0x763fcd01f15c7b6n, 0xa14923c2f920264cn, 0xcc9fd3349bdf0377n, 0xb5b453ca3d42993cn,
+        0x4f8d5238288b78b5n, 0x3802b708d03c91en, 0x687213f98d605936n, 0x3985fb6217dc8effn,
+        0xd7665cdafe049059n, 0x1d0bc9bde9b5c5cfn, 0xf27292b6762172edn, 0xa5d04d531e1242e3n,
+        0x276aa6ced50755d9n, 0xeec259dc7f95897cn, 0x4ab7706eb77350can, 0xb495db4e82456fb4n,
+        0x6a5d932b45ff2c83n, 0x7b85179ad5b077e0n, 0x78e3654bfaf14ff0n, 0x74eff5453e652603n,
+        0x250741818d1fb540n, 0x30cbd7556232b17an, 0x9970cf60ebff8d15n, 0xbf0d073d821c1336n,
+        0x22f235f2e11b868dn, 0x11df12d7dd30de89n, 0xc5ce099c46b82659n, 0xdabac50dca3dd859n,
+        0x570210496a39aaa6n, 0xc9a7d91fef2ae713n, 0x44656d6b81fb18b3n, 0xa81de9d20f87d0n,
+        0xb9de7a3a486822b9n, 0xd664d2644c6e27ffn, 0x9475dbc996418cedn, 0xa8f1e091ffb8102dn,
+        0xdd81b7f57d5911c6n, 0x7250ee18260a5962n, 0x7bfdcc1289e06ab3n, 0x551ac8ea585a0afan,
+        0xc34b9fbb8d4a75b8n, 0x6090d6978b1e3b9dn, 0xeecf67d2749176f4n, 0xde9e37575260001en,
+        0xfb140bc3304b8590n, 0x3d225c30b28f41den, 0x620a60ac9261549dn, 0xdb23aa8c3bcabf85n,
+        0x69288e92c68a152fn, 0x517400f80b2c782an, 0x7914f8a8bea4ff31n, 0xe9d68f23b489d070n,
+        0x61985d54cfb87e6fn, 0xfd08b32c62d60e93n, 0xcada4f80a9e782d4n, 0xa6eab79ed21c82f8n,
+        0x26f05fcffb16e5dbn, 0xf6febc0e7ecddbafn, 0x2051acef097a1e10n, 0xf72169bb80962718n,
+        0x54fd9ad39716108en, 0x19b17e80dea4ae17n, 0xd85480f0dfcaf0b7n, 0x1986b4b270b7e868n,
+    ],
+    22: [
+        0xe912b4bf86a4bae4n, 0x3edd1f874f93d17n, 0x24e75e8eb8f21423n, 0xdef5768968f45bcen,
+        0xf84f16b3a79fbfafn, 0x1327f1bc2784378fn, 0xc8120a8e78308930n, 0x43d88870f81dbaa1n,
+        0x9f8ded9756abf2f1n, 0x65c17795b15516bcn, 0x148f8b74a65bb1f2n, 0x541cdfcdda0d4a5fn,
+        0xaca2b148da330aa1n, 0x889b78d5dbfdd97en, 0xf4427e0b61484bb3n, 0xa075e9275110b492n,
+        0xe32f2e63b7fddd71n, 0x7cea2045c268283en, 0x8a80068ddf547e50n, 0x9e11d2cd0930aef6n,
+        0x3c19e71d118405adn, 0xaf34cf65a193c4b2n, 0x4991ab9bebc2026fn, 0x3a3c8a71ff574e2bn,
+        0x1723199dbf2c14a0n, 0xfa7457616f18c108n, 0xc2a796891933918cn, 0xb4323070a23d4c2fn,
+        0x19bad7aedf615a5cn, 0x2a96e1e27194eae2n, 0x4ca9cf07b1aa0f6an, 0x769165fe746ccb9n,
+        0x530a37df0bc61066n, 0xe5dd462cbd00ef2n, 0x5bc440f14b1a269bn, 0x6e417d475ff595ean,
+        0x3e83b91f25440fe0n, 0x697c392387fa841an, 0xae8a781390e0a95bn, 0x2e183554cae28e66n,
+        0x2cd1586a2b840c67n, 0x9c07a75114374509n, 0x61ee6c5bdeef580fn, 0xaee1e86b9ea556aan,
+        0x7f671eec3da70577n, 0x9549c931e9af299dn, 0x3b70b3a124a35cf2n, 0xa34db7c5760debbbn,
+        0x75a669814104a8b5n, 0xaab612c9415d174an, 0xe61ede900267deb3n, 0x771ad655cdfc6ee0n,
+        0x49a23a89e6b5a92cn, 0x8beddb12ad77e82fn, 0x12e89d1028711733n, 0xf1faf665711533f3n,
+        0xfcd6bdca5876fd09n, 0x4c955f6a966b1964n, 0xf6478986a3917c99n, 0xb0b862ef6c9f82b9n,
+        0x74f3310340066ff2n, 0x4d57d880d865d69an, 0xffd6f23232ffe294n, 0xda743152627b41a1n,
     ],
 };

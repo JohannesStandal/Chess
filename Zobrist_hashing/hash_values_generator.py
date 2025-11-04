@@ -22,18 +22,18 @@ class Piece:
 
 
 pieces = {
-    "white_king":   Piece.white | Piece.king,
-    "white_queen":  Piece.white | Piece.queen,
-    "white_rook":   Piece.white | Piece.rook,
-    "white_bishop": Piece.white | Piece.bishop,
-    "white_knight": Piece.white | Piece.knight,
-    "white_pawn":   Piece.white | Piece.pawn,
-    "black_king":   Piece.black | Piece.king,
-    "black_queen":  Piece.black | Piece.queen,
-    "black_rook":   Piece.black | Piece.rook,
-    "black_bishop": Piece.black | Piece.bishop,
-    "black_knight": Piece.black | Piece.knight,
-    "black_pawn":   Piece.black | Piece.pawn,
+    Piece.white | Piece.king,
+    Piece.white | Piece.queen,
+    Piece.white | Piece.rook,
+    Piece.white | Piece.bishop,
+    Piece.white | Piece.knight,
+    Piece.white | Piece.pawn,
+    Piece.black | Piece.king,
+    Piece.black | Piece.queen,
+    Piece.black | Piece.rook,
+    Piece.black | Piece.bishop,
+    Piece.black | Piece.knight,
+    Piece.black | Piece.pawn,
 }
 
 BOARD_SIZE = 64  # 8x8 brett
@@ -43,7 +43,7 @@ def generate_zobrist_table():
     random.seed(42)
     table = {}
 
-    for name, value in pieces.items():
+    for value in pieces:
         # Generer 64 tilfeldige 64-bit heltall som vanlige tall (ikke strenger)
         table[value] = [random.getrandbits(64) for _ in range(BOARD_SIZE)]
 

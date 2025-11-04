@@ -10,6 +10,7 @@ class Board {
         this.castlingRights = 0b1111
         this.halfMoveClock = 0
         this.enPassantSquare = null
+        
         //lagrar rutene som motstandar angriper
         //Nyttig for å leite etter lovlege kongetrekk, sjakk og sjakkmatt
         this.opponentAttacks = []
@@ -17,6 +18,7 @@ class Board {
 
         //lagrer spillhistorikk
         this.gameHistory = []
+        this.hash = new zobrist_hashing()
     }
 
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
@@ -65,6 +67,7 @@ class Board {
         })
 
         this.UpdateEnemyAttacks()
+        this.hash.createHash(this.square)
     }
 
     

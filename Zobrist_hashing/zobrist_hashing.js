@@ -1,17 +1,19 @@
 class zobrist_hashing {
     constructor(){
-        this.hash = 0
+        this.hash = BigInt(0)
     }
 
     createHash(board){
-        this.hash = 0
-        for (let i = 0; i < 64; i++){
-            const pieceType = board.square[i]
-            this.hash ^= zobrist_hash_values[pieceType][i]
+        this.hash = BigInt(0)
+        for (let squareIndex = 0; squareIndex < 64; squareIndex++){
+            const pieceType = board[squareIndex]
+            if (pieceType == 0) continue
+            this.hash ^= zobrist_hash_values[pieceType][squareIndex]
         }
+        console.log(this.hash)
     }
 
-    removePiece(square, piece){
+    removePiece(square, pieceType){
         this.hash ^= zobrist_hash_values[pieceType][square]
     }
 
@@ -19,7 +21,9 @@ class zobrist_hashing {
         this.hash ^= zobrist_hash_values[pieceType][square]
     }
 
-    function
+    updateHash(move, board){
+        
+    }
 }
 
 console.log(zobrist_hash_values[Piece.black | Piece.rook][63])
