@@ -4,7 +4,7 @@ var boardElements = new Array(64)
 const board = new Board
 var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: true, // ^ --||--
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
     fromWhitePerspective: true,
@@ -123,7 +123,7 @@ function Make_Move_On_Board(move){
 
     setTimeout(()=>{
         RenderBoard(board)
-        console.log(board.repetitionTable)
+        //console.log(board.repetitionTable)
         GameLoop()
     },180)
     

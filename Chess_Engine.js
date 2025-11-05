@@ -154,6 +154,10 @@ function Search(depth, alpha, beta){
     CheckIfStillSearching()
     if (! searching) return 0
     
+    if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
+        console.log("found threefold repetition in search")
+        return 0
+    }
     // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()
     

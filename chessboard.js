@@ -27,7 +27,7 @@ class Board {
         //Tømmer brett
         this.square = new Array(64).fill(0)
         this.stack = []
-        this.repetitionTable = []
+        
 
         //Deler opp FEN i dei ulike infodelane
         // 0 = Posisjon, 1 = Spelar sin tur, 2 = Rokade, 3 = en pessant, 4/5 half move clock
@@ -71,7 +71,7 @@ class Board {
 
         this.UpdateEnemyAttacks()
         this.zobrist.createHash(this.square, this.white_To_Move)
-        this.repetitionTable.push(this.zobrist.hash)
+        this.repetitionTable = [this.zobrist.hash]
     }
 
     
