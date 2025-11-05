@@ -99,31 +99,41 @@ function MoveOrder(moves){
     return sortedMoves
 }
 
-function SearchAllCaptures(alpha, beta){
+function QuiesenceSearch(alpha, beta){
+    // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
+    // https://www.chessprogramming.org/Quiescence_Search
+    
     CheckIfStillSearching()
     if (! searching) return 0
 
-    let evaluation = Eval()
-    if (evaluation >= beta){
-        return beta
-    }
-    alpha = Math.max(alpha, evaluation)
+    let bestValue = Evaluation.evaluate(board)
 
+    if (bestValue >= beta){
+        return bestValue
+    }
+    
+    alpha = Math.max(alpha, bestValue)
+
+    //Genererer lovlege angrep
     let captureMoves = board.GenerateCaptures()
     captureMoves = MoveOrder(captureMoves)
     
-    captureMoves.forEach(capture => {
-        board.Make_Move(capture)
-        evaluation = - SearchAllCaptures(-beta, -alpha)
-        board.Unmake_Move(capture)
+    for (let move of captureMoves){
+        board.Make_Move(move)
+        evaluation = - QuiesenceSearch(-beta, -alpha)
+        board.Unmake_Move(move)
 
         if (evaluation >= beta){
             return beta
         }
-        alpha = Math.max(alpha, evaluation)
-    })
+        if (evaluation > bestValue){
+            bestValue = evaluation
+        }
 
-    return alpha
+        alpha = Math.max(alpha, evaluation)
+    }
+
+    return bestValue
 }
 
 function Search(depth, alpha, beta){
@@ -156,8 +166,8 @@ function Search(depth, alpha, beta){
 
     //Evaluer når du har nådd maks søkedybde
     if (depth == 0){
-        const score = Evaluation.evaluate(board)
-        return score //SearchAllCaptures(alpha, beta)
+        //const score = Evaluation.evaluate(board)
+        return QuiesenceSearch(alpha, beta)
     } 
     
     //Lagre beste poengsum og beste trekk
