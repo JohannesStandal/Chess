@@ -1,24 +1,24 @@
 /*
-Eval
-- generer ned til posisjonar der ingen brikker er under angrep
-//- Tell materiale
-
-- kart over optimale ruter per brikketype
-
-
+Features
 
 Search
-//- Negamax
+- Negamax
+- Quiescence search
 - Alpha Beta
-- Move order optimalisering
+- Move order optimisation
 - Iterativ Deepening
+- Transposision table
 
+Evaluation
+- Material count
+- bonuses for certain squares for each piecetype
+- avoids threefold repetition
 */
 
 
 //Søkedybde i PLY
 const MaxDepthLimit = 10
-const thinkingTime = 5000
+const thinkingTime = 1000
 
 var orginalDepth; 
 var bestMoveSoFar;
@@ -144,6 +144,12 @@ function Search(depth, alpha, beta){
     //Generer lovlege trekk
     CheckIfStillSearching()
     if (! searching) return 0
+    
+    //sjekk repetisjonar
+    if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
+        console.log("found threefold repetition in search")
+        return 0
+    }
 
     //transposition table
     if (TT.IsValidTransposition(board.zobrist.hash)){
@@ -154,10 +160,6 @@ function Search(depth, alpha, beta){
     
 
     
-    if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
-        console.log("found threefold repetition in search")
-        return 0
-    }
 
     // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()

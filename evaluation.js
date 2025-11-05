@@ -4,7 +4,7 @@ class Evaluation {
     static mapFromPieceType = Array(12)
 
     static kingMap = [
-        50, 50, 50, 10, 10, 10, 50, 50,
+        20, 20, 20, 10, 10, 10, 20, 20,
         10, 10, 10, 10, 10, 10, 10, 10,
         10, 10, 10, 10, 10, 10, 10, 10,
         10, 10, 10, 10, 10, 10, 10, 10,
@@ -95,6 +95,8 @@ class Evaluation {
          * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
          * spelaren sin tur det er. Dette er viktig for å få riktig resultat frå negamax funksjonen
          */
+        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
+
         posEvaled ++
         let score = 0
 
@@ -103,6 +105,8 @@ class Evaluation {
 
         score += this.countMaterial(board) * materialWeight
         score += this.positionBonus(board) * positionBonusWeight
+
+        score += this.forceKingToCorner(board, endgameWeight)
 
         return score
         
@@ -140,5 +144,48 @@ class Evaluation {
         }
         
         return score
+    }
+
+    static forceKingToCorner(board, endgameWeight){
+        
+        let score = 0
+
+        // find kings
+        let friendlyKingSquare = 0
+        let enemyKingSquare = 0
+
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            if (!Piece.IsType(piece, Piece.king)) continue
+
+            const isFriendly = Piece.CheckPieceColor(piece, board.white_To_Move)
+
+            if (isFriendly) friendlyKingSquare = i
+            else enemyKingSquare = i
+        }
+        // rekn ut avstand til midthen for vennleg konge
+        const friendlyKingRank = ChessHelper.Rank(friendlyKingSquare)
+        const friendlyKingFile = ChessHelper.File(friendlyKingSquare)
+       
+        // rekn ut avstand til midthen for fiendtleg konge
+        const enemyKingRank = ChessHelper.Rank(enemyKingSquare)
+        const enemyKingFile = ChessHelper.File(enemyKingSquare)
+
+        // oppfordre til å få fiendtlig konge til hjørne av brettet
+        const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5)
+        const enemyKingDstToCenterFile = Math.abs(enemyKingFile - 3.5)
+
+        const enemyKingDstToCenter = enemyKingDstToCenterRank + enemyKingDstToCenterFile
+        score += enemyKingDstToCenter * 3
+        
+        
+        const RankDistance = Math.abs(friendlyKingRank - enemyKingRank)
+        const FileDistance = Math.abs(friendlyKingFile - enemyKingFile)
+        const kingDistance = FileDistance + RankDistance
+
+        
+        score += (14 - kingDistance)
+
+        return score * endgameWeight
     }
 }

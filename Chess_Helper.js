@@ -15,5 +15,25 @@ class ChessHelper {
         return false
         
     }
+
+    static Rank(squareIndex){
+        return Math.floor(squareIndex / 8)
+    }
+
+    static File(squareIndex){
+        return (squareIndex % 8) - 1
+    }
+
+    static CalculateEndgameWeight(board){
+        let numOpponentPieces = 0
+
+        for (let piece of board.square){
+            if (Piece.CheckPieceColor(piece, !board.white_To_Move)){
+                numOpponentPieces += 1
+            }
+        }
+
+        return (16 - numOpponentPieces)
+    }
     
 }
