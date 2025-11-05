@@ -31,6 +31,7 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
 function GameLoop(){
     promo = false
     const gameOver = (board.GenerateLegalMoves().length == 0)
+    const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
     const check = board.InCheck(board.white_To_Move)
     if (check){
         console.log("Check")
@@ -47,6 +48,11 @@ function GameLoop(){
             message = "Uavgjort ved sjakk patt"
         }
 
+        EndGame(message)
+        return
+    }
+    else if (threefoldRepetition){
+        let message = "Uavgjort ved repetisjon"
         EndGame(message)
         return
     }

@@ -3,14 +3,16 @@ class zobrist_hashing {
         this.hash = BigInt(0)
     }
 
-    createHash(board){
+    createHash(board, white_to_move){
         this.hash = BigInt(0)
         for (let squareIndex = 0; squareIndex < 64; squareIndex++){
             const pieceType = board[squareIndex]
             if (pieceType == 0) continue
             this.hash ^= zobrist_hash_values[pieceType][squareIndex]
         }
-        console.log(this.hash)
+
+        if (white_to_move) this.hash ^= hash_white_to_move
+        //console.log(this.hash)
     }
 
     removePiece(square, pieceType){

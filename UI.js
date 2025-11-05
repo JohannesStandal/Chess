@@ -4,7 +4,7 @@ var boardElements = new Array(64)
 const board = new Board
 var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: false, // ^ --||--
+    playAsBlack: true, // ^ --||--
     playerTurn: false,
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
     fromWhitePerspective: true,
@@ -85,7 +85,8 @@ function AnimateMove(move){
     let piece_IMG = boardElements[move.start].childNodes[0]
     piece_IMG.style = "top: " + String(dy) + "px; left: " + String(dx) + "px; z-inex: 200;"
 
-} 
+}
+
 var promo = false
 function Make_Move_On_Board(move){
     if (promo) return
@@ -122,6 +123,7 @@ function Make_Move_On_Board(move){
 
     setTimeout(()=>{
         RenderBoard(board)
+        console.log(board.repetitionTable)
         GameLoop()
     },180)
     

@@ -17,14 +17,17 @@ class Board {
         this.moves = []
 
         //lagrer spillhistorikk
-        this.gameHistory = []
-        this.hash = new zobrist_hashing()
+        this.stack = []
+        this.repetitionTable = []
+        this.zobrist = new zobrist_hashing()
     }
 
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
     Load_Fen(fen){
         //Tømmer brett
         this.square = new Array(64).fill(0)
+        this.stack = []
+        this.repetitionTable = []
 
         //Deler opp FEN i dei ulike infodelane
         // 0 = Posisjon, 1 = Spelar sin tur, 2 = Rokade, 3 = en pessant, 4/5 half move clock
@@ -67,12 +70,13 @@ class Board {
         })
 
         this.UpdateEnemyAttacks()
-        this.hash.createHash(this.square)
+        this.zobrist.createHash(this.square, this.white_To_Move)
+        this.repetitionTable.push(this.zobrist.hash)
     }
 
     
     Make_Move(move){
-        this.gameHistory.push({
+        this.stack.push({
             square: [...this.square],
             white_To_Move: this.white_To_Move,
             castlingRights: this.castlingRights,
@@ -80,7 +84,7 @@ class Board {
             enPassantSquare: this.enPassantSquare,
             opponentAttacks: this.opponentAttacks,
             moves: [...this.moves],
-            
+            repetitionTable: [...this.repetitionTable],
         })
         
         this.castlingRights &= Piece.updateCastleRights[move.start] 
@@ -136,17 +140,18 @@ class Board {
         //Oppdaterer variablar
         this.white_To_Move = !this.white_To_Move
         this.UpdateEnemyAttacks()
-        
-        
+
+        this.zobrist.createHash(this.square, this.white_To_Move)
+        this.repetitionTable.push(this.zobrist.hash)
     }
 
     Unmake_Move(move){
         //sjekkar om det eksisterer ein spelhistorikk
         //Dersom det ikkje er det avbryter den operasjonen
-        if (this.gameHistory.length == 0) return
+        if (this.stack.length == 0) return
 
         //overfører data frå forrige posisjon
-        const previousPosition = this.gameHistory.pop()
+        const previousPosition = this.stack.pop()
 
         this.square = previousPosition.square
         this.white_To_Move = previousPosition.white_To_Move
@@ -154,7 +159,9 @@ class Board {
         this.halfMoveClock = previousPosition.halfMoveClock
         this.opponentAttacks = previousPosition.opponentAttacks,
         this.enPassantSquare = previousPosition.enPassantSquare
+
         this.moves = previousPosition.moves
+        this.repetitionTable = previousPosition.repetitionTable
        
     }
 

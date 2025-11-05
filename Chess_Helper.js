@@ -89,5 +89,20 @@ class ChessHelper {
         this.mapFromPieceType[Piece.rook] = this.rookMap
         this.mapFromPieceType[Piece.queen] = this.queenMap
     }
+
+    static checkForRepetitions(repetetionTable){
+        var dict = {}
+        for (let value of repetetionTable){
+            if (value in dict){
+                dict[value] += 1
+                if (dict[value] == 3) return true
+            }
+            else {
+                dict[value] = 1
+            }
+        }
+        return false
+        
+    }
     
 }

@@ -52,3 +52,6 @@ function testFunctionTime(f){
     console.log((t2-t1).toFixed(5) + "ms")
 }
 //performanceTest(0,6)
+
+// const testTable = [BigInt(2954), BigInt(135), BigInt(145), BigInt(1), BigInt(1)]//, BigInt(1)]
+// console.log(ChessHelper.checkForRepetitions(testTable))`
