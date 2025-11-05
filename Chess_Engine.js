@@ -29,6 +29,7 @@ var searching = false
 
 const checkMateScore = 10000000
 var posEvaled = 0
+var TT = new Transposition_Table()
 
 function CheckIfStillSearching(){
     elapsedTime = performance.now() - startTime
@@ -73,7 +74,10 @@ function ChessEngine(){
     Make_Move_On_Board(move)
 }
 
-function Examine(move){
+function MVV_LVA_ordering(move){
+    //Most valuable victim - Least valuable attacker 
+    //Prioritises moves where a low value piece captures a high value piece
+
     let pieceTypeMoved = board.square[move.start] & 0b0111 
     let pieceTypeAttacked = board.square[move.target] & 0b0111
 
@@ -84,7 +88,7 @@ function MoveOrder(moves){
     let moveScore = []
 
     moves.forEach(move => {
-        moveScore.push(Examine(move))
+        moveScore.push(MVV_LVA_ordering(move))
     })
     //  Sortering gjort av chatgpt
     // Trinn 1: Kombiner begge listene som par
@@ -140,11 +144,21 @@ function Search(depth, alpha, beta){
     //Generer lovlege trekk
     CheckIfStillSearching()
     if (! searching) return 0
+
+    //transposition table
+    if (TT.IsValidTransposition(board.zobrist.hash)){
+        return TT.GetScore(board.zobrist.hash)
+    }
+    // utan: 1893
+    // med: 2234 (nådde dybde på 5)
+    
+
     
     if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
         console.log("found threefold repetition in search")
         return 0
     }
+
     // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()
     
@@ -200,6 +214,8 @@ function Search(depth, alpha, beta){
     if (depth == orginalDepth){
         return bestMove
     }
+
+    TT.AddPosition(board.zobrist.hash, alpha, depth)
 
     return alpha
 }
