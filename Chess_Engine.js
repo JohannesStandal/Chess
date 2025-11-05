@@ -27,7 +27,7 @@ var startTime = 0
 var elapsedTime = 0
 var searching = false
 
-const checkMateScore = 100000
+const checkMateScore = 10000000
 var posEvaled = 0
 
 function CheckIfStillSearching(){
@@ -71,29 +71,6 @@ function ChessEngine(){
     if (move == null) move = board.GenerateLegalMoves()[0]
     console.log(Move.CoordinatesNotation(move), posEvaled, orginalDepth-1)
     Make_Move_On_Board(move)
-}
-
-function Eval(){
-    /**
-     * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
-     * spelaren sin tur det er.
-     */
-    posEvaled ++
-
-    // tell materiale
-    let materialScore = 0
-    for (let i = 0; i < 64; i++){
-        // Finner brikke type (inga brikke får vidare)
-        const piece = board.square[i]
-        if (piece == 0) continue
-        
-        // forteikn 
-        const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-
-        materialScore += sign * Piece.pieceValues[piece & 0b111]
-    }
-
-    return materialScore
 }
 
 function Examine(move){
@@ -173,12 +150,13 @@ function Search(depth, alpha, beta){
         //Stalemate
         return 0
     }
+
     // sorter trekk etter kor bra du GJETTAR at trekket er
     let legalMoves = MoveOrder(UnsortedlegalMoves)
 
     //Evaluer når du har nådd maks søkedybde
     if (depth == 0){
-        const score = Eval()
+        const score = Evaluation.evaluate(board)
         return score //SearchAllCaptures(alpha, beta)
     } 
     

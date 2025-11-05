@@ -309,5 +309,9 @@ class Piece {
         return 3 < pieceType && pieceType < 7
     }
 
+    static getPieceValue(piece){
+        return this.pieceValues[piece & 0b111]
+    }
+
 }
 
