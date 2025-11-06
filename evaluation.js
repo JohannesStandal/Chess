@@ -95,7 +95,9 @@ class Evaluation {
          * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
          * spelaren sin tur det er. Dette er viktig for å få riktig resultat frå negamax funksjonen
          */
-        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
+        //if (ChessHelper.isInsufficientMaterial(board)) return 0
+
+        
 
         posEvaled ++
         let score = 0
@@ -106,7 +108,13 @@ class Evaluation {
         score += this.countMaterial(board) * materialWeight
         score += this.positionBonus(board) * positionBonusWeight
 
+        let endgameWeight = ChessHelper.CalculateEndgameWeight(board)
         score += this.forceKingToCorner(board, endgameWeight)
+        board.white_To_Move = !board.white_To_Move
+        
+        endgameWeight = ChessHelper.CalculateEndgameWeight(board)
+        score += this.forceKingToCorner(board, endgameWeight)
+        board.white_To_Move = !board.white_To_Move
 
         return score
         
@@ -136,11 +144,14 @@ class Evaluation {
             if (piece == 0) continue
 
             const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            
+
             const pieceType = piece & 0b00111
             const mapIndex = (Piece.CheckPieceColor(piece, true)) ? i : Evaluation.mirroredBoard[i]
 
-            score += sign * (Evaluation.mapFromPieceType[pieceType][mapIndex])
+            let bonus = Evaluation.mapFromPieceType[pieceType][mapIndex]
+            let pieceValue = Piece.pieceValues[piece & 0b111]
+            console.log(bonus) 
+            score += sign * bonus * (pieceValue / 100)
         }
         
         return score
@@ -163,6 +174,7 @@ class Evaluation {
             if (isFriendly) friendlyKingSquare = i
             else enemyKingSquare = i
         }
+
         // rekn ut avstand til midthen for vennleg konge
         const friendlyKingRank = ChessHelper.Rank(friendlyKingSquare)
         const friendlyKingFile = ChessHelper.File(friendlyKingSquare)
@@ -175,8 +187,8 @@ class Evaluation {
         const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5)
         const enemyKingDstToCenterFile = Math.abs(enemyKingFile - 3.5)
 
-        const enemyKingDstToCenter = enemyKingDstToCenterRank + enemyKingDstToCenterFile
-        score += enemyKingDstToCenter * 3
+        const enemyKingDstToCenter = (enemyKingDstToCenterRank + enemyKingDstToCenterFile)
+        score += enemyKingDstToCenter
         
         
         const RankDistance = Math.abs(friendlyKingRank - enemyKingRank)

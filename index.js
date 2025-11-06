@@ -70,6 +70,15 @@ function GameLoop(){
     }
 }
 
+//StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
+
+/**
+ * Endgames
+ *  - knight underpromotion: "8/8/8/7k/6p1/5pQ1/3R1p1K/6N1 b - - 0 1"
+ *  - sacrifice bishop for promotion: "8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1"
+ *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
+ */
+//StartGame("8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1")
 
 
 

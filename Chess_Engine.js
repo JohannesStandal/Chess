@@ -18,7 +18,7 @@ Evaluation
 
 //Søkedybde i PLY
 const MaxDepthLimit = 10
-const thinkingTime = 1000
+const thinkingTime = 3000
 
 var orginalDepth; 
 var bestMoveSoFar;
@@ -67,6 +67,7 @@ function ChessEngine(){
         }
         
         console.log(move)
+        console.log(posEvaled)
     }
       
     if (move == null) move = board.GenerateLegalMoves()[0]
@@ -143,7 +144,7 @@ function QuiesenceSearch(alpha, beta){
 function Search(depth, alpha, beta){
     //Generer lovlege trekk
     CheckIfStillSearching()
-    if (! searching) return 0
+    if (! searching) return -20
     
     //sjekk repetisjonar
     if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
@@ -155,11 +156,6 @@ function Search(depth, alpha, beta){
     if (TT.IsValidTransposition(board.zobrist.hash)){
         return TT.GetScore(board.zobrist.hash)
     }
-    // utan: 1893
-    // med: 2234 (nådde dybde på 5)
-    
-
-    
 
     // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()
@@ -213,11 +209,12 @@ function Search(depth, alpha, beta){
         }
     }
     
+    TT.AddPosition(board.zobrist.hash, alpha, depth)
+
     if (depth == orginalDepth){
         return bestMove
     }
 
-    TT.AddPosition(board.zobrist.hash, alpha, depth)
 
     return alpha
 }
