@@ -1,4 +1,7 @@
-class Evaluation {
+import { Piece } from "./piece.js"
+import { ChessHelper } from "./Chess_Helper.js"
+
+export class Evaluation {
     
     static mirroredBoard = new Array(64)
     static mapFromPieceType = Array(12)
@@ -99,7 +102,7 @@ class Evaluation {
 
         
 
-        posEvaled ++
+       
         let score = 0
 
         const materialWeight = 1
@@ -150,7 +153,7 @@ class Evaluation {
 
             let bonus = Evaluation.mapFromPieceType[pieceType][mapIndex]
             let pieceValue = Piece.pieceValues[piece & 0b111]
-            console.log(bonus) 
+            
             score += sign * bonus * (pieceValue / 100)
         }
         

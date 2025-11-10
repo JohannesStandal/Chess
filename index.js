@@ -1,3 +1,10 @@
+import { RenderScene, EndGame, Rematch} from "./App.js"
+import { gameData, board, RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board } from "./UI.js"
+import { ChessHelper } from "./Chess_Helper.js"
+
+import { ChessEngine } from "./Chess_Engine.js"
+import { Piece } from "./piece.js"
+
 function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){
     RenderScene(1)
     
@@ -23,12 +30,19 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
    GameLoop()
 }
 
+window.StartGame = StartGame
+window.EndGame = EndGame
+window.Rematch = Rematch
+window.RenderScene = RenderScene
 //startpos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 //test = "5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1"
 //Sliding moves test = "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
 
+var promo;
 
-function GameLoop(){
+const Engine = new Worker("./Chess")
+
+export function GameLoop(){
     promo = false
     const gameOver = (board.GenerateLegalMoves().length == 0)
     const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
@@ -65,10 +79,12 @@ function GameLoop(){
     }
     else {
         setTimeout(()=>{
-            ChessEngine()
+            let engine_move = ChessEngine()
+            Make_Move_On_Board(engine_move)
         },300)
     }
 }
+
 
 //StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
 

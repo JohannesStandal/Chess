@@ -1,4 +1,4 @@
-class Transposition_Table {
+export class Transposition_Table {
     constructor (){
         this.table = {}
     }

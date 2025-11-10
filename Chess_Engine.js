@@ -15,6 +15,11 @@ Evaluation
 - avoids threefold repetition
 */
 
+import { Transposition_Table } from "./Transposition_Table.js";
+import { Evaluation } from "./evaluation.js";
+import { ChessHelper } from "./Chess_Helper.js";
+import { board } from "./UI.js";
+import { Piece, Move } from "./piece.js";
 
 //Søkedybde i PLY
 const MaxDepthLimit = 10
@@ -37,9 +42,8 @@ function CheckIfStillSearching(){
     //console.log(elapsedTime, searching)
 }
 
-function ChessEngine(){
-    console.log("")
-    console.log("New search")
+export function ChessEngine(){
+    console.log("New search\n")
     
     bestMoveSoFar = null
     startTime = performance.now() 
@@ -51,10 +55,10 @@ function ChessEngine(){
         board.moves = []
         posEvaled = 0
         orginalDepth = i
-        console.log("")
-        console.log("Search Depth:", orginalDepth)
+        console.log("Search Depth:", orginalDepth, "\n")
         //const searchStartTime = performance.now()
         bestMoveSoFar = Search(orginalDepth, -Infinity, Infinity)
+
         //const searchEndTime = performance.now()
         //const searchTime = searchEndTime - searchStartTime
         
@@ -72,8 +76,11 @@ function ChessEngine(){
       
     if (move == null) move = board.GenerateLegalMoves()[0]
     console.log(Move.CoordinatesNotation(move), posEvaled, orginalDepth-1)
-    Make_Move_On_Board(move)
+
+    return move
 }
+
+window.ChessEngine = ChessEngine
 
 function MVV_LVA_ordering(move){
     //Most valuable victim - Least valuable attacker 
@@ -99,7 +106,7 @@ function MoveOrder(moves){
     combined.sort((a, b) => (a[0] > b[0]) ? 1 : 1);
 
     // Trinn 3: Del opp igjen i to separate arrays
-    sortedMoves = combined.map(pair => pair[0]);
+    let sortedMoves = combined.map(pair => pair[0]);
 
     return sortedMoves
 }
@@ -112,6 +119,7 @@ function QuiesenceSearch(alpha, beta){
     if (! searching) return 0
 
     let bestValue = Evaluation.evaluate(board)
+    posEvaled ++
 
     if (bestValue >= beta){
         return bestValue
@@ -125,7 +133,7 @@ function QuiesenceSearch(alpha, beta){
     
     for (let move of captureMoves){
         board.Make_Move(move)
-        evaluation = - QuiesenceSearch(-beta, -alpha)
+        let evaluation = - QuiesenceSearch(-beta, -alpha)
         board.Unmake_Move(move)
 
         if (evaluation >= beta){

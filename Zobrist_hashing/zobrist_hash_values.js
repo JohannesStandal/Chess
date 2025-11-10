@@ -1,8 +1,8 @@
 // Auto-generert Zobrist-hashtabell (64-bit BigInt-verdier)
 // Generert med Python
-const hash_white_to_move = 0x8f3a7c21b4d9e560n
+export const hash_white_to_move = 0x8f3a7c21b4d9e560n
 
-const zobrist_hash_values = {
+export const zobrist_hash_values = {
     9: [
         0xc4b032ccd7c524a5n, 0xe51f30dc6a7ee39n, 0xd261a7ab3aa2e4f9n, 0xce177b4e0837b8a3n,
         0x66b2bc5b50c187fcn, 0x10f1bc81448aaa9en, 0xe9c349e03602f8acn, 0x9132b63ef16287e4n,

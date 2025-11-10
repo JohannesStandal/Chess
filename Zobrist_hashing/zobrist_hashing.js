@@ -1,4 +1,7 @@
-class zobrist_hashing {
+import { zobrist_hash_values, hash_white_to_move} from "./zobrist_hash_values.js"
+import { Piece } from "../piece.js"
+
+export class zobrist_hashing {
     constructor(){
         this.hash = BigInt(0)
     }

@@ -1,3 +1,7 @@
+import { Board } from "./chessboard.js"
+import { Piece, Move } from "./piece.js"
+import { GameLoop } from "./index.js"
+
 var main = document.getElementById("main")
 var boardElements = new Array(64)
 
@@ -41,10 +45,10 @@ function RenderBoard(board){
             e.addEventListener("click", () => Click(index))
 
             //Finn brikkenummeret for den ruta. 0 = inga brikke
-            pieceType = board.square[index]
+            let pieceType = board.square[index]
             if (pieceType != 0){
                 //Teikn brikka in, med bruk av brikkenummer
-                img = document.createElement("img")
+                let img = document.createElement("img")
                 img.src = Piece.Images[pieceType]
                 e.appendChild(img)
             }
@@ -145,3 +149,4 @@ function Click(squareIndex){
     })
 }
 
+export { board, gameData, RenderBoard, UpdateLegalMovesLookUp, AnimateMove, Make_Move_On_Board, Click}

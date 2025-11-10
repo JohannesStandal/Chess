@@ -1,3 +1,4 @@
+import { board } from "./UI"
 
 function MoveGenerationCount(depth){
     if (depth == 0) return 1

@@ -2,7 +2,10 @@
 //Denne klassen simulerer reglar for sjakkbrettet og er 
 //Hjernen bak programmet
 
-class Board {
+import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
+import { Piece, Move } from "./piece.js"
+
+export class Board {
     constructor(){
         //blir fiksa når du lastar inn ein FEN
         this.square = new Array(64).fill(0)
@@ -94,7 +97,7 @@ class Board {
 
         //en passant
         if (move.flag == Move.flags.epCapture){
-            board.square[board.enPassantSquare] = 0
+            this.square[this.enPassantSquare] = 0
         }
         //sjekker etter flag
         if (move.flag == Move.flags.doublePush){
@@ -331,13 +334,13 @@ class Board {
             for (let i = 1; i < 3; i++){
                 const squareToCheck = myKingSquare + i
                 //Er ruta tom
-                if (board.square[squareToCheck] != 0){
+                if (this.square[squareToCheck] != 0){
                    
                     legal = false 
                     break
                 }
                 //Er ruta under angrep
-                if (board.opponentAttacks.includes(squareToCheck)){
+                if (this.opponentAttacks.includes(squareToCheck)){
                     legal = false 
                    
                     break
@@ -355,13 +358,13 @@ class Board {
                 const squareToCheck = myKingSquare - i
                 
                 //Er ruta tom
-                if (board.square[squareToCheck] != 0){
+                if (this.square[squareToCheck] != 0){
                     legal = false 
                     break
                 }
 
                 //Er ruta under angrep
-                if (board.opponentAttacks.includes(squareToCheck) && i <= 2){
+                if (this.opponentAttacks.includes(squareToCheck) && i <= 2){
                     legal = false 
                     break
                 }

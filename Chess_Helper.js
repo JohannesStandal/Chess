@@ -1,6 +1,5 @@
-class ChessHelper {
-
-
+import { Piece } from "./piece.js"
+export class ChessHelper {
     static checkForRepetitions(repetetionTable){
         var dict = {}
         for (let value of repetetionTable){

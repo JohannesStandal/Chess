@@ -1,4 +1,5 @@
-class Move {
+// Klassen for moves som inneheld all info for å flytte brikker
+export class Move {
     constructor(start, target, flag){
         this.start = start
         this.target = target
@@ -83,7 +84,7 @@ class Move {
 }
 
 //Klassen Piece vil fungere som eit bibliotek for sjakkbrikkene.
-class Piece {
+export class Piece {
     //Definerer brikker med tal slik at binær representerer brikke + farge
     //Døme: 01101 -> 01|101 -> 8 + 5 = kvitt, tårn  
     static none    = 0 //00_000
