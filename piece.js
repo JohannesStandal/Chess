@@ -121,7 +121,6 @@ export class Piece {
 
     static From_Number = new Array(22)
     
-
     
     static updateCastleRights = [
         //Dronning side <- | -> Kongeside
@@ -138,6 +137,23 @@ export class Piece {
     
     //Retningar for rette og diagonale linjer
     static directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
+
+    static pin_W_E  =  0b1001   // +1 -1
+    static pin_N_S  =  0b1010   // +8 -8
+    static pin_NE_SW = 0b0101 // +9 -9
+    static pin_NW_SE = 0b0110 // +7 -7
+
+    static pins = [
+        this.pin_W_E,
+        this.pin_W_E,
+        this.pin_N_S,
+        this.pin_N_S,
+        this.pin_NE_SW,
+        this.pin_NE_SW,
+        this.pin_NW_SE,
+        this.pin_NW_SE
+    ]
+    
 
     //Liste for å rekne ut lovlege trekk for hest og konge
     static knightAttacks = new Array(64)
@@ -207,6 +223,7 @@ export class Piece {
                 ]
             }
         }
+
         //Forhåndsreknar alle lovlege Hest trekk for alle rutene på brettet
         //Dette vil spare tid når ein genererer trekk
         for (let file = 0; file < 8; file++){
@@ -219,35 +236,35 @@ export class Piece {
                 
                 //Offset: + 15
                 if (data[2] >= 2 && data[0] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex + 15))
+                    moves.push(squareIndex + 15)
                 }
                 //Offset: + 17
                 if (data[2] >= 2 && data[1] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex + 17))
+                    moves.push(squareIndex + 17)
                 }
                 //Offset: + 6
                 if (data[0] >= 2 && data[2] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex + 6))
+                    moves.push(squareIndex + 6)
                 }
                 //Offset: + 10
                 if (data[1] >= 2 && data[2] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex + 10))
+                    moves.push(squareIndex + 10)
                 }
                 //Offset: - 10
                 if (data[0] >= 2 && data[3] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex - 10))
+                    moves.push(squareIndex - 10)
                 }
                 //Offset: - 6
                 if (data[1] >= 2 && data[3] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex - 6))
+                    moves.push(squareIndex - 6)
                 }
                 //Offset: -17
                 if (data[3] >= 2 && data[0] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex - 17))
+                    moves.push(squareIndex - 17)
                 }
                 //Offset: -15
                 if (data[3] >= 2 && data[1] >= 1){
-                    moves.push(new Move(squareIndex, squareIndex - 15))
+                    moves.push(squareIndex - 15)
                 }
                 
 

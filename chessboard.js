@@ -2,27 +2,35 @@
 //Denne klassen simulerer reglar for sjakkbrettet og er 
 //Hjernen bak programmet
 
+import { ChessHelper } from "./Chess_Helper.js"
 import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
 import { Piece, Move } from "./piece.js"
 
 export class Board {
     constructor(){
-        //blir fiksa når du lastar inn ein FEN
+        // blir fiksa når du lastar inn ein FEN
         this.square = new Array(64).fill(0)
         this.white_To_Move = true
         this.castlingRights = 0b1111
         this.halfMoveClock = 0
         this.enPassantSquare = null
         
-        //lagrar rutene som motstandar angriper
-        //Nyttig for å leite etter lovlege kongetrekk, sjakk og sjakkmatt
-        this.opponentAttacks = []
+        
+        
+        // lagrer spillhistorikk
         this.moves = []
-
-        //lagrer spillhistorikk
         this.stack = []
         this.repetitionTable = []
         this.zobrist = new zobrist_hashing()
+        
+        // Important data for generating legal moves
+        this.opponentAttacks = []
+        this.blockingSquares = []
+        this.kingAttackers = []
+        this.pinMask = new Array(64).fill(0)
+        
+        this.friendlyKingSquare = 0
+        this.enemyKingSquare = 0 
     }
 
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
@@ -167,6 +175,123 @@ export class Board {
        
     }
 
+    dontknowgoodname(){
+        
+        /**
+         *  This is a complex function to; locate kings, detect pinned pieces, find checks and doublecheks, as well as keep track of ways to resolve checks 
+         * 
+         * - If the kingAttackers array is empty, you can make any legal move accounting for pins
+         * 
+         * - If the kingAttackers array has one element, you must move to one of the blockingsquares.
+         *   The blockingsquares array describes the path from the kingAttacker to the friendly king. 
+         *   If your moves target square is in the blocker array it will resolve or block the check.
+         *   
+         *  - If the kingAttackers array has two elements, then there is a double check. In this case we only care about the king moves.
+         * 
+         */
+        this.pinMask = new Array(64).fill(0)
+        this.kingAttackers = []
+        
+        // the squares you can move to in order to resolve a check (either by blocking path or capturing the attacker)
+        // This will be countered by a double check in wich we only generate king moves
+        this.blockingSquares = [] 
+
+        // update king locations
+        let kings = ChessHelper.LocateKings(this)
+        this.friendlyKingSquare = kings[0]
+        this.enemyKingSquare = kings[1]
+
+        // The algoritm is going to generate moves from the friendly king square. If it finds a hostile piece that attacks it
+        // it will add them to the kingAttackers array.
+        
+        // Generate knight moves from friendly king square. Check if any knight is attacking the king
+        const potentialKnightAttackers = Piece.knightAttacks[this.friendlyKingSquare]
+        console.log(potentialKnightAttackers)
+        for (let startSquare of potentialKnightAttackers){
+            let piece = this.square[startSquare]
+            console.log(Piece.CheckPieceColor(piece, !this.white_To_Move))
+            console.log(Piece.IsType(piece, Piece.knight))
+            if (
+                Piece.CheckPieceColor(piece, !this.white_To_Move) &&
+                Piece.IsType(piece, Piece.knight)
+            ){
+                this.kingAttackers.push(startSquare)
+                this.blockingSquares.push(startSquare)
+            }
+        }
+
+        // Generate sliding moves from the friendly king square. If it finds a friendly piece it is marked as a potenially pinned piece. If it finds another friendly piece
+        // there is no pin in this direction. However if there is a hostile piece that can slide in the given direction, the potential pinned piece will be pinned in the current direction
+        // If it finds a hostile piece with the ability to slide in the given direction it is added to the kingAttackers array. It also lists all the squares between itself and the king
+        // as valid targetsquares for blocking the check or capturing the piece
+        
+        //Definerer nokre variablar
+        let data = Piece.numSquaresToEdge[this.friendlyKingSquare]
+        
+        //directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
+        //  0 -> 3: Rette trekk
+        //  4 -> 7: Diagonale trekk
+
+        for (let i = 0; i < 8; i++){
+            const offset = Piece.directionOffsets[i]
+            const pinType = Piece.pins[i]
+            
+            let potentialPinnedPiece = null
+            let blockingSquares = []
+
+            for (let n = 0; n < data[i]; n++){
+                const target = this.friendlyKingSquare + offset * (n+1)
+                const pieceOnTargetSquare = this.square[target]
+                
+                blockingSquares.push(target)
+                
+                //Om brikka er vennleg lagrar vi ruta som ein potensiell pin
+                if (Piece.CheckPieceColor(pieceOnTargetSquare, this.white_To_Move)){
+                    if (potentialPinnedPiece != null) break
+                    potentialPinnedPiece = target
+                    console.log(potentialPinnedPiece)
+                }
+
+                //Dersom brikka er fientleg må ein sjekke om den kan bevege seg i same retning
+                if (Piece.CheckPieceColor(pieceOnTargetSquare, !this.white_To_Move)){
+
+                    const isQueen  = Piece.IsType(pieceOnTargetSquare, Piece.queen)
+                    const isBishop = Piece.IsType(pieceOnTargetSquare, Piece.bishop)
+                    const isRook   = Piece.IsType(pieceOnTargetSquare, Piece.rook)
+
+                    // vi sjekker etter eit rett trekk
+                    if ((i < 4) && (isQueen || isRook)){
+                        if (potentialPinnedPiece != null) this.pinMask[potentialPinnedPiece] = pinType
+                        else {
+                            // Kongen er i sjakk på grunn av denne angriparen
+                            this.kingAttackers.push(target)
+                            this.blockingSquares = blockingSquares
+                        }
+                    } 
+                    else if ((4 <= i) && (isQueen || isBishop)){
+                        console.log("found bishop")
+                        if (potentialPinnedPiece != null) this.pinMask[potentialPinnedPiece] = pinType
+                        else {
+                            // Kongen er i sjakk på grunn av denne angriparen
+                            this.kingAttackers.push(target)
+                            this.blockingSquares = blockingSquares
+
+                        }
+                    }
+                }
+                
+                 
+            }
+        }
+    }
+    
+
+        
+
+
+
+        
+
     GenerateSlidingMoves(piece, start){
         let moves = []
 
@@ -208,20 +333,18 @@ export class Board {
     }
 
     GenerateKnightMoves(start){
-        let arr = Piece.knightAttacks[start]
+        let targetSquares = Piece.knightAttacks[start]
         let moves = []
 
-        arr.forEach(move =>{
-            const pieceOnTargetSquare = this.square[move.target]
+        targetSquares.forEach(targetSquare =>{
+            const pieceOnTargetSquare = this.square[targetSquare]
             //Dersom ruta er tom er trekket eit quiet move
             if (pieceOnTargetSquare == 0){
-                move.flag = Move.flags.quietMove
-                moves.push(move)
+                moves.push(new Move(start, targetSquare, Move.flags.quietMove))
             }
             //Om brikka vi landar på er fientleg kan vi lagre som anrep
             else if (! Piece.CheckPieceColor(pieceOnTargetSquare, this.white_To_Move)){
-                move.flag = Move.flags.captures
-                moves.push(move)
+                moves.push(new Move(start, targetSquare, Move.flags.captures))
             }
             //Om brikka vi landar på er vennleg er gjeldande trekk er ulovleg
             //Vi tren derfor ikkje å gjere noko

@@ -30,7 +30,7 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
    RenderBoard(board)
    GameLoop()
 }
-
+StartGame("2k5/1pp1N3/8/2P5/2K3B1/8/8/8 b - - 0 1")
 window.StartGame = StartGame
 window.EndGame = EndGame
 window.Rematch = Rematch

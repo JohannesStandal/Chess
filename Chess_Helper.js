@@ -65,5 +65,23 @@ export class ChessHelper {
 
         return (16 - numOpponentPieces) * 10
     }
+
+    static LocateKings(board){
+        // find kings
+        let friendlyKingSquare = 0
+        let enemyKingSquare = 0
+
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            if (! Piece.IsType(piece, Piece.king)) continue
+
+            const isFriendly = Piece.CheckPieceColor(piece, board.white_To_Move)
+
+            if (isFriendly) friendlyKingSquare = i
+            else enemyKingSquare = i
+        }
+
+        return [friendlyKingSquare, enemyKingSquare]
+    }
     
 }
