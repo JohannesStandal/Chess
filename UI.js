@@ -132,7 +132,7 @@ function Make_Move_On_Board(move){
     },180)
     
 }
-
+window.Make_Move_On_Board = Make_Move_On_Board
 function Click(squareIndex){
     if (!gameData.playerTurn) return
     RenderBoard(board)

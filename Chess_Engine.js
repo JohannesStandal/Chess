@@ -156,8 +156,8 @@ function Search(depth, alpha, beta){
     
     //sjekk repetisjonar
     if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
-        console.log("found threefold repetition in search")
-        return 0
+        //console.log("found threefold repetition in search")
+        return - 10
     }
 
     //transposition table
@@ -172,24 +172,24 @@ function Search(depth, alpha, beta){
     if (UnsortedlegalMoves.length == 0){    
         //Checkmate
         if (board.InCheck()){
-            console.log("Checkmate Found", orginalDepth - depth, "ply")
-            console.log(board.moves)
+            //console.log("Checkmate Found", orginalDepth - depth, "ply")
+            //console.log(board.moves)
             return - (checkMateScore + depth)
         }
         
         //Stalemate
-        return 0
+        return -10
     }
-
-    // sorter trekk etter kor bra du GJETTAR at trekket er
-    let legalMoves = MoveOrder(UnsortedlegalMoves)
-
+    
     //Evaluer når du har nådd maks søkedybde
     if (depth == 0){
         //const score = Evaluation.evaluate(board)
         return QuiesenceSearch(alpha, beta)
     } 
     
+    // sorter trekk etter kor bra du GJETTAR at trekket er
+    let legalMoves = MoveOrder(UnsortedlegalMoves)
+
     //Lagre beste poengsum og beste trekk
     let bestMove = null
     

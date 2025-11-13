@@ -4,6 +4,7 @@ import { ChessHelper } from "./Chess_Helper.js"
 
 import { ChessEngine } from "./Chess_Engine.js"
 import { Piece } from "./piece.js"
+import { Tests } from "./Tests.js"
 
 function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){
     RenderScene(1)
@@ -39,8 +40,8 @@ window.RenderScene = RenderScene
 //Sliding moves test = "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
 
 var promo;
-
-const Engine = new Worker("./Chess")
+const tests = new Tests(board)
+window.tests = tests
 
 export function GameLoop(){
     promo = false

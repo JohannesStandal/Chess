@@ -76,7 +76,6 @@ export class Board {
         this.zobrist.createHash(this.square, this.white_To_Move)
         this.repetitionTable = [this.zobrist.hash]
     }
-
     
     Make_Move(move){
         this.stack.push({
