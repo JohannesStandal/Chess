@@ -85,16 +85,41 @@ export class Board {
         this.repetitionTable = [this.zobrist.hash]
     }
     
-    Make_Move(move){
+    Make_Move(move){  
+        // lagrer spillhistorikk
+        this.moves = []
+        this.stack = []
+        this.repetitionTable = []
+        this.zobrist = new zobrist_hashing()
+        
+        // Important data for generating legal moves
+        this.opponentAttacks = []
+        this.blockingSquares = []
+        this.kingAttackers = []
+        this.pinMask = new Array(64).fill(0)
+        
+        this.friendlyKingSquare = 0
+        this.enemyKingSquare = 0 
         this.stack.push({
-            square: [...this.square],
-            white_To_Move: this.white_To_Move,
-            castlingRights: this.castlingRights,
-            halfMoveClock: this.halfMoveClock,
-            enPassantSquare: this.enPassantSquare,
-            opponentAttacks: this.opponentAttacks,
-            moves: [...this.moves],
+            // Posisjons info
+            square:             [...this.square],
+            white_To_Move:      this.white_To_Move,
+            castlingRights:     this.castlingRights,
+            halfMoveClock:      this.halfMoveClock,
+            enPassantSquare:    this.enPassantSquare,
+
+            // Blir rekna ut frå posisjonen
+            opponentAttacks:    [...this.opponentAttacks],
+            blockingSquares:    [...this.blockingSquares],
+            kingAttackers:      [...this.kingAttackers],
+            pinMask:            [...this.pinMask],
+            friendlyKingSquare: this.friendlyKingSquare,
+            enemyKingSquare:    this.enemyKingSquare,
+
+            // spill historikk
+            moves: [...this.moves], 
             repetitionTable: [...this.repetitionTable],
+            hash: this.zobrist.hash
         })
         
         this.castlingRights &= Piece.updateCastleRights[move.start] 
@@ -150,7 +175,7 @@ export class Board {
         //Oppdaterer variablar
         this.white_To_Move = !this.white_To_Move
         this.UpdateEnemyAttacks()
-
+        this.dontknowgoodname()
         this.zobrist.createHash(this.square, this.white_To_Move)
         this.repetitionTable.push(this.zobrist.hash)
     }
@@ -163,15 +188,25 @@ export class Board {
         //overfører data frå forrige posisjon
         const previousPosition = this.stack.pop()
 
+        // posisjons info
         this.square = previousPosition.square
         this.white_To_Move = previousPosition.white_To_Move
         this.castlingRights = previousPosition.castlingRights
         this.halfMoveClock = previousPosition.halfMoveClock
-        this.opponentAttacks = previousPosition.opponentAttacks,
         this.enPassantSquare = previousPosition.enPassantSquare
 
+        // blir rekna ut frå posisjonen
+        this.opponentAttacks = previousPosition.opponentAttacks,
+        this.blockingSquares = previousPosition.blockingSquares
+        this.kingAttackers = previousPosition.kingAttackers
+        this.pinMask = previousPosition.pinMask
+        this.friendlyKingSquare = previousPosition.friendlyKingSquare
+        this.enemyKingSquare = previousPosition.enemyKingSquare
+
+        // spillhistorikk
         this.moves = previousPosition.moves
         this.repetitionTable = previousPosition.repetitionTable
+        this.zobrist.hash = previousPosition.hash
        
     }
 
@@ -206,17 +241,26 @@ export class Board {
         
         // Generate knight moves from friendly king square. Check if any knight is attacking the king
         const potentialKnightAttackers = Piece.knightAttacks[this.friendlyKingSquare]
-        console.log(potentialKnightAttackers)
         for (let startSquare of potentialKnightAttackers){
             let piece = this.square[startSquare]
-            console.log(Piece.CheckPieceColor(piece, !this.white_To_Move))
-            console.log(Piece.IsType(piece, Piece.knight))
             if (
                 Piece.CheckPieceColor(piece, !this.white_To_Move) &&
                 Piece.IsType(piece, Piece.knight)
             ){
                 this.kingAttackers.push(startSquare)
                 this.blockingSquares.push(startSquare)
+            }
+        }
+
+        // Do the same for attacking pawns
+        const offsets = (this.white_To_Move) ? [7, 9] : [-7, 9]
+        
+        for (let offset of offsets){
+            const target = this.friendlyKingSquare + offset
+            const piece = this.square[target]
+            if (Piece.IsType(piece, Piece.pawn) && ! Piece.CheckPieceColor(piece, this.white_To_Move)){
+                this.kingAttackers.push(target)
+                this.blockingSquares.push(target)
             }
         }
 
@@ -249,7 +293,6 @@ export class Board {
                 if (Piece.CheckPieceColor(pieceOnTargetSquare, this.white_To_Move)){
                     if (potentialPinnedPiece != null) break
                     potentialPinnedPiece = target
-                    console.log(potentialPinnedPiece)
                 }
 
                 //Dersom brikka er fientleg må ein sjekke om den kan bevege seg i same retning
@@ -269,13 +312,11 @@ export class Board {
                         }
                     } 
                     else if ((4 <= i) && (isQueen || isBishop)){
-                        console.log("found bishop")
                         if (potentialPinnedPiece != null) this.pinMask[potentialPinnedPiece] = pinType
                         else {
                             // Kongen er i sjakk på grunn av denne angriparen
                             this.kingAttackers.push(target)
                             this.blockingSquares = blockingSquares
-
                         }
                     }
                 }
