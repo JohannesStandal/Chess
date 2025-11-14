@@ -87,19 +87,6 @@ export class Board {
     
     Make_Move(move){  
         // lagrer spillhistorikk
-        this.moves = []
-        this.stack = []
-        this.repetitionTable = []
-        this.zobrist = new zobrist_hashing()
-        
-        // Important data for generating legal moves
-        this.opponentAttacks = []
-        this.blockingSquares = []
-        this.kingAttackers = []
-        this.pinMask = new Array(64).fill(0)
-        
-        this.friendlyKingSquare = 0
-        this.enemyKingSquare = 0 
         this.stack.push({
             // Posisjons info
             square:             [...this.square],
@@ -121,6 +108,7 @@ export class Board {
             repetitionTable: [...this.repetitionTable],
             hash: this.zobrist.hash
         })
+        
         
         this.castlingRights &= Piece.updateCastleRights[move.start] 
         this.castlingRights &= Piece.updateCastleRights[move.target]
