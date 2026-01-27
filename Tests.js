@@ -11,11 +11,11 @@ export class Tests {
     
         const moves = this.board.GenerateLegalMoves()
 
-        moves.forEach(move=>{
+        for (let move of moves){
             this.board.Make_Move(move)
             sum += this.MoveGenerationCount(depth-1, log_moves)
             this.board.Unmake_Move(move)
-        })
+        }
 
         if (log_moves && this.board.moves.length == 1){
             console.log(this.board.moves[0], sum)
