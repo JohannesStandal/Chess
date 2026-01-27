@@ -63,17 +63,17 @@ export class Move {
         return notation
     }
 
-    static CoordinatesNotation(move){
+    CoordinatesNotation(){
         const files = "abcdefgh"
         let notation = ""
 
-        let rank = String(Math.floor(move.start / 8) + 1)
-        let file = files[move.start % 8]
+        let rank = String(Math.floor(this.start / 8) + 1)
+        let file = files[this.start % 8]
 
         notation += file + rank
         
-        rank = String(Math.floor(move.target / 8) + 1)
-        file = files[move.target % 8]
+        rank = String(Math.floor(this.target / 8) + 1)
+        file = files[this.target % 8]
 
         notation += file + rank
 
@@ -81,6 +81,21 @@ export class Move {
 
     }
 
+    IsPromotion(){
+        return (this.flag & 0b1000) == 0b1000
+    }
+
+    IsCastleKing(){
+        return this.flag == Move.flags.kingCastle 
+
+    }
+    IsCastleQueen(){
+        return this.flag == Move.flags.queenCastle
+    }
+
+    IsEnPassantCapture(){
+        return this.flag == Move.flags.epCapture
+    }
 }
 
 //Klassen Piece vil fungere som eit bibliotek for sjakkbrikkene.
