@@ -30,11 +30,12 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
    RenderBoard(board)
    GameLoop()
 }
-StartGame("2k5/1pp1N3/8/2P5/2K3B1/8/8/8 b - - 0 1")
+StartGame("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -")
 window.StartGame = StartGame
 window.EndGame = EndGame
 window.Rematch = Rematch
 window.RenderScene = RenderScene
+window.RenderBoard = RenderBoard
 //startpos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 //test = "5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1"
 //Sliding moves test = "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"

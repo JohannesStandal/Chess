@@ -7,7 +7,7 @@ var boardElements = new Array(64)
 
 const board = new Board
 var gameData = {
-    playAsWhite: false, //false betyr at AI speler
+    playAsWhite: true, //false betyr at AI speler
     playAsBlack: true, // ^ --||--
     playerTurn: false,
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
