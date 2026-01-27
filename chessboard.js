@@ -18,7 +18,7 @@ export class Board {
         
         
         // lagrer spillhistorikk
-        this.moves = []
+        this.playedMoves = []
         this.stack = []
         this.repetitionTable = []
         this.zobrist = new zobrist_hashing()
@@ -80,7 +80,6 @@ export class Board {
             else if (char == "q") this.castlingRights += 0b0001
         })
 
-        this.UpdateEnemyAttacks()
         this.zobrist.createHash(this.square, this.white_To_Move)
         this.repetitionTable = [this.zobrist.hash]
     }
@@ -89,37 +88,21 @@ export class Board {
         // lagrer spillhistorikk
         this.stack.push({
             // Posisjons info
-            square:             [...this.square],
-            white_To_Move:      this.white_To_Move,
+            capturedPiece: this.square[move.target],
             castlingRights:     this.castlingRights,
-            halfMoveClock:      this.halfMoveClock,
             enPassantSquare:    this.enPassantSquare,
-
-            // Blir rekna ut frå posisjonen
-            opponentAttacks:    [...this.opponentAttacks],
-            blockingSquares:    [...this.blockingSquares],
-            kingAttackers:      [...this.kingAttackers],
-            pinMask:            [...this.pinMask],
-            friendlyKingSquare: this.friendlyKingSquare,
-            enemyKingSquare:    this.enemyKingSquare,
-
-            // spill historikk
-            moves: [...this.moves], 
-            repetitionTable: [...this.repetitionTable],
             hash: this.zobrist.hash
         })
         
-        
+        // update castling rights
         this.castlingRights &= Piece.updateCastleRights[move.start] 
         this.castlingRights &= Piece.updateCastleRights[move.target]
 
-
-
-        //en passant
+        // en passant logic
         if (move.flag == Move.flags.epCapture){
             this.square[this.enPassantSquare] = 0
         }
-        //sjekker etter flag
+        // checks for flags
         if (move.flag == Move.flags.doublePush){
             this.enPassantSquare = move.target
         }
@@ -127,22 +110,23 @@ export class Board {
             this.enPassantSquare = null
         }
 
-        //Finne brikketype
+        // Find original piece
         let piece = this.square[move.start]
 
-        //Forfremmelse
+        // promotion logic
         if (move.flag >> 3 == 1){
+            // create ne
             const color = (this.white_To_Move) ? Piece.white : Piece.black
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
-            const index = move.flag & 0b0011
-            piece = color | pieceTypes[index]
+            const newPieceType = pieceTypes[move.flag & 0b0011]
+            piece = color | newPieceType
         } 
 
-        //Sjølve flyttet
+        // moving the piece
         this.square[move.target] = piece
         this.square[move.start] = 0
 
-        //Flytte tårn i tilfellet av rokade
+        // if there is a castle, the rook shal be moved as well
         if (move.flag == Move.flags.kingCastle){
             const rookSquare = move.start + 3
             const targetSquare = move.start + 1
@@ -158,12 +142,11 @@ export class Board {
             this.square[rookSquare] = 0
         }
 
-        this.moves.push(Move.CoordinatesNotation(move))
+        this.playedMoves.push(move)
 
         //Oppdaterer variablar
         this.white_To_Move = !this.white_To_Move
-        this.UpdateEnemyAttacks()
-        this.dontknowgoodname()
+        // this.dontknowgoodname()
         this.zobrist.createHash(this.square, this.white_To_Move)
         this.repetitionTable.push(this.zobrist.hash)
     }
@@ -172,30 +155,50 @@ export class Board {
         //sjekkar om det eksisterer ein spelhistorikk
         //Dersom det ikkje er det avbryter den operasjonen
         if (this.stack.length == 0) return
+        
+        // Flips the turn
+        this.white_To_Move = !this.white_To_Move
 
         //overfører data frå forrige posisjon
         const previousPosition = this.stack.pop()
-
-        // posisjons info
-        this.square = previousPosition.square
-        this.white_To_Move = previousPosition.white_To_Move
+        
+        // stored position info
         this.castlingRights = previousPosition.castlingRights
-        this.halfMoveClock = previousPosition.halfMoveClock
         this.enPassantSquare = previousPosition.enPassantSquare
-
-        // blir rekna ut frå posisjonen
-        this.opponentAttacks = previousPosition.opponentAttacks,
-        this.blockingSquares = previousPosition.blockingSquares
-        this.kingAttackers = previousPosition.kingAttackers
-        this.pinMask = previousPosition.pinMask
-        this.friendlyKingSquare = previousPosition.friendlyKingSquare
-        this.enemyKingSquare = previousPosition.enemyKingSquare
-
-        // spillhistorikk
-        this.moves = previousPosition.moves
-        this.repetitionTable = previousPosition.repetitionTable
         this.zobrist.hash = previousPosition.hash
-       
+        
+        // Reconstructing position
+        let movedPiece = this.square[move.target]
+        const capturedPiece = previousPosition.capturedPiece
+        
+        const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
+        // checking if the moved piece was a promoted pawn
+        if (move.IsPromotion()){
+            movedPiece = Piece.pawn | friendlyColor
+        }
+
+        this.square[move.start] = movedPiece
+        this.square[move.target] = capturedPiece
+
+        // move rook back in case of castling
+        if (move.IsCastleKing()){
+            this.square[move.start + 1] = 0
+            this.square[move.start + 3] = Piece.rook | friendlyColor
+        }
+        else if (move.IsCastleQueen()){
+            this.square[move.start - 1] = 0
+            this.square[move.start - 4] = Piece.rook | friendlyColor
+        }
+        
+        // en passant capture
+        if (move.IsEnPassantCapture()){
+            const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
+            this.square[this.enPassantSquare] = Piece.pawn | enemyColor
+        }
+
+        // Remove move from gamehistory
+        this.playedMoves.pop()
+        this.repetitionTable.pop()
     }
 
     dontknowgoodname(){
@@ -313,13 +316,6 @@ export class Board {
             }
         }
     }
-    
-
-        
-
-
-
-        
 
     GenerateSlidingMoves(piece, start){
         let moves = []
@@ -564,6 +560,8 @@ export class Board {
     }
 
     UpdateEnemyAttacks(){
+        // Returns a list of square indexes that are under attack by the enemy 
+
         //generer pseudo-lovlige motstandartrekk
         this.white_To_Move = !this.white_To_Move
         const opponentResponses = this.GenerateMoves(true) //true = tillat ulovlige bondeangrep
@@ -573,8 +571,6 @@ export class Board {
         this.opponentAttacks = []
         opponentResponses.forEach(response => {
             //itererer gjennom alle trekk og sjekker om vi veit at det er under angrep
-            const pieceToMove = this.square[response.start]
-            
             if ( ! this.opponentAttacks.includes(response.target)){
                 this.opponentAttacks.push(response.target)
             }
@@ -605,6 +601,8 @@ export class Board {
     }
 
     GenerateLegalMoves(){
+        // returns a list of the legal moves for the given position
+        this.UpdateEnemyAttacks()
         let legalMoves = []
 
         //brikkenummer til vennleg konge
