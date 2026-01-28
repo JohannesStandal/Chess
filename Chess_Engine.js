@@ -75,7 +75,7 @@ export function ChessEngine(){
     }
       
     if (move == null) move = board.GenerateLegalMoves()[0]
-    console.log(Move.CoordinatesNotation(move), posEvaled, orginalDepth-1)
+    console.log(move.CoordinatesNotation(), posEvaled, orginalDepth-1)
 
     return move
 }
