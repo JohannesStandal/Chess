@@ -82,32 +82,16 @@ export function ChessEngine(){
 
 window.ChessEngine = ChessEngine
 
-function MVV_LVA_ordering(move){
-    //Most valuable victim - Least valuable attacker 
-    //Prioritises moves where a low value piece captures a high value piece
-
-    let pieceTypeMoved = board.square[move.start] & 0b0111 
-    let pieceTypeAttacked = board.square[move.target] & 0b0111
-
-    return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
-}
-
 function MoveOrder(moves){
-    let moveScore = []
+    const sortedMoves = moves.sort((a, b) => {
+        const valueA = Evaluation.Move(a, board)
+        const valueB = Evaluation.Move(b, board)
 
-    moves.forEach(move => {
-        moveScore.push(MVV_LVA_ordering(move))
-    })
-    //  Sortering gjort av chatgpt
-    // Trinn 1: Kombiner begge listene som par
-    let combined = moves.map((_, i) => [moves[i], moveScore[i]]);
+        return valueB - valueA 
+    }
+    )
 
-    // Trinn 2: Sorter parene basert på første element (arr1)
-    combined.sort((a, b) => (a[0] > b[0]) ? 1 : 1);
-
-    // Trinn 3: Del opp igjen i to separate arrays
-    let sortedMoves = combined.map(pair => pair[0]);
-
+    //sortedMoves.forEach(move =>{console.log(move.CoordinatesNotation())})
     return sortedMoves
 }
 
@@ -161,9 +145,9 @@ function Search(depth, alpha, beta){
     }
 
     //transposition table
-    if (TT.IsValidTransposition(board.zobrist.hash)){
-        return TT.GetScore(board.zobrist.hash)
-    }
+    //if (TT.IsValidTransposition(board.zobrist.hash)){
+    //    return TT.GetScore(board.zobrist.hash)
+    //}
 
     // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()
@@ -217,7 +201,7 @@ function Search(depth, alpha, beta){
         }
     }
     
-    TT.AddPosition(board.zobrist.hash, alpha, depth)
+    //TT.AddPosition(board.zobrist.hash, alpha, depth)
 
     if (depth == orginalDepth){
         return bestMove
