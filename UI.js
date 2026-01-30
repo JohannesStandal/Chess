@@ -44,6 +44,7 @@ function RenderBoard(board){
             e.classList.add("square")
             e.classList.add(color)
             e.addEventListener("click", () => Click(index))
+            //e.innerHTML = String(index)
 
             //Finn brikkenummeret for den ruta. 0 = inga brikke
             let pieceType = board.square[index]
