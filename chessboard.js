@@ -3,6 +3,7 @@
 //Hjernen bak programmet
 
 import { ChessHelper } from "./Chess_Helper.js"
+import { board } from "./UI.js"
 import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
 import { Piece, Move } from "./piece.js"
 
@@ -85,24 +86,29 @@ export class Board {
     }
     
     Make_Move(move){  
+        let capturedPiece = this.square[move.target]
         // lagrer spillhistorikk
         this.stack.push({
             // Posisjons info
-            capturedPiece: this.square[move.target],
+            capturedPiece: capturedPiece,
             castlingRights:     this.castlingRights,
             enPassantSquare:    this.enPassantSquare,
             hash: this.zobrist.hash
         })
+        //Oppdaterer variablar
+        this.zobrist.incrementHash(move, this)
         
         // update castling rights
         this.castlingRights &= Piece.updateCastleRights[move.start] 
         this.castlingRights &= Piece.updateCastleRights[move.target]
 
-        // en passant logic
+        // en-passant capture
         if (move.flag == Move.flags.epCapture){
+            capturedPiece = this.square[this.enPassantSquare]
             this.square[this.enPassantSquare] = 0
         }
-        // checks for flags
+
+        // updates en-passant square
         if (move.flag == Move.flags.doublePush){
             this.enPassantSquare = move.target
         }
@@ -111,19 +117,19 @@ export class Board {
         }
 
         // Find original piece
-        let piece = this.square[move.start]
+        let movedPiece = this.square[move.start]
 
         // promotion logic
         if (move.flag >> 3 == 1){
-            // create ne
-            const color = (this.white_To_Move) ? Piece.white : Piece.black
+            // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
-            const newPieceType = pieceTypes[move.flag & 0b0011]
-            piece = color | newPieceType
+            const color = movedPiece & 0b11000
+            const pieceType = pieceTypes[move.flag & 0b0011]
+            movedPiece = color | pieceType
         } 
 
         // moving the piece
-        this.square[move.target] = piece
+        this.square[move.target] = movedPiece
         this.square[move.start] = 0
 
         // if there is a castle, the rook shal be moved as well
@@ -141,14 +147,20 @@ export class Board {
             this.square[targetSquare] = this.square[rookSquare]
             this.square[rookSquare] = 0
         }
-
-        this.playedMoves.push(move)
-
-        //Oppdaterer variablar
+        
+        
+        // flip turn and store game history
         this.white_To_Move = !this.white_To_Move
-        // this.dontknowgoodname()
-        this.zobrist.createHash(this.square, this.white_To_Move)
+        this.playedMoves.push(move)
         this.repetitionTable.push(this.zobrist.hash)
+
+        // // just to check for hash errors
+        // const compare = new zobrist_hashing()
+        // compare.createHash(this.square, this.white_To_Move)
+
+        // if (this.zobrist.hash != compare.hash){
+        //     console.error("Error with incremental HASH", [...this.playedMoves])
+        // }
     }
 
     Unmake_Move(move){
@@ -437,13 +449,13 @@ export class Board {
             //Bonde har nådd siste rekke
             const promotion = (pawnIsWhite) ? (55 < move.target) : (move.target < 8)
             if (promotion){
-                const capture = (move.flag >> 2 & 1 == 1) 
+                const capture = move.IsCapture() 
                 const captureFlag = capture ? 0b100 : 0b000
                 //1|0|00: 3 siffer refererer til capture
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.bishopPromotion + captureFlag))
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.knightPromotion + captureFlag))
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.rookPromotion   + captureFlag))
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.queenPromotion  + captureFlag))
+                filteredMoves.push(new Move(move.start, move.target, Move.flags.bishopPromotion | captureFlag))
+                filteredMoves.push(new Move(move.start, move.target, Move.flags.knightPromotion | captureFlag))
+                filteredMoves.push(new Move(move.start, move.target, Move.flags.rookPromotion   | captureFlag))
+                filteredMoves.push(new Move(move.start, move.target, Move.flags.queenPromotion  | captureFlag))
             }
             else{
                 filteredMoves.push(move)
@@ -455,26 +467,24 @@ export class Board {
     GenerateKingMoves(start){
         let moves = []
         //Vanlege trekk
-        Piece.kingAttacks[start].forEach(move => {
-            const targetPiece = this.square[move.target]
+        Piece.kingAttacks[start].forEach(targetIndex => {
+            const targetPiece = this.square[targetIndex]
             //Om ruta er tom er trekket eit quiet move
             if (targetPiece == 0){
-                move.flag = Move.flags.quietMove
-                moves.push(move)
+                moves.push(new Move(start, targetIndex, Move.flags.quietMove))
             } 
             //Om ruta har ei fientleg brikke er trekket ulovleg
-            if (Piece.CheckPieceColor(targetPiece, !this.white_To_Move)){
-                move.flag = Move.flags.captures
-                moves.push(move)
+            else if (Piece.CheckPieceColor(targetPiece, !this.white_To_Move)){
+                moves.push(new Move(start, targetIndex, Move.flags.captures))
             }
             //Ellers er det ei vennleg brikke på ruta og vi treng ikkje å gjere noko
         })
         
-        //Todo Rokade
+       // castle rights
         const castleRights = (this.white_To_Move) ? this.castlingRights >> 2 : this.castlingRights
         const myKingSquare = (this.white_To_Move) ? 4 : 60
 
-        //castle kingside
+        // castle kingside
         if ((castleRights & 0b10) == 0b10){
            
             let legal = !this.opponentAttacks.includes(myKingSquare)

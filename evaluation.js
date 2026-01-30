@@ -93,6 +93,8 @@ export class Evaluation {
         this.mapFromPieceType[Piece.queen] = this.queenMap
     }
 
+    // Board
+
     static evaluate(board){
         /**
          * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
@@ -202,5 +204,31 @@ export class Evaluation {
         score += (14 - kingDistance)
 
         return score * endgameWeight
+    }
+
+    // Moves
+    static Move(move, board){
+        let score = 0
+        score += this.MVV_LVA_ordering(move, board)
+        score += this.PieceSquareTables(move, board)
+        return score
+    }
+
+    static MVV_LVA_ordering(move, board){
+    //Most valuable victim - Least valuable attacker 
+    //Prioritises moves where a low value piece captures a high value piece
+    let pieceTypeMoved = board.square[move.start] & 0b0111 
+    let pieceTypeAttacked = board.square[move.target] & 0b0111
+
+    return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
+    }
+
+    static PieceSquareTables(move, board){
+        const piece = board.square[move.start]
+        const mapIndex = (Piece.CheckPieceColor(piece, true)) ? move.start : Evaluation.mirroredBoard[move.start]
+
+        const pieceType =  piece & 0b00111
+
+        return Evaluation.mapFromPieceType[pieceType][mapIndex]
     }
 }

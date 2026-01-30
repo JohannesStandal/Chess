@@ -85,6 +85,10 @@ export class Move {
         return (this.flag & 0b1000) == 0b1000
     }
 
+    IsCapture(){
+        return (this.flag & 0b0100) == 0b0100
+    }
+
     IsCastleKing(){
         return this.flag == Move.flags.kingCastle 
 
@@ -289,7 +293,7 @@ export class Piece {
             }
         }
 
-        
+        // king attacks
         for (let start = 0; start < 64; start++){
             let moves = []
 
@@ -304,11 +308,11 @@ export class Piece {
             for (let i = 0; i < 4; i++){
                 if (dir[i]){
                     const targetSquare = start + offset[i]
-                    moves.push(new Move(start, targetSquare))
+                    moves.push(targetSquare)
                 }
                 if (dir[i] && dir[i+1]){
                     const targetSquare = start + offset[i+4]
-                    moves.push(new Move(start, targetSquare))
+                    moves.push(targetSquare)
                 }
                
             }
