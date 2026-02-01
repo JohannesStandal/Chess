@@ -225,10 +225,14 @@ export class Evaluation {
 
     static PieceSquareTables(move, board){
         const piece = board.square[move.start]
-        const mapIndex = (Piece.CheckPieceColor(piece, true)) ? move.start : Evaluation.mirroredBoard[move.start]
-
         const pieceType =  piece & 0b00111
+        
+        const startIndex = (Piece.CheckPieceColor(piece, true)) ? move.start : Evaluation.mirroredBoard[move.start]
+        const targetIndex = (Piece.CheckPieceColor(piece, true)) ? move.target : Evaluation.mirroredBoard[move.target]
 
-        return Evaluation.mapFromPieceType[pieceType][mapIndex]
+        const bonusOld = Evaluation.mapFromPieceType[pieceType][startIndex]
+        const bonusNew = Evaluation.mapFromPieceType[pieceType][targetIndex]
+
+        return bonusOld - bonusNew
     }
 }
