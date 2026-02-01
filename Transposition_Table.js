@@ -7,8 +7,14 @@ export class Transposition_Table {
         this.table = {}
     }
 
-    AddPosition(hash, score, depth){
-        this.table[hash] = {score: score, depth: depth}
+    AddPosition(hash, score, depth, flag, bestMove){
+        return
+        this.table[hash] = {
+            score: score, 
+            depth: depth,
+            flag: flag,
+            bestMove: bestMove,
+        }
     }
 
     IsValidTransposition(hash, currentDepth){
@@ -19,9 +25,4 @@ export class Transposition_Table {
         }
         return false
     }
-
-    GetScore(hash){
-        return this.table[hash].score
-    }
-
 }

@@ -19,11 +19,10 @@ import { Transposition_Table } from "./Transposition_Table.js";
 import { Evaluation } from "./evaluation.js";
 import { ChessHelper } from "./Chess_Helper.js";
 import { board } from "./UI.js";
-import { Piece, Move } from "./piece.js";
 
 //Søkedybde i PLY
 const MaxDepthLimit = 10
-const thinkingTime = 3000
+const thinkingTime = 1000
 
 var orginalDepth; 
 var bestMoveSoFar;
@@ -76,7 +75,7 @@ export function ChessEngine(){
       
     if (move == null) move = board.GenerateLegalMoves()[0]
     console.log(move.CoordinatesNotation(), posEvaled, orginalDepth-1)
-
+    console.log(TT)
     return move
 }
 
@@ -145,9 +144,22 @@ function Search(depth, alpha, beta){
     }
 
     //transposition table
-    //if (TT.IsValidTransposition(board.zobrist.hash)){
-    //    return TT.GetScore(board.zobrist.hash)
-    //}
+    const hash = board.zobrist.hash
+    if (TT.IsValidTransposition(hash, depth)){
+        const entry = TT.table[hash]
+        if (entry.flag == "EXACT"){
+            return entry.score
+        }
+        else if (entry.flag == "UPPER"){
+            beta = Math.min(beta, entry.score)
+        }
+        else if (entry.flag == "LOWER"){
+            alpha = Math.max(alpha, entry.score)
+        }
+        if (alpha >= beta){
+            return entry.score
+        }
+    }
 
     // generer trekk
     const UnsortedlegalMoves = board.GenerateLegalMoves()
@@ -174,35 +186,53 @@ function Search(depth, alpha, beta){
     // sorter trekk etter kor bra du GJETTAR at trekket er
     let legalMoves = MoveOrder(UnsortedlegalMoves)
 
-    //Lagre beste poengsum og beste trekk
-    let bestMove = null
-    
     //Sørger for at det beste trekket vi har funne så langt blir utforska først
     if (depth == orginalDepth && bestMoveSoFar != null) legalMoves.unshift(bestMoveSoFar)
+    
+        
+    //Lagre beste poengsum og beste trekk
+    let bestMove = null
+    const originalAlpha = alpha
 
     //Loop gjennom alle lovlege trekk
     for (let move of legalMoves){
         //Gjer trekket på brettet, finn poengsum, gjer om trekket
         board.Make_Move(move)
-        let evaluation = - Search(depth - 1, -beta, -alpha)
+        let score = - Search(depth - 1, -beta, -alpha)
         board.Unmake_Move(move)
         
-        if (beta <= evaluation){
+        if (beta <= score){
+            TT.AddPosition(
+                board.zobrist.hash,
+                beta,
+                depth,
+                "LOWER",
+                move
+            )
             return beta     
         }
         
         //Om poengsummen er betre enn noko som er funne så langt så kan du lagre
         //beste trekk og poengsum
-        if (alpha < evaluation){
-            alpha = evaluation
-            if (depth == orginalDepth){
-                bestMove = move
-            } 
+        if (alpha < score){
+            alpha = score
+            bestMove = move
         }
     }
     
-    //TT.AddPosition(board.zobrist.hash, alpha, depth)
+    let flag = ""
+    if (alpha <= originalAlpha) flag = "UPPERBOUND";
+    else if (alpha >= beta) flag = "LOWERBOUND";
+    else flag = "EXACT";
 
+    TT.AddPosition(
+        board.zobrist.hash,
+        alpha,
+        depth,
+        flag,
+        bestMove,
+    )
+    
     if (depth == orginalDepth){
         return bestMove
     }
