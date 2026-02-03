@@ -109,17 +109,13 @@ export class Evaluation {
 
         const materialWeight = 1
         const positionBonusWeight = 1
+        const kingWeight = 50
 
         score += this.countMaterial(board) * materialWeight
-        score += this.positionBonus(board) * positionBonusWeight
-
-        let endgameWeight = ChessHelper.CalculateEndgameWeight(board)
-        score += this.forceKingToCorner(board, endgameWeight)
-        board.white_To_Move = !board.white_To_Move
         
-        endgameWeight = ChessHelper.CalculateEndgameWeight(board)
-        score += this.forceKingToCorner(board, endgameWeight)
-        board.white_To_Move = !board.white_To_Move
+        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
+        score += this.positionBonus(board, endgameWeight) * positionBonusWeight
+        score += this.forceKingToCornerWithKing(board, endgameWeight) * kingWeight
 
         return score
         
@@ -141,7 +137,7 @@ export class Evaluation {
         return materialScore
     }
 
-    static positionBonus(board){
+    static positionBonus(board, endgameWeight){
         let score = 0
 
         for (let i = 0; i < 64; i++){
@@ -153,16 +149,15 @@ export class Evaluation {
             const pieceType = piece & 0b00111
             const mapIndex = (Piece.CheckPieceColor(piece, true)) ? i : Evaluation.mirroredBoard[i]
 
-            let bonus = Evaluation.mapFromPieceType[pieceType][mapIndex]
-            let pieceValue = Piece.pieceValues[piece & 0b111]
+            const bonus = Evaluation.mapFromPieceType[pieceType][mapIndex]
             
-            score += sign * bonus * (pieceValue / 100)
+            score += sign * bonus * 0.2
+            
         }
-        
-        return score
+        return score * (1 - endgameWeight)
     }
 
-    static forceKingToCorner(board, endgameWeight){
+    static forceKingToCornerWithKing(board, endgameWeight){
         
         let score = 0
 
@@ -180,7 +175,7 @@ export class Evaluation {
             else enemyKingSquare = i
         }
 
-        // rekn ut avstand til midthen for vennleg konge
+        // friendly king
         const friendlyKingRank = ChessHelper.Rank(friendlyKingSquare)
         const friendlyKingFile = ChessHelper.File(friendlyKingSquare)
        
@@ -192,18 +187,19 @@ export class Evaluation {
         const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5)
         const enemyKingDstToCenterFile = Math.abs(enemyKingFile - 3.5)
 
+        // total distance to center
         const enemyKingDstToCenter = (enemyKingDstToCenterRank + enemyKingDstToCenterFile)
-        score += enemyKingDstToCenter
+        score += enemyKingDstToCenter / 7
         
-        
-        const RankDistance = Math.abs(friendlyKingRank - enemyKingRank)
-        const FileDistance = Math.abs(friendlyKingFile - enemyKingFile)
+        // encourage kings to be close to each other
+        const RankDistance = Math.abs(friendlyKingRank - enemyKingRank) 
+        const FileDistance = Math.abs(friendlyKingFile - enemyKingFile) 
         const kingDistance = FileDistance + RankDistance
 
         
-        score += (14 - kingDistance)
+        score += (14 - kingDistance) / 14
 
-        return score * endgameWeight
+        return score * Math.min(endgameWeight, 1)
     }
 
     // Moves

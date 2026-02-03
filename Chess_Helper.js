@@ -59,11 +59,11 @@ export class ChessHelper {
 
         for (let piece of board.square){
             if (Piece.CheckPieceColor(piece, !board.white_To_Move)){
-                numOpponentPieces += 1
+                numOpponentPieces ++
             }
         }
 
-        return (16 - numOpponentPieces) * 10
+        return (16 - numOpponentPieces) / 16
     }
 
     static LocateKings(board){

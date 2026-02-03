@@ -7,13 +7,12 @@ export class Transposition_Table {
         this.table = {}
     }
 
-    AddPosition(hash, score, depth, flag, bestMove){
+    AddPosition(hash, score, depth, flag){
         return
         this.table[hash] = {
             score: score, 
             depth: depth,
             flag: flag,
-            bestMove: bestMove,
         }
     }
 

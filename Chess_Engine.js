@@ -24,7 +24,7 @@ import { board } from "./UI.js";
 const MaxDepthLimit = 10
 const thinkingTime = 1000
 
-var orginalDepth; 
+var originalDepth; 
 var bestMoveSoFar;
 
 var startTime = 0
@@ -32,8 +32,11 @@ var elapsedTime = 0
 var searching = false
 
 const checkMateScore = 10000000
-var posEvaled = 0
+const drawScore = 0
+
+var nodesExplored = 0
 var TT = new Transposition_Table()
+window.TT = TT
 
 function CheckIfStillSearching(){
     elapsedTime = performance.now() - startTime
@@ -44,39 +47,40 @@ function CheckIfStillSearching(){
 export function ChessEngine(){
     console.log("New search\n")
     
-    bestMoveSoFar = null
+    bestMoveSoFar = board.GenerateLegalMoves()[0]
     startTime = performance.now() 
-
-    let move = null
     
     //iterativ søkedybde
     for (let i = 1; i < MaxDepthLimit; i++){
         board.moves = []
-        posEvaled = 0
-        orginalDepth = i
-        console.log("Search Depth:", orginalDepth, "\n")
+        nodesExplored = 0
+        originalDepth = i
+
+        console.log("\nSearch Depth:", originalDepth)
         //const searchStartTime = performance.now()
-        bestMoveSoFar = Search(orginalDepth, -Infinity, Infinity)
+        Search(originalDepth, -Infinity, Infinity)
 
         //const searchEndTime = performance.now()
         //const searchTime = searchEndTime - searchStartTime
         
-        if (searching){
-            move = bestMoveSoFar
-        }
-        else {
-            console.log("Search canceled due to time limit")
+        if (! searching){
+            console.log("\nSearch canceled due to time limit")
+            console.log("move:", bestMoveSoFar)
+            console.log("numNodes:", nodesExplored)
             break
         }
         
-        console.log(move)
-        console.log(posEvaled)
+        console.log("move:", bestMoveSoFar)
+        console.log("numNodes:", nodesExplored)
     }
       
-    if (move == null) move = board.GenerateLegalMoves()[0]
-    console.log(move.CoordinatesNotation(), posEvaled, orginalDepth-1)
-    console.log(TT)
-    return move
+    console.log("\nSearch finished")
+    console.log("Move:", bestMoveSoFar.CoordinatesNotation())
+    console.log("depth:", originalDepth - 1)
+    console.log("numNodes:", nodesExplored)
+
+    //console.log(TT)
+    return bestMoveSoFar
 }
 
 window.ChessEngine = ChessEngine
@@ -99,10 +103,18 @@ function QuiesenceSearch(alpha, beta){
     // https://www.chessprogramming.org/Quiescence_Search
     
     CheckIfStillSearching()
-    if (! searching) return 0
+    if (! searching) return null
+    // Transposition tables for quick repetition / checkmate detection 
+    const hash = board.zobrist.hash
+    if (TT.IsValidTransposition(hash, MaxDepthLimit)){
+        const entry = TT.table[hash]
+        if (entry.flag == "EXACT"){
+            return entry.score
+        }
+    }
 
     let bestValue = Evaluation.evaluate(board)
-    posEvaled ++
+    nodesExplored ++
 
     if (bestValue >= beta){
         return bestValue
@@ -133,29 +145,29 @@ function QuiesenceSearch(alpha, beta){
 }
 
 function Search(depth, alpha, beta){
+    
     //Generer lovlege trekk
     CheckIfStillSearching()
-    if (! searching) return -20
-    
-    //sjekk repetisjonar
-    if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
-        //console.log("found threefold repetition in search")
-        return - 10
-    }
+    if (! searching) return null
+    nodesExplored ++
 
-    //transposition table
     const hash = board.zobrist.hash
-    if (TT.IsValidTransposition(hash, depth)){
+   
+    //transposition table
+    if (TT.IsValidTransposition(hash, depth) && depth != originalDepth){
         const entry = TT.table[hash]
+        // TT position is accurate
         if (entry.flag == "EXACT"){
             return entry.score
         }
-        else if (entry.flag == "UPPER"){
+        // update upper or lower bound
+        if (entry.flag == "UPPER"){
             beta = Math.min(beta, entry.score)
         }
         else if (entry.flag == "LOWER"){
             alpha = Math.max(alpha, entry.score)
         }
+        // early cutoff
         if (alpha >= beta){
             return entry.score
         }
@@ -168,14 +180,23 @@ function Search(depth, alpha, beta){
     if (UnsortedlegalMoves.length == 0){    
         //Checkmate
         if (board.InCheck()){
-            //console.log("Checkmate Found", orginalDepth - depth, "ply")
-            //console.log(board.moves)
+            TT.AddPosition(hash, -checkMateScore, MaxDepthLimit, "EXACT")
             return - (checkMateScore + depth)
+
         }
         
         //Stalemate
-        return -10
+        TT.AddPosition(hash, drawScore, MaxDepthLimit, "EXACT")
+        return drawScore
     }
+
+     // check for threefold repetition
+    if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
+        //console.log("found threefold repetition in search")
+        TT.AddPosition(hash, drawScore, MaxDepthLimit, "EXACT")
+        return drawScore
+    }
+
     
     //Evaluer når du har nådd maks søkedybde
     if (depth == 0){
@@ -187,56 +208,44 @@ function Search(depth, alpha, beta){
     let legalMoves = MoveOrder(UnsortedlegalMoves)
 
     //Sørger for at det beste trekket vi har funne så langt blir utforska først
-    if (depth == orginalDepth && bestMoveSoFar != null) legalMoves.unshift(bestMoveSoFar)
+    if (depth == originalDepth && bestMoveSoFar != null) legalMoves.unshift(bestMoveSoFar)
     
         
     //Lagre beste poengsum og beste trekk
-    let bestMove = null
     const originalAlpha = alpha
 
     //Loop gjennom alle lovlege trekk
     for (let move of legalMoves){
         //Gjer trekket på brettet, finn poengsum, gjer om trekket
         board.Make_Move(move)
-        let score = - Search(depth - 1, -beta, -alpha)
+        const score = - Search(depth - 1, -beta, -alpha)
         board.Unmake_Move(move)
         
-        if (beta <= score){
-            TT.AddPosition(
-                board.zobrist.hash,
-                beta,
-                depth,
-                "LOWER",
-                move
-            )
-            return beta     
-        }
+        //exit point
+        if (! searching) return null
         
         //Om poengsummen er betre enn noko som er funne så langt så kan du lagre
         //beste trekk og poengsum
         if (alpha < score){
             alpha = score
-            bestMove = move
+            if (depth == originalDepth){
+                bestMoveSoFar = move
+            }
+        }
+
+        // lowerbound fail high node
+        if (beta <= score){
+            TT.AddPosition(hash, score, depth, "LOWER")
+            return score    
         }
     }
     
     let flag = ""
-    if (alpha <= originalAlpha) flag = "UPPERBOUND";
-    else if (alpha >= beta) flag = "LOWERBOUND";
+    if (alpha <= originalAlpha) flag = "UPPER";
+    else if (alpha >= beta) flag = "LOWER";
     else flag = "EXACT";
 
-    TT.AddPosition(
-        board.zobrist.hash,
-        alpha,
-        depth,
-        flag,
-        bestMove,
-    )
-    
-    if (depth == orginalDepth){
-        return bestMove
-    }
-
+    TT.AddPosition(hash, alpha, depth, flag)
 
     return alpha
 }
