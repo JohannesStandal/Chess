@@ -9,7 +9,7 @@ import { Piece, Move } from "./piece.js"
 export class Board {
     constructor(){
         // blir fiksa når du lastar inn ein FEN
-        this.square = new Array(64).fill(0)
+        this.square = new Uint8Array(64).fill(0)
         this.white_To_Move = true
         this.castlingRights = 0b1111
         this.halfMoveClock = 0
