@@ -17,11 +17,19 @@ export class Tests {
             this.board.Unmake_Move(move)
         }
 
-        if (log_moves && this.board.moves.length == 1){
-            console.log(this.board.moves[0], sum)
+        if (log_moves && this.board.playedMoves.length == 1){
+            console.log(this.board.playedMoves[0].CoordinatesNotation(), sum)
         }
 
         return sum
+    }
+
+    ListMoves(){
+        const moves = this.board.GenerateLegalMoves()
+        moves.forEach(move => {
+            console.log(move.CoordinatesNotation())
+        });
+        console.log("Num nodes: ", moves.length)
     }
 
     perft(depth){
@@ -88,7 +96,7 @@ export class Tests {
     
     testMoveGenerationTime(){
         const t1 = performance.now()
-        this.board.GenerateMoves()
+        this.board.GenerateLegalMoves()
         const t2 = performance.now()
         console.log((t2-t1).toFixed(5) + "ms")
     }
