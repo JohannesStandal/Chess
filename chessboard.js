@@ -3,7 +3,6 @@
 //Hjernen bak programmet
 
 import { ChessHelper } from "./Chess_Helper.js"
-import { board } from "./UI.js"
 import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
 import { Piece, Move } from "./piece.js"
 

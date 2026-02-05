@@ -104,6 +104,8 @@ function QuiesenceSearch(alpha, beta){
     
     CheckIfStillSearching()
     if (! searching) return null
+    nodesExplored ++
+
     // Transposition tables for quick repetition / checkmate detection 
     const hash = board.zobrist.hash
     if (TT.IsValidTransposition(hash, MaxDepthLimit)){
@@ -113,8 +115,8 @@ function QuiesenceSearch(alpha, beta){
         }
     }
 
+    // stand pat
     let bestValue = Evaluation.evaluate(board)
-    nodesExplored ++
 
     if (bestValue >= beta){
         return bestValue
@@ -128,17 +130,15 @@ function QuiesenceSearch(alpha, beta){
     
     for (let move of captureMoves){
         board.Make_Move(move)
-        let evaluation = - QuiesenceSearch(-beta, -alpha)
+        let score = - QuiesenceSearch(-beta, -alpha)
         board.Unmake_Move(move)
 
-        if (evaluation >= beta){
-            return beta
+        
+        if (score >= beta){
+            return score
         }
-        if (evaluation > bestValue){
-            bestValue = evaluation
-        }
-
-        alpha = Math.max(alpha, evaluation)
+        bestValue = Math.max(bestValue, score)
+        alpha = Math.max(alpha, score)
     }
 
     return bestValue
