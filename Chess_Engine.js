@@ -32,7 +32,7 @@ var elapsedTime = 0
 var searching = false
 
 const checkMateScore = 10000000
-const drawScore = 0
+const drawScore = -1
 
 var nodesExplored = 0
 var TT = new Transposition_Table()
@@ -52,13 +52,15 @@ export function ChessEngine(){
     
     //iterativ søkedybde
     for (let i = 1; i < MaxDepthLimit; i++){
-        board.moves = []
         nodesExplored = 0
         originalDepth = i
 
         console.log("\nSearch Depth:", originalDepth)
         //const searchStartTime = performance.now()
-        Search(originalDepth, -Infinity, Infinity)
+        const score = Search(originalDepth, -Infinity, Infinity)
+
+        // if we found a forced checkmate there is no need to search further
+        if (checkMateScore <= score) searching = false
 
         //const searchEndTime = performance.now()
         //const searchTime = searchEndTime - searchStartTime
@@ -106,15 +108,6 @@ function QuiesenceSearch(alpha, beta){
     if (! searching) return null
     nodesExplored ++
 
-    // Transposition tables for quick repetition / checkmate detection 
-    const hash = board.zobrist.hash
-    if (TT.IsValidTransposition(hash, MaxDepthLimit)){
-        const entry = TT.table[hash]
-        if (entry.flag == "EXACT"){
-            return entry.score
-        }
-    }
-
     // stand pat
     let bestValue = Evaluation.evaluate(board)
 
@@ -155,7 +148,7 @@ function Search(depth, alpha, beta){
    
     //transposition table
     if (TT.IsValidTransposition(hash, depth) && depth != originalDepth){
-        const entry = TT.table[hash]
+        const entry = TT.table.get(hash)
         // TT position is accurate
         if (entry.flag == "EXACT"){
             return entry.score
@@ -180,20 +173,20 @@ function Search(depth, alpha, beta){
     if (UnsortedlegalMoves.length == 0){    
         //Checkmate
         if (board.InCheck(board.white_To_Move)){
-            TT.AddPosition(hash, -checkMateScore, MaxDepthLimit, "EXACT")
-            return - (checkMateScore + depth)
+            const mateScore = -(checkMateScore + depth)
+            TT.AddPosition(hash, mateScore, depth, "EXACT")
+            return mateScore
 
         }
         
         //Stalemate
-        TT.AddPosition(hash, drawScore, MaxDepthLimit, "EXACT")
+        TT.AddPosition(hash, drawScore, depth, "EXACT")
         return drawScore
     }
 
      // check for threefold repetition
     if (ChessHelper.checkForRepetitions(board.repetitionTable)) {
         //console.log("found threefold repetition in search")
-        TT.AddPosition(hash, drawScore, MaxDepthLimit, "EXACT")
         return drawScore
     }
 
