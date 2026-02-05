@@ -30,15 +30,12 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
    RenderBoard(board)
    GameLoop()
 }
-StartGame("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -")
+
 window.StartGame = StartGame
 window.EndGame = EndGame
 window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
-//startpos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-//test = "5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1"
-//Sliding moves test = "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
 
 var promo;
 const tests = new Tests(board)
@@ -89,13 +86,28 @@ export function GameLoop(){
 }
 
 
-//StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
+StartGame("8/8/3pk3/2pp3p/2p1pPp1/4N3/2P1P3/3K4 b - - 0 1")
 
 /**
- * Endgames
+ * Positions:
+ * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+ * test: "5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1"
+ * Sliding moves test: "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
+ *
+ * Basic Endgames:
+ *  - queen vs king: "8/5Q2/6K1/8/2k5/8/8/8 b - - 0 1"
+ *  - 2 rook vs king: "8/3K4/8/8/8/3k4/3r4/3r4 b - - 0 1"
+ *  - 1 rook vs king: "8/3K4/8/8/8/3k4/8/3r4 b - - 0 1"
+ *  - two knights vs king: "8/3K4/8/8/8/3k4/3n4/3n4 b - - 0 1"
+ *  - two bishops vs king: "8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1"
+ *  - knigth + bishop vs king: "8/3K4/8/8/8/3k4/3b4/3n4 b - - 0 1"
+ *  - simple pawn promote: "8/8/8/8/8/3pk3/8/3K4 b - - 0 1"
+ * 
+ * Endgames:
  *  - knight underpromotion: "8/8/8/7k/6p1/5pQ1/3R1p1K/6N1 b - - 0 1"
  *  - sacrifice bishop for promotion: "8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1"
  *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
+ *
  */
 //StartGame("8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1")
 

@@ -3,7 +3,6 @@
 //Hjernen bak programmet
 
 import { ChessHelper } from "./Chess_Helper.js"
-import { board } from "./UI.js"
 import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
 import { Piece, Move } from "./piece.js"
 
@@ -153,13 +152,13 @@ export class Board {
         this.playedMoves.push(move)
         this.repetitionTable.push(this.zobrist.hash)
 
-        // // just to check for hash errors
-        // const compare = new zobrist_hashing()
-        // compare.createHash(this.square, this.white_To_Move)
+        // just to check for hash errors
+        const compare = new zobrist_hashing()
+        compare.createHash(this.square, this.white_To_Move)
 
-        // if (this.zobrist.hash != compare.hash){
-        //     console.error("Error with incremental HASH", [...this.playedMoves])
-        // }
+        if (this.zobrist.hash != compare.hash){
+            console.error("Error with incremental HASH", [...this.playedMoves])
+        }
     }
 
     Unmake_Move(move){
