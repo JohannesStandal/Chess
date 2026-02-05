@@ -25,7 +25,6 @@ export class Board {
         this.zobrist = new zobrist_hashing()
         
         // Important data for generating legal moves
-        this.opponentAttacks = []
         this.blockingSquares = []
         this.kingAttackers = []
         this.pinMask = new Array(64).fill(0)
@@ -329,6 +328,98 @@ export class Board {
         }
     }
 
+    squareUnderAttack(squareIndex, whiteAttacks){
+        // Checks if a squareIndex is under attack by the enemy
+        const opponentColor = (whiteAttacks) ? Piece.white : Piece.black 
+        
+        // Check for potential attacking knights
+        const knightAttacks = Piece.knightAttacks[squareIndex]
+        for (let i = 0; i < knightAttacks.length; i++){
+            // Find every possible knight attacker
+            const attackIndex = knightAttacks[i]
+            const piece = this.square[attackIndex]
+
+            
+            // check for knight
+            if (piece == (Piece.knight | opponentColor)) return true
+        }
+
+        // check for potential attacking king
+        const kingAttacks = Piece.kingAttacks[squareIndex]
+        for (let i = 0; i < kingAttacks.length; i++){
+            const attackIndex = kingAttacks[i]
+            const piece = this.square[attackIndex]
+
+            if (piece == (Piece.king | opponentColor)) return true
+        }
+
+        // Check for potential attacking pawns
+        const offsets = (whiteAttacks) ? [-9, -7] : [7, 9]
+
+        for (let i = 0; i < 2; i++){
+            // relevant data
+            const offset = offsets[i]
+            const numSquaresToEdge = Piece.numSquaresToEdge[squareIndex][i]
+            // Clamp to board edges
+            if (numSquaresToEdge == 0){
+                continue
+            }
+
+            // find piece on target square
+            const pieceOnTargetSquare = this.square[squareIndex + offset]
+
+            // check if it is an enemy pawn
+            if (pieceOnTargetSquare == (Piece.pawn | opponentColor)) return true
+        }
+
+
+        // generate attacking sliding moves
+        for (let i = 0; i < 8; i++){
+
+            const offset = Piece.directionOffsets[i]
+            const numSquaresToEdge = Piece.numSquaresToEdge[squareIndex][i]
+            const slidingPiece = (i < 4) ? (Piece.rook | opponentColor) : (Piece.bishop | opponentColor)
+
+            for (let n = 0; n < numSquaresToEdge; n++){
+                
+                const target = squareIndex + offset * (n+1)
+                const pieceOnTargetSquare = this.square[target]
+
+                //Om brikka er vennleg kan vi ikkje gå lenger, og gjeldande trekk er ulovleg
+                if (pieceOnTargetSquare == 0){
+                    continue
+                }
+
+                // Enemy piece is a potential attacker
+                else if (
+                    pieceOnTargetSquare == (Piece.queen | opponentColor) ||
+                    pieceOnTargetSquare == slidingPiece
+                    ){
+                    return true
+                }
+
+                // If the squere is occupied by a friendly piece the square is safe
+                else {
+                    break
+                }
+            }
+        
+        }
+
+        return false
+        
+    }
+
+    InCheck(white){
+        const index = (white) ? 0 : 1
+
+        // find the friendly king square
+        const KingSquare = ChessHelper.LocateKings(this)[index]
+        
+        // check if the king square is under attack
+        return this.squareUnderAttack(KingSquare, ! white)
+    }
+
     GenerateSlidingMoves(piece, start){
         let moves = []
 
@@ -487,43 +578,43 @@ export class Board {
         // castle kingside
         if ((castleRights & 0b10) == 0b10){
            
-            let legal = !this.opponentAttacks.includes(myKingSquare)
+            let legal = ! this.squareUnderAttack(myKingSquare, !this.white_To_Move)
             for (let i = 1; i < 3; i++){
+                // If the move is illegal we dont need to investigate further
+                if (! legal){
+                    break
+                }
                 const squareToCheck = myKingSquare + i
                 //Er ruta tom
                 if (this.square[squareToCheck] != 0){
-                   
                     legal = false 
-                    break
                 }
                 //Er ruta under angrep
-                if (this.opponentAttacks.includes(squareToCheck)){
+                else if ((i < 3) && this.squareUnderAttack(squareToCheck, !this.white_To_Move)){
                     legal = false 
-                   
-                    break
                 }
             }
+
             if (legal) moves.push(new Move(myKingSquare, myKingSquare + 2, Move.flags.kingCastle))
 
         }
         //castle queenside
         if ((castleRights & 0b01) == 0b01){
           
-            let legal = !this.opponentAttacks.includes(myKingSquare)
+            let legal = ! this.squareUnderAttack(myKingSquare, !this.white_To_Move)
 
             for (let i = 1; i < 4 ; i++){
                 const squareToCheck = myKingSquare - i
-                
+                if (! legal){
+                    break
+                }
                 //Er ruta tom
                 if (this.square[squareToCheck] != 0){
                     legal = false 
-                    break
                 }
-
                 //Er ruta under angrep
-                if (this.opponentAttacks.includes(squareToCheck) && i <= 2){
+                else if ((i < 3) && this.squareUnderAttack(squareToCheck, !this.white_To_Move)){
                     legal = false 
-                    break
                 }
             }
             if (legal) moves.push(new Move(myKingSquare, myKingSquare - 2, Move.flags.queenCastle))
@@ -533,7 +624,7 @@ export class Board {
         return moves
     }
 
-    GenerateMoves(GenerateAttackSquares = false){
+    GeneratePseudoLegalMoves(GenerateAttackSquares = false){
         //Lager moves for posisjonen på brettet
         let moves = []
         for (let i = 0; i<64; i++){
@@ -569,66 +660,24 @@ export class Board {
         return moves
     }
 
-    UpdateEnemyAttacks(){
-        // Returns a list of square indexes that are under attack by the enemy 
-
-        //generer pseudo-lovlige motstandartrekk
-        this.white_To_Move = !this.white_To_Move
-        const opponentResponses = this.GenerateMoves(true) //true = tillat ulovlige bondeangrep
-        this.white_To_Move = !this.white_To_Move
-        
-        //Nullstiller opponentAttacks og filtrerer motstandartrekk
-        this.opponentAttacks = []
-        opponentResponses.forEach(response => {
-            //itererer gjennom alle trekk og sjekker om vi veit at det er under angrep
-            if ( ! this.opponentAttacks.includes(response.target)){
-                this.opponentAttacks.push(response.target)
-            }
-        })
-
-    }
-
-    InCheck(color = this.white_To_Move){
-        const colorNumber = (color) ? Piece.white : Piece.black
-        let myKingSquare = undefined
-
-        for (let i = 0; i<64; i++){
-            if (this.square[i] == (colorNumber | Piece.king)){
-                myKingSquare = i
-                break
-            }
-        }
-        if (color != this.white_To_Move){
-            this.white_To_Move = !this.white_To_Move
-            this.UpdateEnemyAttacks()
-            this.white_To_Move = !this.white_To_Move
-        }
-        else {
-            this.UpdateEnemyAttacks()
-        }
-
-        return this.opponentAttacks.includes(myKingSquare)
-    }
-
     GenerateLegalMoves(){
         // returns a list of the legal moves for the given position
-        this.UpdateEnemyAttacks()
         let legalMoves = []
 
         //brikkenummer til vennleg konge
         
         
         //genererer og itererer gjennom alle pseudolovlige trekk
-        const pseudoLegalMoves = this.GenerateMoves()
+        const pseudoLegalMoves = this.GeneratePseudoLegalMoves()
         //return pseudoLegalMoves
         
         pseudoLegalMoves.forEach(moveToCheck => {
-            this.Make_Move(moveToCheck)
-            //todo lagre alle brikkene i individuelle lister / variablar
-            
 
-            //In check
-            if (! this.InCheck(! this.white_To_Move)){
+            const colorToCheck = this.white_To_Move
+            this.Make_Move(moveToCheck)
+            
+            // if not in check the move is legal
+            if (! this.InCheck(colorToCheck)){
                 legalMoves.push(moveToCheck)
             }
 
@@ -650,20 +699,4 @@ export class Board {
         
         return captureMoves
     }
-
-    IsTerminal(){
-        
-        //Ingen lovlege trekk, sjekk etter sjakkmatt / sjakk patt
-        if (board.GenerateLegalMoves().length == 0){    
-            //Checkmate
-            if (board.InCheck()){
-                return true, -checkMateScore
-            }
-            
-            //Stalemate
-            return true, 0
-        }
-        return false, 0
-    }
 }
-

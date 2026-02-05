@@ -48,7 +48,8 @@ export function GameLoop(){
     promo = false
     const gameOver = (board.GenerateLegalMoves().length == 0)
     const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
-    const check = board.InCheck(board.white_To_Move)
+    const check = board.InCheck()
+
     if (check){
         console.log("Check")
     }
