@@ -4,15 +4,22 @@ Features
 Search
 - Negamax
 - Quiescence search
-- Alpha Beta
+- Alpha Beta pruning
 - Move order optimisation
-- Iterativ Deepening
 - Transposision table
+- Iterativ Deepening
 
 Evaluation
 - Material count
 - bonuses for certain squares for each piecetype
 - avoids threefold repetition
+
+TODO:
+ - Move encoder / decoder: (move represented by a 16 bit value)
+ - Opening book
+ - Zobrist account for castling rights and en passant square
+ - replace default 8x8 mailbox array with a Uint8 Array
+ - 
 */
 
 import { Transposition_Table } from "./Transposition_Table.js";
