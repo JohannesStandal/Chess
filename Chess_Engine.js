@@ -179,7 +179,7 @@ function Search(depth, alpha, beta){
     //Ingen lovlege trekk, sjekk etter sjakkmatt / sjakk patt
     if (UnsortedlegalMoves.length == 0){    
         //Checkmate
-        if (board.InCheck()){
+        if (board.InCheck(board.white_To_Move)){
             TT.AddPosition(hash, -checkMateScore, MaxDepthLimit, "EXACT")
             return - (checkMateScore + depth)
 
