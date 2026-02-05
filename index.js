@@ -26,7 +26,7 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
     
     Generer fra ! svart perspektiv
     */
-   gameData.fromWhitePerspective = gameData.playAsWhite 
+   //gameData.fromWhitePerspective = gameData.playAsWhite 
    RenderBoard(board)
    GameLoop()
 }
@@ -43,9 +43,10 @@ window.tests = tests
 
 export function GameLoop(){
     promo = false
+
     const gameOver = (board.GenerateLegalMoves().length == 0)
     const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
-    const check = board.InCheck()
+    const check = board.InCheck(board.white_To_Move)
 
     if (check){
         console.log("Check")
@@ -86,7 +87,7 @@ export function GameLoop(){
 }
 
 
-StartGame("8/8/3pk3/2pp3p/2p1pPp1/4N3/2P1P3/3K4 b - - 0 1")
+StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
 
 /**
  * Positions:
