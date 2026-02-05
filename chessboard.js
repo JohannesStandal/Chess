@@ -344,6 +344,15 @@ export class Board {
             if (piece == (Piece.knight | opponentColor)) return true
         }
 
+        // check for potential attacking king
+        const kingAttacks = Piece.kingAttacks[squareIndex]
+        for (let i = 0; i < kingAttacks.length; i++){
+            const attackIndex = kingAttacks[i]
+            const piece = this.square[attackIndex]
+
+            if (piece == (Piece.king | opponentColor)) return true
+        }
+
         // Check for potential attacking pawns
         const offsets = (whiteAttacks) ? [-9, -7] : [7, 9]
 
