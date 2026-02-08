@@ -1,5 +1,5 @@
-import { Board } from "./chessboard.js"
-import { Piece, Move } from "./piece.js"
+import { Board } from "../Core/Board/chessboard.js"
+import { Piece, Move } from "../Core/Board/piece.js"
 import { GameLoop } from "./index.js"
 
 var main = document.getElementById("main")
@@ -7,7 +7,7 @@ var boardElements = new Array(64)
 
 const board = new Board
 var gameData = {
-    playAsWhite: false, //false betyr at AI speler
+    playAsWhite: true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
     playerTurn: false,
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt

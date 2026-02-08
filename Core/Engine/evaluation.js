@@ -1,5 +1,5 @@
-import { Piece } from "./piece.js"
-import { ChessHelper } from "./Chess_Helper.js"
+import { Piece } from "../Board/piece.js"
+import { ChessHelper } from "../Utils/Chess_Helper.js"
 
 export class Evaluation {
     

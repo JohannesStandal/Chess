@@ -1,10 +1,10 @@
 import { RenderScene, EndGame, Rematch} from "./App.js"
 import { gameData, board, RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board } from "./UI.js"
-import { ChessHelper } from "./Chess_Helper.js"
+import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 
-import { ChessEngine } from "./Chess_Engine.js"
-import { Piece } from "./piece.js"
-import { Tests } from "./Tests.js"
+import { ChessEngine } from "../Core/Engine/Chess_Engine.js"
+import { Piece } from "../Core/Board/piece.js"
+import { Tests } from "../Tests/Tests.js"
 
 function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){
     RenderScene(1)
@@ -38,7 +38,7 @@ window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
 
 var promo;
-const tests = new Tests(board)
+const tests = new Tests()
 window.tests = tests
 
 export function GameLoop(){

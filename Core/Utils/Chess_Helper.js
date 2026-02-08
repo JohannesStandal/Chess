@@ -1,4 +1,4 @@
-import { Piece } from "./piece.js"
+import { Piece } from "../Board/piece.js"
 export class ChessHelper {
     static checkForRepetitions(repetetionTable){
         var dict = {}

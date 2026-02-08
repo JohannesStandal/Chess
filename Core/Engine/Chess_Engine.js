@@ -33,8 +33,9 @@ TODO:
 
 import { Transposition_Table } from "./Transposition_Table.js";
 import { Evaluation } from "./evaluation.js";
-import { ChessHelper } from "./Chess_Helper.js";
-import { board } from "./UI.js";
+import { ChessHelper } from "../Utils/Chess_Helper.js";
+
+import { board } from "../../Interface/UI.js";
 
 //Søkedybde i PLY
 const MaxDepthLimit = 10

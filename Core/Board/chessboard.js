@@ -2,8 +2,8 @@
 //Denne klassen simulerer reglar for sjakkbrettet og er 
 //Hjernen bak programmet
 
-import { ChessHelper } from "./Chess_Helper.js"
-import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
+import { ChessHelper } from "../Utils/Chess_Helper.js"
+import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece, Move } from "./piece.js"
 
 export class Board {

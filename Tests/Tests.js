@@ -1,6 +1,8 @@
+import { Board } from "../Core/Board/chessboard.js"
+
 export class Tests {
-    constructor(board) {
-        this.board = board
+    constructor() {
+        this.board = new Board()
     }
 
     MoveGenerationCount(depth, log_moves = false){
