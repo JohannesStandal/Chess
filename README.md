@@ -23,7 +23,8 @@
   <li> Johannes Husevåg Standal </li>
 </ul>
 
-<h2>Project description<h2>
+<h2>Project description</h2>
+
 <p>
   Preben is a standard negamax chess engine written in JS and built as a console application 
   using Node.js. Following standard UCI protocol it will take on the bot community of lichess.org
@@ -35,6 +36,7 @@
   The algorithm is based on other implementations from the chess programming wiki. His core consists of a search and an evalutation scheme, in order
   to determine the best positions.
 </p>
+
 <h2>Search</h2>
 <ul>
   <li> Negamax </li>
