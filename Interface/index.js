@@ -1,16 +1,34 @@
 import { RenderScene, EndGame, Rematch} from "./App.js"
-import { gameData, board, RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board } from "./UI.js"
+import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 
+import { Board } from "../Core/Board/chessboard.js"
 import { ChessEngine } from "../Core/Engine/Chess_Engine.js"
 import { Piece } from "../Core/Board/piece.js"
 import { Tests } from "../Tests/Tests.js"
+
+export const board = new Board
+export var gameData = {
+    playAsWhite: true, //false betyr at AI speler
+    playAsBlack: true, // ^ --||--
+    playerTurn: false,
+    playedMoves: [],    //for å lagre alle trekk som har blitt spelt
+    fromWhitePerspective: true,
+    moveLookUpTable: null,
+}
+
+export const sounds = {
+        quietMove: new Audio("Lydeffektar/move-self.mp3"),
+        capture: new Audio("Lydeffektar/capture.mp3"),
+        notification: new Audio("Lydeffektar/notify.mp3"),
+}
 
 function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){
     RenderScene(1)
     
     //fjern gamle trekk
     gameData.playedMoves = []
+
     //lastar inn posisjon
     board.Load_Fen(startFen)
     UpdateLegalMovesLookUp()

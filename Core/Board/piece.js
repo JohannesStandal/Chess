@@ -181,12 +181,6 @@ export class Piece {
     //Bileter til HTML brett
     static Images = new Array(16)
     
-    static Sounds = {
-        quietMove: new Audio("Lydeffektar/move-self.mp3"),
-        capture: new Audio("Lydeffektar/capture.mp3"),
-        notification: new Audio("Lydeffektar/notify.mp3"),
-    }
-    
     static {
         this.Images[this.black | this.king]   = "bilder/King_Black.png"
         this.Images[this.black | this.queen]  = "bilder/Queen_Black.png"
