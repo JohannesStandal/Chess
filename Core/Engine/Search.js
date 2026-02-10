@@ -28,7 +28,7 @@ export class Search {
             
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
-                console.log("Search canceled")
+                console.log("Search canceled", this.currentDepth)
                 break
             }
         }
@@ -43,8 +43,10 @@ export class Search {
         const hash = this.board.zobrist.hash
         
         //transposition table
-        if (TT.IsValidTransposition(hash, depth) && depth != this.currentDepth){
-            const entry = TT.table.get(hash)
+        if (this.TT.IsValidTransposition(hash, depth) && 
+            depth != this.currentDepth){
+
+            const entry = this.TT.table.get(hash)
             // TT position is accurate
             if (entry.flag == "EXACT"){
                 return entry.score
@@ -70,13 +72,13 @@ export class Search {
             //Checkmate
             if (this.board.InCheck(this.board.white_To_Move)){
                 const mateScore = -(checkMateScore + depth)
-                TT.AddPosition(hash, mateScore, depth, "EXACT")
+                this.TT.AddPosition(hash, mateScore, depth, "EXACT")
                 return mateScore
     
             }
             
             //Stalemate
-            TT.AddPosition(hash, drawScore, depth, "EXACT")
+            this.TT.AddPosition(hash, drawScore, depth, "EXACT")
             return drawScore
         }
     
@@ -124,7 +126,7 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= score){
-                TT.AddPosition(hash, score, depth, "LOWER")
+                this.TT.AddPosition(hash, score, depth, "LOWER")
                 return score    
             }
         }
@@ -134,7 +136,7 @@ export class Search {
         else if (alpha >= beta) flag = "LOWER";
         else flag = "EXACT";
     
-        TT.AddPosition(hash, alpha, depth, flag)
+        this.TT.AddPosition(hash, alpha, depth, flag)
     
         return alpha
     }
