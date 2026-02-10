@@ -118,7 +118,7 @@ function AnimateMove(move){
     piece_IMG.style = "top: " + String(dy) + "px; left: " + String(dx) + "px; z-index: 200;"
 }
 
-function Make_Move_On_Board(move){ 
+function Make_Move_On_Board(move){
     // update global scope variables
     previousMove = move
     selecetedSquareIndex = null

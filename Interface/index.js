@@ -2,10 +2,10 @@
 import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
+import { Move } from "../Core/Board/piece.js"
 
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
-import { Engine } from "../Core/Engine/Engine.js"
 
 // Testsuite availability
 import { Tests } from "../Tests/Tests.js"
@@ -68,8 +68,17 @@ window.tests = tests
 
 window.board = board
 
-const engine = new Engine(1000)
-window.engine = engine
+const engine = new Worker("./Engine.worker.js", {type: "module"})
+engine.onmessage = (e) =>{
+    const moveData = e.data.move
+    const move = new Move(
+        moveData.start,
+        moveData.target,
+        moveData.flag
+    )
+    console.log("engine move:", move)
+    Make_Move_On_Board(move)
+}
 
 export function GameLoop(){
 
@@ -109,13 +118,14 @@ export function GameLoop(){
     }
     else {
         setTimeout(()=>{
-            const engine_move = engine.Bestmove(rootPos, board.playedMoves)
-            console.log("engine move: ", engine_move.CoordinatesNotation())
-            Make_Move_On_Board(engine_move)
+            engine.postMessage({
+                type: "SEARCH",
+                fen: rootPos,
+                moves: board.playedMoves,
+            })
         },300)
     }
 }
-
 
 StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
 
