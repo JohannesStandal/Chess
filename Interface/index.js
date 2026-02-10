@@ -4,13 +4,14 @@ import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 
 import { Board } from "../Core/Board/chessboard.js"
 import { ChessEngine } from "../Core/Engine/Chess_Engine.js"
-import { Piece } from "../Core/Board/piece.js"
 import { Tests } from "../Tests/Tests.js"
 
-export const board = new Board
+import { Engine } from "../Core/Engine/Engine.js"
+
+export const board = new Board()
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: true, // ^ --||--
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
     fromWhitePerspective: true,
@@ -23,14 +24,19 @@ export const sounds = {
         notification: new Audio("Lydeffektar/notify.mp3"),
 }
 
-function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){
+const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+var rootPos = ""
+
+function StartGame(fen = startPos){
+    rootPos = fen
+    window.rootPos = rootPos
     RenderScene(1)
     
     //fjern gamle trekk
     gameData.playedMoves = []
 
     //lastar inn posisjon
-    board.Load_Fen(startFen)
+    board.Load_Fen(fen)
     UpdateLegalMovesLookUp()
     //Genererer eit nytt brett fra eit perspektiv
     /*
@@ -49,18 +55,21 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
    GameLoop()
 }
 
+const tests = new Tests()
+
 window.StartGame = StartGame
 window.EndGame = EndGame
 window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
-
-var promo;
-const tests = new Tests()
 window.tests = tests
 
+window.board = board
+
+const engine = new Engine(1000)
+window.engine = engine
+
 export function GameLoop(){
-    promo = false
 
     const gameOver = (board.GenerateLegalMoves().length == 0)
     const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
@@ -98,7 +107,7 @@ export function GameLoop(){
     }
     else {
         setTimeout(()=>{
-            let engine_move = ChessEngine()
+            const engine_move = engine.Bestmove(rootPos, board.playedMoves)
             Make_Move_On_Board(engine_move)
         },300)
     }
