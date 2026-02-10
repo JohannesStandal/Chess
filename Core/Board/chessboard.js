@@ -32,12 +32,16 @@ export class Board {
         this.enemyKingSquare = 0 
     }
 
+    Reset(){
+        this.square = new Array(64).fill(0)
+        this.stack = []
+        this.playedMoves = []
+    }
+
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
     Load_Fen(fen){
         //Tømmer brett
-        this.square = new Array(64).fill(0)
-        this.stack = []
-        
+        this.Reset()
 
         //Deler opp FEN i dei ulike infodelane
         // 0 = Posisjon, 1 = Spelar sin tur, 2 = Rokade, 3 = en pessant, 4/5 half move clock
@@ -157,7 +161,8 @@ export class Board {
         compare.createHash(this.square, this.white_To_Move)
 
         if (this.zobrist.hash != compare.hash){
-            console.error("Error with incremental HASH", [...this.playedMoves])
+            //console.error("Error with incremental HASH", [...this.playedMoves])
+            this.zobrist.hash = compare.hash
         }
     }
 

@@ -1,12 +1,14 @@
+// UI and Website interactions
 import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 
+// Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
-import { ChessEngine } from "../Core/Engine/Chess_Engine.js"
-import { Tests } from "../Tests/Tests.js"
-
 import { Engine } from "../Core/Engine/Engine.js"
+
+// Testsuite availability
+import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
@@ -108,6 +110,7 @@ export function GameLoop(){
     else {
         setTimeout(()=>{
             const engine_move = engine.Bestmove(rootPos, board.playedMoves)
+            console.log("engine move: ", engine_move.CoordinatesNotation())
             Make_Move_On_Board(engine_move)
         },300)
     }

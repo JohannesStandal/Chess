@@ -24,8 +24,11 @@ export class Search {
         for (let depth = 1; depth < 24; depth++){
             // search the position
             this.currentDepth = depth
-            this.Negamax(depth, -Infinity, Infinity)
-            
+            const score = this.Negamax(depth, -Infinity, Infinity)
+            if (checkMateScore <= score){
+                console.log("Found forced checkmate at M" + Math.ceil(this.currentDepth / 2))
+                this.timeManager.Stop()
+            }
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
                 console.log("Search canceled", this.currentDepth)
