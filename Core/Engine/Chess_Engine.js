@@ -28,7 +28,6 @@ TODO:
 30 - Zobrist hashing should account for castling rights and en passant square
 15 - Track king squares incrementally
 30 - mobility bonus in evaluation
-
 */
 
 import { Transposition_Table } from "./Transposition_Table.js";
@@ -36,6 +35,7 @@ import { Evaluation } from "./evaluation.js";
 import { ChessHelper } from "../Utils/Chess_Helper.js";
 
 import { board } from "../../Interface/UI.js";
+import { TimeManager } from "./TimeManager.js";
 
 //Søkedybde i PLY
 const MaxDepthLimit = 10
@@ -104,7 +104,7 @@ export function ChessEngine(){
 
 window.ChessEngine = ChessEngine
 
-function MoveOrder(moves){
+function MoveOrder(board, moves){
     const sortedMoves = moves.sort((a, b) => {
         const valueA = Evaluation.Move(a, board)
         const valueB = Evaluation.Move(b, board)
@@ -140,13 +140,15 @@ function QuiesenceSearch(alpha, beta){
     
     for (let move of captureMoves){
         board.Make_Move(move)
-        let score = - QuiesenceSearch(-beta, -alpha)
+        let score = - QuiesenceSearch(this.board, this.TimeManager, -beta, -alpha)
         board.Unmake_Move(move)
-
         
+        // beta cutoff 
         if (score >= beta){
             return score
         }
+
+        // store highest values
         bestValue = Math.max(bestValue, score)
         alpha = Math.max(alpha, score)
     }

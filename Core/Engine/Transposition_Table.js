@@ -8,6 +8,7 @@ export class Transposition_Table {
     }
 
     AddPosition(hash, score, depth, flag){
+        return
         if (this.table.has(hash)){
             // if the entry alreadt exists for deeper depth, we dont want to overwrite it
             const entry = this.table.get(hash)

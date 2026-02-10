@@ -109,7 +109,7 @@ export class Evaluation {
 
         const materialWeight = 1
         const positionBonusWeight = 1
-        const kingWeight = 50
+        const kingWeight = 100
 
         score += this.countMaterial(board) * materialWeight
         
