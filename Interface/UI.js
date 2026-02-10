@@ -1,6 +1,4 @@
 import { Piece, Move } from "../Core/Board/piece.js"
-
-
 import {GameLoop, gameData, board, sounds } from "./index.js"
 
 // main element containing the chessboard

@@ -72,7 +72,7 @@ export function GameLoop(){
 
     if (gameOver){
         let message = ""
-        Piece.Sounds.notification.play()
+        sounds.notification.play()
         if (check){
             const winner = (board.white_To_Move) ? "Svart" : "Kvit"
             message = winner + " vant ved sjakkmatt!"
