@@ -12,12 +12,12 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: false, //false betyr at AI speler
-    playAsBlack: false, // ^ --||--
+    playAsWhite: true, //false betyr at AI speler
+    playAsBlack: true, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
-    fromWhitePerspective: true,
+    fromWhitePerspective: false,
     moveLookUpTable: null,
 }
 

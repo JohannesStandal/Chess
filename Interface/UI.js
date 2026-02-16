@@ -32,7 +32,7 @@ function RenderBoard(board, legalMoves=[]){
     const moveTargets = legalMoves.map(move => {return move.target})
 
     //Genererer nytt brett i HTML kode
-    while (true){
+    for (let rank = 7; 0 <= rank; rank--){
         for (let file = 0; file < 8; file++){
             // Create square element
             let e = document.createElement("div")
@@ -41,11 +41,11 @@ function RenderBoard(board, legalMoves=[]){
             // Calculate color
             const defaultColor = ( (rank + file) % 2 == 0) ? "brown" : "white"
             e.classList.add(defaultColor)
-            let color;
+            
             // Calculate squareIndex
             let index = rank*8+file
             
-            if (gameData.fromWhitePerspective){
+            if (! gameData.fromWhitePerspective){
                 index = 63 - index
             }
 
@@ -80,11 +80,6 @@ function RenderBoard(board, legalMoves=[]){
             main.appendChild(e)
             boardElements[index] = e
         }
-
-        if (rank == rankStop){
-            break
-        }
-        rank += increment
     }
     
     // add eventlisteners
