@@ -1,24 +1,24 @@
 """
-This is a subsection of the chess engine. The purpose of this file is to 
+This is a subsection of the chess engine. The purpose of this file is to
 generete a table of values for the Zobrist hashing.
 """
 
 import random
-import json
+
 
 class Piece:
     # Brikker (lavere bits)
-    none   = 0b00_000
-    king   = 0b00_001
-    pawn   = 0b00_010
+    none = 0b00_000
+    king = 0b00_001
+    pawn = 0b00_010
     knight = 0b00_011
     bishop = 0b00_100
-    rook   = 0b00_101
-    queen  = 0b00_110
+    rook = 0b00_101
+    queen = 0b00_110
 
     # Farger (øverste bits)
-    white  = 0b01_000
-    black  = 0b10_000
+    white = 0b01_000
+    black = 0b10_000
 
 
 pieces = {
@@ -51,7 +51,8 @@ def generate_zobrist_table():
 
 
 def write_js_file(table, filename="zobrist_hash_values.js"):
-    # Konverter tallene til "BigInt"-notasjon (0x...n) slik at JS beholder 64-bit-verdi
+    # Konverter tallene til "BigInt"-notasjon (0x...n) slik at JS
+    # beholder 64-bit-verdi
     # JS Numbers mister presisjon over 53 bit, så BigInt er tryggere
     js_ready = {
         str(k): [f"0x{v:x}n" for v in vals]
@@ -76,7 +77,8 @@ def write_js_file(table, filename="zobrist_hash_values.js"):
     with open(filename, "w", encoding="utf-8") as f:
         f.write("\n".join(js_lines))
 
-    print(f"✅ Filen '{filename}' ble generert med {len(table)} brikketyper × {BOARD_SIZE} felter.")
+    print(f"✅ Filen '{filename}' + ble generert med {len(table)}" +
+          f"brikketyper × {BOARD_SIZE} felter.")
 
 
 if __name__ == "__main__":

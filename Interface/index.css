@@ -41,11 +41,19 @@
     background-color: var(--squareColor2);
 }
 
-.yellow {
+.white.yellow {
+    background-color: rgb(255, 233, 107);
+}
+
+.brown.yellow {
     background-color: rgb(242, 207, 6);
 }
 
-.blue {
+
+.white.blue {
+    background-color: rgb(99, 182, 255);
+}
+.brown.blue {
     background-color: rgb(44, 157, 255);
 }
 
@@ -53,6 +61,4 @@
     background-color: rgb(255, 55, 55);
 }
 
-.yellow img {
-    top: -10px;
-}
+

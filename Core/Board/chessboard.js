@@ -2,8 +2,8 @@
 //Denne klassen simulerer reglar for sjakkbrettet og er 
 //Hjernen bak programmet
 
-import { ChessHelper } from "./Chess_Helper.js"
-import { zobrist_hashing} from "./Zobrist_hashing/zobrist_hashing.js"
+import { ChessHelper } from "../Utils/Chess_Helper.js"
+import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece, Move } from "./piece.js"
 
 export class Board {
@@ -32,12 +32,16 @@ export class Board {
         this.enemyKingSquare = 0 
     }
 
+    Reset(){
+        this.square = new Array(64).fill(0)
+        this.stack = []
+        this.playedMoves = []
+    }
+
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
     Load_Fen(fen){
         //Tømmer brett
-        this.square = new Array(64).fill(0)
-        this.stack = []
-        
+        this.Reset()
 
         //Deler opp FEN i dei ulike infodelane
         // 0 = Posisjon, 1 = Spelar sin tur, 2 = Rokade, 3 = en pessant, 4/5 half move clock
@@ -81,6 +85,59 @@ export class Board {
 
         this.zobrist.createHash(this.square, this.white_To_Move)
         this.repetitionTable = [this.zobrist.hash]
+    }
+
+    Export_Fen(){
+        // Board
+        let fen = ""
+
+        for (let rank = 7; 0 <= rank; rank--){
+            let empty = 0
+            for (let file = 0; file < 8; file++){
+                
+                const squareIndex = rank * 8 + file
+                const piece = this.square[squareIndex]
+
+                if (piece == 0){
+                    empty ++
+                    continue
+                }
+                
+                if (1 <= empty){
+                    fen += String(empty)
+                }
+                
+                empty = 0
+                const symbol = Piece.From_Number[piece]
+                //console.log(squareIndex, piece, symbol)
+                fen += symbol
+            }
+
+            if (1 <= empty) fen += String(empty)
+            if (0 < rank) fen += "/"
+        }
+        // side to move
+        const sideToMove = (this.white_To_Move) ? " w " : " b "
+        fen += sideToMove
+
+        // castling rights
+        const lookUp = ["", "q", "k", "kq"]
+        // 00 = -, 01 = q, 10 = k, 11 = kq
+        fen += lookUp[(this.castlingRights >> 2) & 0b11].toUpperCase()
+        fen += lookUp[this.castlingRights & 0b11]
+
+        if (this.castlingRights == 0) fen += "-"
+
+        // ep square 
+        if (this.enPassantSquare == null){
+            fen += " -"
+        }
+        else {
+            fen += " " + String(this.enPassantSquare)
+        }
+        // half move clock
+        fen += " 0 0"
+        return fen
     }
     
     Make_Move(move){  
@@ -153,12 +210,13 @@ export class Board {
         this.repetitionTable.push(this.zobrist.hash)
 
         // just to check for hash errors
-        const compare = new zobrist_hashing()
-        compare.createHash(this.square, this.white_To_Move)
+        // const compare = new zobrist_hashing()
+        // compare.createHash(this.square, this.white_To_Move)
 
-        if (this.zobrist.hash != compare.hash){
-            console.error("Error with incremental HASH", [...this.playedMoves])
-        }
+        // if (this.zobrist.hash != compare.hash){
+        //     console.error("Error with incremental HASH", [...this.playedMoves])
+        //     this.zobrist.hash = compare.hash
+        // }
     }
 
     Unmake_Move(move){

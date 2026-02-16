@@ -1,18 +1,49 @@
+// UI and Website interactions
 import { RenderScene, EndGame, Rematch} from "./App.js"
-import { gameData, board, RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board } from "./UI.js"
-import { ChessHelper } from "./Chess_Helper.js"
+import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset} from "./UI.js"
+import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
+import { Move } from "../Core/Board/piece.js"
+import { Evaluation } from "../Core/Engine/evaluation.js"
+// Core logic for playing chess
+import { Board } from "../Core/Board/chessboard.js"
 
-import { ChessEngine } from "./Chess_Engine.js"
-import { Piece } from "./piece.js"
-import { Tests } from "./Tests.js"
+// Testsuite availability
+import { Tests } from "../Tests/Tests.js"
 
-function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){
+export const board = new Board()
+export var gameData = {
+    playAsWhite: !false, //false betyr at AI speler
+    playAsBlack: !true, // ^ --||--
+    playerTurn: false,
+    active: false, 
+    playedMoves: [],    //for å lagre alle trekk som har blitt spelt
+    fromWhitePerspective: false,
+    moveLookUpTable: null,
+}
+
+export const sounds = {
+        quietMove: new Audio("Sounds/move-self.mp3"),
+        capture: new Audio("Sounds/capture.mp3"),
+        notification: new Audio("Sounds/notify.mp3"),
+}
+window.evaluate = Evaluation
+const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+var rootPos = ""
+
+function StartGame(fen = startPos){
+    rootPos = fen
+    window.rootPos = rootPos
+    gameData.active = true
     RenderScene(1)
+    Reset()
     
     //fjern gamle trekk
     gameData.playedMoves = []
+    engine.postMessage({
+        type: "RESET"
+    })
     //lastar inn posisjon
-    board.Load_Fen(startFen)
+    board.Load_Fen(fen)
     UpdateLegalMovesLookUp()
     //Genererer eit nytt brett fra eit perspektiv
     /*
@@ -31,30 +62,41 @@ function StartGame(startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
    GameLoop()
 }
 
+const tests = new Tests()
+
 window.StartGame = StartGame
 window.EndGame = EndGame
 window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
-
-var promo;
-const tests = new Tests(board)
+window.FlipBoard = FlipBoard
 window.tests = tests
+window.gameData = gameData
+
+window.board = board
+
+const engine = new Worker("./Engine.worker.js", {type: "module"})
+engine.onmessage = (e) =>{
+    if (! gameData.active) return
+    const moveData = e.data.move
+    const move = new Move(
+        moveData.start,
+        moveData.target,
+        moveData.flag
+    )
+    console.log("engine move:", move)
+    Make_Move_On_Board(move)
+}
 
 export function GameLoop(){
-    promo = false
 
     const gameOver = (board.GenerateLegalMoves().length == 0)
     const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
     const check = board.InCheck(board.white_To_Move)
 
-    if (check){
-        console.log("Check")
-    }
-
     if (gameOver){
         let message = ""
-        Piece.Sounds.notification.play()
+        sounds.notification.play()
         if (check){
             const winner = (board.white_To_Move) ? "Svart" : "Kvit"
             message = winner + " vant ved sjakkmatt!"
@@ -64,6 +106,7 @@ export function GameLoop(){
         }
 
         EndGame(message)
+        gameData.active = false
         return
     }
     else if (threefoldRepetition){
@@ -79,16 +122,19 @@ export function GameLoop(){
         
     }
     else {
+        console.log(board.Export_Fen())
         setTimeout(()=>{
-            let engine_move = ChessEngine()
-            Make_Move_On_Board(engine_move)
+            engine.postMessage({
+                type: "SEARCH",
+                fen: rootPos,
+                moves: board.playedMoves,
+            })
         },300)
     }
 }
 
-
-StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-
+//StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
+StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

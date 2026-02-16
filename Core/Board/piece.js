@@ -181,26 +181,20 @@ export class Piece {
     //Bileter til HTML brett
     static Images = new Array(16)
     
-    static Sounds = {
-        quietMove: new Audio("Lydeffektar/move-self.mp3"),
-        capture: new Audio("Lydeffektar/capture.mp3"),
-        notification: new Audio("Lydeffektar/notify.mp3"),
-    }
-    
     static {
-        this.Images[this.black | this.king]   = "bilder/King_Black.png"
-        this.Images[this.black | this.queen]  = "bilder/Queen_Black.png"
-        this.Images[this.black | this.rook]   = "bilder/Rook_Black.png"
-        this.Images[this.black | this.bishop] = "bilder/Bishop_Black.png"
-        this.Images[this.black | this.knight] = "bilder/Knight_Black.png"
-        this.Images[this.black | this.pawn]   = "bilder/Pawn_Black.png"
+        this.Images[this.black | this.king]   = "Images/King_Black.png"
+        this.Images[this.black | this.queen]  = "Images/Queen_Black.png"
+        this.Images[this.black | this.rook]   = "Images/Rook_Black.png"
+        this.Images[this.black | this.bishop] = "Images/Bishop_Black.png"
+        this.Images[this.black | this.knight] = "Images/Knight_Black.png"
+        this.Images[this.black | this.pawn]   = "Images/Pawn_Black.png"
         
-        this.Images[this.white | this.king]   = "bilder/King_White.png"
-        this.Images[this.white | this.queen]  = "bilder/Queen_White.png"
-        this.Images[this.white | this.rook]   = "bilder/Rook_White.png"
-        this.Images[this.white | this.bishop] = "bilder/Bishop_White.png"
-        this.Images[this.white | this.knight] = "bilder/Knight_White.png"
-        this.Images[this.white | this.pawn]   = "bilder/Pawn_White.png"
+        this.Images[this.white | this.king]   = "Images/King_White.png"
+        this.Images[this.white | this.queen]  = "Images/Queen_White.png"
+        this.Images[this.white | this.rook]   = "Images/Rook_White.png"
+        this.Images[this.white | this.bishop] = "Images/Bishop_White.png"
+        this.Images[this.white | this.knight] = "Images/Knight_White.png"
+        this.Images[this.white | this.pawn]   = "Images/Pawn_White.png"
 
         //from Number
         this.From_Number[Piece.white | Piece.pawn]   = "P"

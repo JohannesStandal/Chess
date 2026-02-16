@@ -1,11 +1,9 @@
-import { gameData } from "./UI.js"
+import { gameData } from "./index.js"
+import { RenderBoard, Reset } from "./UI.js"
 
 const gameScene = document.getElementById("game")
 const menuScene = document.getElementById("menu")
 const resultScene = document.getElementById("result")
-
-const processELEMENT = document.getElementById("process")
-
 
 const scenes = [menuScene, gameScene, resultScene]
 
@@ -17,11 +15,13 @@ export function RenderScene(key){
 }
 
 export function EndGame(message){
+    gameData.active = false
     resultScene.style.display = "block"
     document.getElementById("resultMessage").innerHTML = message
 }
 
 export function Rematch(){
+    Reset()
     gameData.playAsBlack = !gameData.playAsBlack
     gameData.playAsWhite = !gameData.playAsWhite 
     StartGame()

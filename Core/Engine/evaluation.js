@@ -1,5 +1,5 @@
-import { Piece } from "./piece.js"
-import { ChessHelper } from "./Chess_Helper.js"
+import { Piece } from "../Board/piece.js"
+import { ChessHelper } from "../Utils/Chess_Helper.js"
 
 export class Evaluation {
     
@@ -109,7 +109,7 @@ export class Evaluation {
 
         const materialWeight = 1
         const positionBonusWeight = 1
-        const kingWeight = 50
+        const kingWeight = 100
 
         score += this.countMaterial(board) * materialWeight
         
