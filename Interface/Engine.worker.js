@@ -1,7 +1,7 @@
 import { Engine } from "../Core/Engine/Engine.js";
 import { Move } from "../Core/Board/piece.js";
 
-const engine = new Engine(3000)
+const engine = new Engine(100)
 
 self.onmessage = (e) => {
     const {type, fen, moves} = e.data
@@ -12,10 +12,15 @@ self.onmessage = (e) => {
             move.target,
             move.flag
         ))
+        // console.log(fen, moveObjects)
         const move = engine.Bestmove(fen, moveObjects)
         self.postMessage({move})
     }
     if (type === "STOP"){
         engine.Stop()
+    }
+
+    if (type === "RESET"){
+        engine.Reset()
     }
 }

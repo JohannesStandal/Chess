@@ -8,6 +8,11 @@ var boardElements;
 var selecetedSquareIndex;
 var previousMove;
 
+export function Reset(){
+    selecetedSquareIndex = null
+    previousMove = null
+}
+
 function RenderBoard(board, legalMoves=[]){
     //Byttar om på rekkene dersom du spelar frå svart perspektiv
     const rankStart = gameData.fromWhitePerspective ? 7 : 0
@@ -34,8 +39,9 @@ function RenderBoard(board, legalMoves=[]){
             e.classList.add("square")
             
             // Calculate color
-            let color = ( (rank + file) % 2 == 0) ? "brown" : "white"
-            
+            const defaultColor = ( (rank + file) % 2 == 0) ? "brown" : "white"
+            e.classList.add(defaultColor)
+            let color;
             // Calculate squareIndex
             let index = rank*8+file
             
@@ -43,15 +49,21 @@ function RenderBoard(board, legalMoves=[]){
                 index = 63 - index
             }
 
-            if (index == selecetedSquareIndex){
-                color = "yellow"
+            if (index == selecetedSquareIndex
+            ){
+                e.classList.add("yellow")
             }
-            else if ( moveTargets.includes(index)){
-                color = "blue"
+            if (previousMove != null){
+                if (index == previousMove.start ||
+                    index == previousMove.target){
+                        e.classList.add("yellow")
+                }
+            }
+            if ( moveTargets.includes(index)){
+                e.classList.add("blue")
             }
             
-            // color square
-            e.classList.add(color)
+          
             //e.innerHTML = String(index)
 
             // Render piece images
@@ -119,6 +131,7 @@ function AnimateMove(move){
 }
 
 function Make_Move_On_Board(move){
+    boardElements[move.start].classList.add("yellow")
     // update global scope variables
     previousMove = move
     selecetedSquareIndex = null

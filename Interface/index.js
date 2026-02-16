@@ -3,7 +3,7 @@ import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 import { Move } from "../Core/Board/piece.js"
-
+import { Evaluation } from "../Core/Engine/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
 
@@ -12,31 +12,35 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: true, //false betyr at AI speler
+    playAsWhite: false, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
     playerTurn: false,
+    active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
     fromWhitePerspective: true,
     moveLookUpTable: null,
 }
 
 export const sounds = {
-        quietMove: new Audio("Lydeffektar/move-self.mp3"),
-        capture: new Audio("Lydeffektar/capture.mp3"),
-        notification: new Audio("Lydeffektar/notify.mp3"),
+        quietMove: new Audio("Sounds/move-self.mp3"),
+        capture: new Audio("Sounds/capture.mp3"),
+        notification: new Audio("Sounds/notify.mp3"),
 }
-
+window.evaluate = Evaluation
 const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
 
 function StartGame(fen = startPos){
     rootPos = fen
     window.rootPos = rootPos
+    gameData.active = true
     RenderScene(1)
     
     //fjern gamle trekk
     gameData.playedMoves = []
-
+    engine.postMessage({
+        type: "RESET"
+    })
     //lastar inn posisjon
     board.Load_Fen(fen)
     UpdateLegalMovesLookUp()
@@ -65,11 +69,13 @@ window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
 window.tests = tests
+window.gameData = gameData
 
 window.board = board
 
 const engine = new Worker("./Engine.worker.js", {type: "module"})
 engine.onmessage = (e) =>{
+    if (! gameData.active) return
     const moveData = e.data.move
     const move = new Move(
         moveData.start,
@@ -86,10 +92,6 @@ export function GameLoop(){
     const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
     const check = board.InCheck(board.white_To_Move)
 
-    if (check){
-        console.log("Check")
-    }
-
     if (gameOver){
         let message = ""
         sounds.notification.play()
@@ -102,6 +104,7 @@ export function GameLoop(){
         }
 
         EndGame(message)
+        gameData.active = false
         return
     }
     else if (threefoldRepetition){
@@ -117,6 +120,7 @@ export function GameLoop(){
         
     }
     else {
+        console.log(board.Export_Fen())
         setTimeout(()=>{
             engine.postMessage({
                 type: "SEARCH",
@@ -127,8 +131,8 @@ export function GameLoop(){
     }
 }
 
-StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-
+//StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
+StartGame()
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
