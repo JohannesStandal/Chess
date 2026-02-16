@@ -33,14 +33,14 @@ export class Search {
             // search the position
             this.currentDepth = depth
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
-            console.log("depth: ", depth, " Nodes: ", nodesSearched)
+            // console.log("depth: ", depth, " Nodes: ", nodesSearched)
             if (mateTreshold <= score){
-                console.log("Found forced checkmate at M" + Math.ceil(this.currentDepth / 2))
+                // console.log("Found forced checkmate at M" + Math.ceil(this.currentDepth / 2))
                 this.timeManager.Stop()
             }
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
-                console.log("Search canceled", this.currentDepth)
+                // console.log("Search canceled", this.currentDepth)
                 break
             }
         }

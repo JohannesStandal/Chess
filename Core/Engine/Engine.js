@@ -47,14 +47,16 @@ export class Engine {
         this.board.Reset()
     }
 
-    Bestmove(fen, moves){
-        // load fen
+    SetPosition(fen){
         this.board.Load_Fen(fen)
-        // make all moves on the board
+    }
+
+    MakeMoves(moves){
         for (let move of moves){
             this.board.Make_Move(move)
         }
-        // search
+    }
+    Bestmove(){
         return this.search.IterativeDeepening()
     }
 
