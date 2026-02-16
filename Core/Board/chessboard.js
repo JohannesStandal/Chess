@@ -40,7 +40,6 @@ export class Board {
 
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
     Load_Fen(fen){
-        console.log(fen)
         //Tømmer brett
         this.Reset()
 
@@ -122,10 +121,12 @@ export class Board {
         fen += sideToMove
 
         // castling rights
-        const lookUp = ["- ", "q", "k", "kq"]
+        const lookUp = ["", "q", "k", "kq"]
         // 00 = -, 01 = q, 10 = k, 11 = kq
         fen += lookUp[(this.castlingRights >> 2) & 0b11].toUpperCase()
         fen += lookUp[this.castlingRights & 0b11]
+
+        if (this.castlingRights == 0) fen += "-"
 
         // ep square 
         if (this.enPassantSquare == null){
@@ -136,7 +137,6 @@ export class Board {
         }
         // half move clock
         fen += " 0 0"
-        console.log(fen)
         return fen
     }
     
