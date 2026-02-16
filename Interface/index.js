@@ -1,6 +1,6 @@
 // UI and Website interactions
 import { RenderScene, EndGame, Rematch} from "./App.js"
-import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board} from "./UI.js"
+import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 import { Move } from "../Core/Board/piece.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
@@ -12,7 +12,7 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: true, //false betyr at AI speler
+    playAsWhite: false, //false betyr at AI speler
     playAsBlack: true, // ^ --||--
     playerTurn: false,
     active: false, 
@@ -68,6 +68,7 @@ window.EndGame = EndGame
 window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
+window.FlipBoard = FlipBoard
 window.tests = tests
 window.gameData = gameData
 

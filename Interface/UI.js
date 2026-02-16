@@ -13,6 +13,11 @@ export function Reset(){
     previousMove = null
 }
 
+export function FlipBoard(){
+    gameData.fromWhitePerspective = !gameData.fromWhitePerspective
+    RenderBoard(board)
+}
+
 function RenderBoard(board, legalMoves=[]){
     //Byttar om på rekkene dersom du spelar frå svart perspektiv
     const rankStart = gameData.fromWhitePerspective ? 7 : 0

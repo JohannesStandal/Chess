@@ -1,5 +1,5 @@
 import { gameData } from "./index.js"
-import { Reset } from "./UI.js"
+import { RenderBoard, Reset } from "./UI.js"
 
 const gameScene = document.getElementById("game")
 const menuScene = document.getElementById("menu")
