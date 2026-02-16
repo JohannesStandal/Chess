@@ -1,6 +1,6 @@
-import readline from "readline";
-import {Engine} from "../../Core/Engine/Engine.js"
-import { Move } from "../Board/piece.js";
+const readline = require('readline');
+const { Engine } = require('../../Core/Engine/Engine.js');
+const { Move } = require('../Board/piece.js');
 
 export class UCI {
   constructor() {
