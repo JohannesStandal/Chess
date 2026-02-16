@@ -102,4 +102,28 @@ export class Tests {
         const t2 = performance.now()
         console.log((t2-t1).toFixed(5) + "ms")
     }
+
+    testFenExport(){
+        const fens = [
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0",
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 0",
+            "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 0",
+            "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 0",
+            "rnbqkbnr/pp2pppp/2pp4/8/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 0",
+            "8/8/8/8/8/8/4K3/7k w - - 0 0",
+            "7k/5Q2/6K1/8/8/8/8/8 b - - 0 0",
+            "7k/5Q2/7K/8/8/8/8/8 b - - 0 0",
+            "rnbqkbnr/pppp1ppp/8/4p3/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 0",
+            "r3k2r/8/8/8/8/8/8/R3K2R w - - 0 0"
+        ]
+
+        fens.forEach(fen => {
+            this.board.Load_Fen(fen)
+            const exportFen = this.board.Export_Fen()
+            if (fen != exportFen){
+                console.log("Loaded: ", fen)
+                console.log("Exported: ", exportFen)
+            }
+        })
+    }
 }
