@@ -1,4 +1,4 @@
-import { zobrist_hash_values, hash_white_to_move} from "../../Constants/zobrist_hash_values.js"
+import { zobrist_hash_values, hash_white_to_move} from "../../Core/Constants/zobrist_hash_values.js"
 import { Piece } from "./piece.js"
 import { Move } from "./piece.js"
 
