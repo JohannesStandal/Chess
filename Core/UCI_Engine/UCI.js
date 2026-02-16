@@ -20,37 +20,45 @@ export class UCI {
   handleCommand(cmd) {
     if (cmd === "") return;
     const parts = cmd.split(" ")
+    const firstWord = parts[0]
 
-    if (parts[0] === "uci") {
+    // handshake communication
+    if (firstWord === "uci") {
       this.send("id name PrebenV1");
       this.send("id author Johanens Husevåg Standal");
       this.send("uciok");
       return;
     }
 
-    if (parts[0] === "isready") {
+    if (firstWord === "isready") {
       this.send("readyok");
       return;
     }
 
-    if (parts[0] === "ucinewgame") {
+    if (firstWord === "ucinewgame") {
       this.engine.Reset();
       return;
     }
 
-    if (parts[0].startsWith("position")) {
+    // set up position
+    if (firstWord === "position") {
       this.handlePosition(parts);
       return;
     }
 
-    if (parts[0].startsWith("go")) {
+    // run the engine
+    if (firstWord === "go") {
       const bestMove = this.engine.Bestmove().CoordinatesNotation();
       
       this.send(`bestmove ${bestMove}`);
       return;
     }
-
-    if (parts[0] === "quit") {
+    
+    if (firstWord === "stop"){
+      this.engine.Stop()
+    }
+    // quit
+    if (firstWord === "quit") {
       process.exit(0);
     }
   }
@@ -69,8 +77,9 @@ export class UCI {
       this.engine.SetPosition(fen)
     }
     // moves
-    if (parts[8] == "moves"){
-      const UCIMoves = parts.slice(9, parts.length)
+    const movesIndex = parts.indexOf("moves")
+    if (0 <= movesIndex){
+      const UCIMoves = parts.slice(movesIndex + 1, parts.length)
       const moves = UCIMoves.map(UCImove => { return decodeMoves(UCImove, this.engine.board)})
       console.log(moves)
       this.engine.MakeMoves(moves)
@@ -112,7 +121,7 @@ function decodeMoves(UCIMove, board){
       "q": Move.flags.queenPromotion,
     }
 
-    flag += letterToFlag[parts[5]]
+    flag += letterToFlag[parts[4]]
   }
 
   return new Move(start, target, flag)
