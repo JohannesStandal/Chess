@@ -40,6 +40,7 @@ export class Board {
 
     //Denne funksjonen kan laste inn sjakkposisjonar frå standart sjakknotasjon (FEN)
     Load_Fen(fen){
+        console.log(fen)
         //Tømmer brett
         this.Reset()
 
@@ -85,6 +86,58 @@ export class Board {
 
         this.zobrist.createHash(this.square, this.white_To_Move)
         this.repetitionTable = [this.zobrist.hash]
+    }
+
+    Export_Fen(){
+        // Board
+        let fen = ""
+
+        for (let rank = 7; 0 <= rank; rank--){
+            let empty = 0
+            for (let file = 0; file < 8; file++){
+                
+                const squareIndex = rank * 8 + file
+                const piece = this.square[squareIndex]
+
+                if (piece == 0){
+                    empty ++
+                    continue
+                }
+                
+                if (1 <= empty){
+                    fen += String(empty)
+                }
+                
+                empty = 0
+                const symbol = Piece.From_Number[piece]
+                //console.log(squareIndex, piece, symbol)
+                fen += symbol
+            }
+
+            if (1 <= empty) fen += String(empty)
+            if (0 < rank) fen += "/"
+        }
+        // side to move
+        const sideToMove = (this.white_To_Move) ? " w " : " b "
+        fen += sideToMove
+
+        // castling rights
+        const lookUp = ["- ", "q", "k", "kq"]
+        // 00 = -, 01 = q, 10 = k, 11 = kq
+        fen += lookUp[(this.castlingRights >> 2) & 0b11].toUpperCase()
+        fen += lookUp[this.castlingRights & 0b11]
+
+        // ep square 
+        if (this.enPassantSquare == null){
+            fen += " -"
+        }
+        else {
+            fen += " " + String(this.enPassantSquare)
+        }
+        // half move clock
+        fen += " 0 0"
+        console.log(fen)
+        return fen
     }
     
     Make_Move(move){  
