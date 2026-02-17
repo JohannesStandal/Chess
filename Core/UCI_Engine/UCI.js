@@ -73,16 +73,18 @@ export class UCI {
       parts.slice(2, 8).forEach(part => {
         fen += part + " "
       });
-      console.log(fen)
       this.engine.SetPosition(fen)
     }
     // moves
     const movesIndex = parts.indexOf("moves")
     if (0 <= movesIndex){
+      // fetch the list of UCI moves and make them on the board
       const UCIMoves = parts.slice(movesIndex + 1, parts.length)
-      const moves = UCIMoves.map(UCImove => { return decodeMoves(UCImove, this.engine.board)})
-      console.log(moves)
-      this.engine.MakeMoves(moves)
+      for (const UCImove of UCIMoves){
+        console.log(UCImove)
+        const move = decodeMove(UCImove, this.engine.board)
+        this.engine.board.Make_Move(move)
+      }
     }
   }
 
@@ -91,7 +93,7 @@ export class UCI {
   }
 }
 
-function decodeMoves(UCIMove, board){
+function decodeMove(UCIMove, board){
   const parts = UCIMove.split("")
 
   const letterToNumber = {

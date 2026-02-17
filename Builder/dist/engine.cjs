@@ -19,7 +19,7 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// ../Core/Board/piece.js
+// Core/Board/piece.js
 var piece_exports = {};
 __export(piece_exports, {
   Move: () => Move,
@@ -27,7 +27,7 @@ __export(piece_exports, {
 });
 var Move, Piece;
 var init_piece = __esm({
-  "../Core/Board/piece.js"() {
+  "Core/Board/piece.js"() {
     Move = class _Move {
       constructor(start, target, flag) {
         this.start = start;
@@ -376,10 +376,10 @@ var init_piece = __esm({
   }
 });
 
-// ../Core/Utils/Chess_Helper.js
+// Core/Utils/Chess_Helper.js
 var ChessHelper;
 var init_Chess_Helper = __esm({
-  "../Core/Utils/Chess_Helper.js"() {
+  "Core/Utils/Chess_Helper.js"() {
     init_piece();
     ChessHelper = class {
       static checkForRepetitions(repetetionTable) {
@@ -441,10 +441,10 @@ var init_Chess_Helper = __esm({
   }
 });
 
-// ../Core/Constants/zobrist_hash_values.js
+// Core/Constants/zobrist_hash_values.js
 var hash_white_to_move, zobrist_hash_values;
 var init_zobrist_hash_values = __esm({
-  "../Core/Constants/zobrist_hash_values.js"() {
+  "Core/Constants/zobrist_hash_values.js"() {
     hash_white_to_move = 0x8f3a7c21b4d9e560n;
     zobrist_hash_values = {
       0: [
@@ -1309,10 +1309,10 @@ var init_zobrist_hash_values = __esm({
   }
 });
 
-// ../Core/Board/zobrist_hashing.js
+// Core/Board/zobrist_hashing.js
 var zobrist_hashing;
 var init_zobrist_hashing = __esm({
-  "../Core/Board/zobrist_hashing.js"() {
+  "Core/Board/zobrist_hashing.js"() {
     init_zobrist_hash_values();
     init_piece();
     init_piece();
@@ -1373,10 +1373,10 @@ var init_zobrist_hashing = __esm({
   }
 });
 
-// ../Core/Board/chessboard.js
+// Core/Board/chessboard.js
 var Board;
 var init_chessboard = __esm({
-  "../Core/Board/chessboard.js"() {
+  "Core/Board/chessboard.js"() {
     init_Chess_Helper();
     init_zobrist_hashing();
     init_piece();
@@ -1827,10 +1827,10 @@ var init_chessboard = __esm({
   }
 });
 
-// ../Core/Engine/Transposition_Table.js
+// Core/Engine/Transposition_Table.js
 var Transposition_Table;
 var init_Transposition_Table = __esm({
-  "../Core/Engine/Transposition_Table.js"() {
+  "Core/Engine/Transposition_Table.js"() {
     Transposition_Table = class {
       constructor() {
         this.table = /* @__PURE__ */ new Map();
@@ -1863,10 +1863,10 @@ var init_Transposition_Table = __esm({
   }
 });
 
-// ../Core/Engine/evaluation.js
+// Core/Engine/evaluation.js
 var Evaluation;
 var init_evaluation = __esm({
-  "../Core/Engine/evaluation.js"() {
+  "Core/Engine/evaluation.js"() {
     init_piece();
     init_Chess_Helper();
     Evaluation = class _Evaluation {
@@ -2369,7 +2369,7 @@ var init_evaluation = __esm({
   }
 });
 
-// ../Core/Engine/MoveOrdering.js
+// Core/Engine/MoveOrdering.js
 function MoveOrder(board, moves) {
   const sortedMoves = moves.sort(
     (a, b) => {
@@ -2381,12 +2381,12 @@ function MoveOrder(board, moves) {
   return sortedMoves;
 }
 var init_MoveOrdering = __esm({
-  "../Core/Engine/MoveOrdering.js"() {
+  "Core/Engine/MoveOrdering.js"() {
     init_evaluation();
   }
 });
 
-// ../Core/Engine/QuiesenceSearch.js
+// Core/Engine/QuiesenceSearch.js
 function QuiesenceSearch(board, timeManager, alpha, beta) {
   if (timeManager.ExceededTimeLimit()) return null;
   let bestValue = Evaluation.evaluate(board);
@@ -2409,16 +2409,16 @@ function QuiesenceSearch(board, timeManager, alpha, beta) {
   return bestValue;
 }
 var init_QuiesenceSearch = __esm({
-  "../Core/Engine/QuiesenceSearch.js"() {
+  "Core/Engine/QuiesenceSearch.js"() {
     init_evaluation();
     init_MoveOrdering();
   }
 });
 
-// ../Core/Engine/Search.js
+// Core/Engine/Search.js
 var maxSearchDepth, checkMateScore, mateTreshold, drawScore, nodesSearched, Search;
 var init_Search = __esm({
-  "../Core/Engine/Search.js"() {
+  "Core/Engine/Search.js"() {
     init_Transposition_Table();
     init_Chess_Helper();
     init_MoveOrdering();
@@ -2521,10 +2521,10 @@ var init_Search = __esm({
   }
 });
 
-// ../Core/Engine/TimeManager.js
+// Core/Engine/TimeManager.js
 var TimeManager;
 var init_TimeManager = __esm({
-  "../Core/Engine/TimeManager.js"() {
+  "Core/Engine/TimeManager.js"() {
     TimeManager = class {
       constructor(timeLimitMS) {
         this.timeLimitMS = timeLimitMS;
@@ -2546,14 +2546,14 @@ var init_TimeManager = __esm({
   }
 });
 
-// ../Core/Engine/Engine.js
+// Core/Engine/Engine.js
 var Engine_exports = {};
 __export(Engine_exports, {
   Engine: () => Engine
 });
 var Engine;
 var init_Engine = __esm({
-  "../Core/Engine/Engine.js"() {
+  "Core/Engine/Engine.js"() {
     init_chessboard();
     init_Search();
     init_TimeManager();
@@ -2569,11 +2569,6 @@ var init_Engine = __esm({
       SetPosition(fen) {
         this.board.Load_Fen(fen);
       }
-      MakeMoves(moves) {
-        for (let move of moves) {
-          this.board.Make_Move(move);
-        }
-      }
       Bestmove() {
         return this.search.IterativeDeepening();
       }
@@ -2584,7 +2579,7 @@ var init_Engine = __esm({
   }
 });
 
-// ../Core/UCI_Engine/UCI.js
+// Core/UCI_Engine/UCI.js
 var UCI_exports = {};
 __export(UCI_exports, {
   UCI: () => UCI
@@ -2647,24 +2642,23 @@ var UCI = class {
       parts.slice(2, 8).forEach((part) => {
         fen += part + " ";
       });
-      console.log(fen);
       this.engine.SetPosition(fen);
     }
     const movesIndex = parts.indexOf("moves");
     if (0 <= movesIndex) {
       const UCIMoves = parts.slice(movesIndex + 1, parts.length);
-      const moves = UCIMoves.map((UCImove) => {
-        return decodeMoves(UCImove, this.engine.board);
-      });
-      console.log(moves);
-      this.engine.MakeMoves(moves);
+      for (const UCImove of UCIMoves) {
+        console.log(UCImove);
+        const move = decodeMove(UCImove, this.engine.board);
+        this.engine.board.Make_Move(move);
+      }
     }
   }
   send(msg) {
     process.stdout.write(msg + "\n");
   }
 };
-function decodeMoves(UCIMove, board) {
+function decodeMove(UCIMove, board) {
   const parts = UCIMove.split("");
   const letterToNumber = {
     "a": 0,

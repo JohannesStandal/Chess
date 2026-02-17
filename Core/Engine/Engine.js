@@ -51,11 +51,6 @@ export class Engine {
         this.board.Load_Fen(fen)
     }
 
-    MakeMoves(moves){
-        for (let move of moves){
-            this.board.Make_Move(move)
-        }
-    }
     Bestmove(){
         return this.search.IterativeDeepening()
     }
