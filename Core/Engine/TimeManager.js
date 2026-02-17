@@ -5,6 +5,10 @@ export class TimeManager {
         this.cancelSearch = false
     }
 
+    SetTimeLimit(time){
+        this.timeLimitMS = time
+    }
+
     Start(){
         this.cancelSearch = false
         this.start = performance.now()

@@ -48,9 +48,7 @@ export class UCI {
 
     // run the engine
     if (firstWord === "go") {
-      const bestMove = this.engine.Bestmove().CoordinatesNotation();
-      
-      this.send(`bestmove ${bestMove}`);
+      this.handleGo(parts)
       return;
     }
     
@@ -85,6 +83,31 @@ export class UCI {
         this.engine.board.Make_Move(move)
       }
     }
+  }
+
+  handleGo(parts){
+    const whiteTimeIndex = parts.indexOf("wtime")
+    const blackTimeIndex = parts.indexOf("btime")
+
+    let wTime = 10000
+    let bTime = 10000
+
+    if (0 <= whiteTimeIndex){
+      wTime = parseInt(parts[whiteTimeIndex + 1])
+    }
+    if (0 <= whiteTimeIndex){
+      bTime = parseInt(parts[blackTimeIndex + 1])
+    }
+
+    const myTimeLeft = (this.engine.board.white_To_Move) ? wTime : bTime
+    const thinkingTime = Math.max(100, myTimeLeft / 30)
+
+    this.engine.ThinkingTime(thinkingTime)
+    
+    const bestMove = this.engine.Bestmove().CoordinatesNotation();
+      
+    this.send(`bestmove ${bestMove}`);
+
   }
 
   send(msg) {

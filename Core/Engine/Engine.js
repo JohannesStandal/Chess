@@ -51,6 +51,10 @@ export class Engine {
         this.board.Load_Fen(fen)
     }
 
+    ThinkingTime(thinkingTime){
+        this.timeManager.SetTimeLimit(thinkingTime)
+    }
+
     Bestmove(){
         return this.search.IterativeDeepening()
     }

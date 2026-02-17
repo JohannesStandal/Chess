@@ -1873,14 +1873,14 @@ var init_evaluation = __esm({
       static mirroredBoard = new Array(64);
       static mapFromPieceType = Array(12);
       static kingMap = [
-        20,
-        20,
-        20,
+        50,
+        50,
+        50,
         10,
         10,
-        10,
-        20,
-        20,
+        50,
+        50,
+        50,
         10,
         10,
         10,
@@ -2530,6 +2530,9 @@ var init_TimeManager = __esm({
         this.timeLimitMS = timeLimitMS;
         this.cancelSearch = false;
       }
+      SetTimeLimit(time) {
+        this.timeLimitMS = time;
+      }
       Start() {
         this.cancelSearch = false;
         this.start = performance.now();
@@ -2568,6 +2571,9 @@ var init_Engine = __esm({
       }
       SetPosition(fen) {
         this.board.Load_Fen(fen);
+      }
+      ThinkingTime(thinkingTime) {
+        this.timeManager.SetTimeLimit(thinkingTime);
       }
       Bestmove() {
         return this.search.IterativeDeepening();
@@ -2623,8 +2629,7 @@ var UCI = class {
       return;
     }
     if (firstWord === "go") {
-      const bestMove = this.engine.Bestmove().CoordinatesNotation();
-      this.send(`bestmove ${bestMove}`);
+      this.handleGo(parts);
       return;
     }
     if (firstWord === "stop") {
@@ -2652,6 +2657,23 @@ var UCI = class {
         this.engine.board.Make_Move(move);
       }
     }
+  }
+  handleGo(parts) {
+    const whiteTimeIndex = parts.indexOf("wtime");
+    const blackTimeIndex = parts.indexOf("btime");
+    let wTime = 1e4;
+    let bTime = 1e4;
+    if (0 <= whiteTimeIndex) {
+      wTime = parseInt(parts[whiteTimeIndex + 1]);
+    }
+    if (0 <= whiteTimeIndex) {
+      bTime = parseInt(parts[blackTimeIndex + 1]);
+    }
+    const myTimeLeft = this.engine.board.white_To_Move ? wTime : bTime;
+    const thinkingTime = Math.max(100, myTimeLeft / 30);
+    this.engine.ThinkingTime(thinkingTime);
+    const bestMove = this.engine.Bestmove().CoordinatesNotation();
+    this.send(`bestmove ${bestMove}`);
   }
   send(msg) {
     process.stdout.write(msg + "\n");
