@@ -7,7 +7,7 @@ export class Evaluation {
     static mapFromPieceType = Array(12)
 
     static kingMap = [
-        40,  40,  20,   0,   0,  20,  40,  40,
+        40,  40,  100,   0,   0,  40,  100,  40,
         30,  30,  10,   0,   0,  10,  30,  30,
         10,  10,   5,   0,   0,   5,  10,  10,
         0,   0,   0, -10, -10,   0,   0,   0,
@@ -109,7 +109,7 @@ export class Evaluation {
 
         const materialWeight = 1
         const positionBonusWeight = 1
-        const kingWeight = 100
+        const kingWeight = 10
 
         score += this.countMaterial(board) * materialWeight
         
