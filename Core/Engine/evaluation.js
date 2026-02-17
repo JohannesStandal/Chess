@@ -104,21 +104,28 @@ export class Evaluation {
 
         
 
+        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
        
+        // Weights
         let score = 0
 
         const materialWeight = 1
-        const positionBonusWeight = 1
+        const positionWeight = 1
+        const mobilityWeight = 2
         const kingWeight = 10
 
+        // material
         score += this.countMaterial(board) * materialWeight
         
-        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
-        score += this.positionBonus(board, endgameWeight) * positionBonusWeight
+        
+        // position and mobility
+        score += this.positionBonus(board, endgameWeight) * positionWeight
+        score += this.mobilityBonus(board) * mobilityWeight
+        
+        // endgame king aggression
         score += this.forceKingToCornerWithKing(board, endgameWeight) * kingWeight
 
         return score
-        
     }
 
     static countMaterial(board){
@@ -155,6 +162,14 @@ export class Evaluation {
             
         }
         return score * (1 - endgameWeight)
+    }
+
+    static mobilityBonus(board){
+        const myMobility = board.GenerateLegalMoves().length
+        board.white_To_Move = !board.white_To_Move
+        const opponentMobility = board.GenerateLegalMoves().length
+        board.white_To_Move = !board.white_To_Move
+        return myMobility - opponentMobility
     }
 
     static forceKingToCornerWithKing(board, endgameWeight){

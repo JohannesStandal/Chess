@@ -1875,11 +1875,11 @@ var init_evaluation = __esm({
       static kingMap = [
         40,
         40,
-        20,
+        100,
         0,
         0,
-        20,
         40,
+        100,
         40,
         30,
         30,
@@ -2286,13 +2286,15 @@ var init_evaluation = __esm({
       }
       // Board
       static evaluate(board) {
+        const endgameWeight = ChessHelper.CalculateEndgameWeight(board);
         let score = 0;
         const materialWeight = 1;
-        const positionBonusWeight = 1;
-        const kingWeight = 100;
+        const positionWeight = 1;
+        const mobilityWeight = 2;
+        const kingWeight = 10;
         score += this.countMaterial(board) * materialWeight;
-        const endgameWeight = ChessHelper.CalculateEndgameWeight(board);
-        score += this.positionBonus(board, endgameWeight) * positionBonusWeight;
+        score += this.positionBonus(board, endgameWeight) * positionWeight;
+        score += this.mobilityBonus(board) * mobilityWeight;
         score += this.forceKingToCornerWithKing(board, endgameWeight) * kingWeight;
         return score;
       }
@@ -2318,6 +2320,13 @@ var init_evaluation = __esm({
           score += sign * bonus * 0.2;
         }
         return score * (1 - endgameWeight);
+      }
+      static mobilityBonus(board) {
+        const myMobility = board.GenerateLegalMoves().length;
+        board.white_To_Move = !board.white_To_Move;
+        const opponentMobility = board.GenerateLegalMoves().length;
+        board.white_To_Move = !board.white_To_Move;
+        return myMobility - opponentMobility;
       }
       static forceKingToCornerWithKing(board, endgameWeight) {
         let score = 0;
