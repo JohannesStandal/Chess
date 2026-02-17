@@ -4,16 +4,11 @@ import { Move } from "../Core/Board/piece.js";
 const engine = new Engine(1000)
 
 self.onmessage = (e) => {
-    const {type, fen, moves} = e.data
+    const {type, fen} = e.data
     
     if (type === "SEARCH"){
-        const moveObjects = moves.map(move => new Move(
-            move.start,
-            move.target,
-            move.flag
-        ))
-        // console.log(fen, moveObjects)
-        const move = engine.Bestmove(fen, moveObjects)
+        engine.SetPosition(fen)
+        const move = engine.Bestmove()
         self.postMessage({move})
     }
     if (type === "STOP"){

@@ -12,8 +12,8 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: !false, //false betyr at AI speler
-    playAsBlack: !true, // ^ --||--
+    playAsWhite: false, //false betyr at AI speler
+    playAsBlack: true, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -126,8 +126,7 @@ export function GameLoop(){
         setTimeout(()=>{
             engine.postMessage({
                 type: "SEARCH",
-                fen: rootPos,
-                moves: board.playedMoves,
+                fen: board.Export_Fen(),
             })
         },300)
     }

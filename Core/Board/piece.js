@@ -77,6 +77,10 @@ export class Move {
 
         notation += file + rank
 
+        if (this.IsPromotion()){
+            const promotionTags = "nbrq"
+            notation += promotionTags[this.flag & 0b11]
+        }
         return notation
 
     }
