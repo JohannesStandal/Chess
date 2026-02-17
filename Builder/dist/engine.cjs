@@ -2323,10 +2323,7 @@ var init_evaluation = __esm({
       }
       static mobilityBonus(board) {
         const myMobility = board.GenerateLegalMoves().length;
-        board.white_To_Move = !board.white_To_Move;
-        const opponentMobility = board.GenerateLegalMoves().length;
-        board.white_To_Move = !board.white_To_Move;
-        return myMobility - opponentMobility;
+        return myMobility;
       }
       static forceKingToCornerWithKing(board, endgameWeight) {
         let score = 0;
