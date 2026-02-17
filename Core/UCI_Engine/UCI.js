@@ -103,7 +103,7 @@ export class UCI {
     const thinkingTime = Math.max(100, myTimeLeft / 30)
 
     this.engine.ThinkingTime(thinkingTime)
-    
+
     const bestMove = this.engine.Bestmove().CoordinatesNotation();
       
     this.send(`bestmove ${bestMove}`);
@@ -150,6 +150,7 @@ function decodeMove(UCIMove, board){
 
   if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
   if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
+  if (target == board.enPassantSquare) flag = Move.enPassantSquare
 
   return new Move(start, target, flag)
 }
