@@ -2648,7 +2648,6 @@ var UCI = class {
     if (0 <= movesIndex) {
       const UCIMoves = parts.slice(movesIndex + 1, parts.length);
       for (const UCImove of UCIMoves) {
-        console.log(UCImove);
         const move = decodeMove(UCImove, this.engine.board);
         this.engine.board.Make_Move(move);
       }
@@ -2685,6 +2684,8 @@ function decodeMove(UCIMove, board) {
     };
     flag += letterToFlag[parts[4]];
   }
+  if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move2.flags.kingCastle;
+  if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move2.flags.queenCastle;
   return new Move2(start, target, flag);
 }
 new UCI();
