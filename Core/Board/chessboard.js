@@ -4,7 +4,8 @@
 
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { zobrist_hashing} from "./zobrist_hashing.js"
-import { Piece, Move } from "./piece.js"
+import { Piece} from "./piece.js"
+import { Move } from "./move.js"
 
 export class Board {
     constructor(){
@@ -140,8 +141,14 @@ export class Board {
         return fen
     }
     
-    Make_Move(move){  
-        let capturedPiece = this.square[move.target]
+    Make_Move(move){
+        // decode move
+        const start = Move.Start(move)
+        const target = Move.Target(move)
+        const flag = Move.Flag(move)
+
+
+        let capturedPiece = this.square[target]
         // lagrer spillhistorikk
         this.stack.push({
             // Posisjons info
@@ -154,17 +161,17 @@ export class Board {
         this.zobrist.incrementHash(move, this)
         
         // update castling rights
-        this.castlingRights &= Piece.updateCastleRights[move.start] 
-        this.castlingRights &= Piece.updateCastleRights[move.target]
+        this.castlingRights &= Piece.updateCastleRights[start] 
+        this.castlingRights &= Piece.updateCastleRights[target]
 
         // en-passant capture
-        if (move.flag == Move.flags.epCapture){
+        if (flag == Move.flags.epCapture){
             capturedPiece = this.square[this.enPassantSquare]
             this.square[this.enPassantSquare] = 0
         }
 
         // updates en-passant square
-        if (move.flag == Move.flags.doublePush){
+        if (flag == Move.flags.doublePush){
             this.enPassantSquare = move.target
         }
         else {
@@ -172,32 +179,34 @@ export class Board {
         }
 
         // Find original piece
-        let movedPiece = this.square[move.start]
+        let movedPiece = this.square[start]
 
         // promotion logic
-        if (move.flag >> 3 == 1){
+        if (Move.IsPromototion(flag)){
             // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
             const color = movedPiece & 0b11000
-            const pieceType = pieceTypes[move.flag & 0b0011]
+
+            const pieceType = pieceTypes[flag & 0b0011]
+            
             movedPiece = color | pieceType
         } 
 
         // moving the piece
-        this.square[move.target] = movedPiece
-        this.square[move.start] = 0
+        this.square[target] = movedPiece
+        this.square[start] = 0
 
-        // if there is a castle, the rook shal be moved as well
-        if (move.flag == Move.flags.kingCastle){
-            const rookSquare = move.start + 3
-            const targetSquare = move.start + 1
+        // if there is a castle, the rook should be moved as well
+        if (flag == Move.flags.kingCastle){
+            const rookSquare = start + 3
+            const targetSquare = start + 1
 
             this.square[targetSquare] = this.square[rookSquare]
             this.square[rookSquare] = 0
         }
-        else if (move.flag == Move.flags.queenCastle){
-            const rookSquare = move.start - 4
-            const targetSquare = move.start - 1
+        else if (flag == Move.flags.queenCastle){
+            const rookSquare = start - 4
+            const targetSquare = start - 1
 
             this.square[targetSquare] = this.square[rookSquare]
             this.square[rookSquare] = 0
@@ -235,8 +244,13 @@ export class Board {
         this.enPassantSquare = previousPosition.enPassantSquare
         this.zobrist.hash = previousPosition.hash
         
+        // decode move
+        const start = Move.Start(move)
+        const target = Move.Target(move)
+        const flag = Move.Flag(move)
+
         // Reconstructing position
-        let movedPiece = this.square[move.target]
+        let movedPiece = this.square[target]
         const capturedPiece = previousPosition.capturedPiece
         
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
@@ -245,21 +259,21 @@ export class Board {
             movedPiece = Piece.pawn | friendlyColor
         }
 
-        this.square[move.start] = movedPiece
-        this.square[move.target] = capturedPiece
+        this.square[start] = movedPiece
+        this.square[target] = capturedPiece
 
         // move rook back in case of castling
-        if (move.IsCastleKing()){
-            this.square[move.start + 1] = 0
-            this.square[move.start + 3] = Piece.rook | friendlyColor
+        if (flag == Move.flags.kingCastle){
+            this.square[start + 1] = 0
+            this.square[start + 3] = Piece.rook | friendlyColor
         }
-        else if (move.IsCastleQueen()){
-            this.square[move.start - 1] = 0
-            this.square[move.start - 4] = Piece.rook | friendlyColor
+        else if (flag == Move.flags.queenCastle){
+            this.square[start - 1] = 0
+            this.square[start - 4] = Piece.rook | friendlyColor
         }
         
         // en passant capture
-        if (move.IsEnPassantCapture()){
+        if (flag == Move.flags.epCapture){
             const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
             this.square[this.enPassantSquare] = Piece.pawn | enemyColor
         }
