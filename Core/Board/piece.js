@@ -1,110 +1,109 @@
 // Klassen for moves som inneheld all info for å flytte brikker
-export class Move {
-    constructor(start, target, flag){
-        this.start = start
-        this.target = target
-        this.flag = flag
-    }
+// export class Move {
+//     constructor(start, target, flag){
+//         this.start = start
+//         this.target = target
+//         this.flag = flag
+//     }
     
-    static flags = {
-        quietMove:          0b0000,
-        doublePush:         0b0001,
-        kingCastle:         0b0010,
-        queenCastle:        0b0011,
-        captures:           0b0100,
-        epCapture:          0b0101,
+//     static flags = {
+//         quietMove:          0b0000,
+//         doublePush:         0b0001,
+//         kingCastle:         0b0010,
+//         queenCastle:        0b0011,
+//         captures:           0b0100,
+//         epCapture:          0b0101,
 
 
-        knightPromotion:    0b1000,
-        bishopPromotion:    0b1001,
-        rookPromotion:      0b1010,
-        queenPromotion:     0b1011,
-        knightPromoCapture: 0b1100,
-        bishopPromoCapture: 0b1101,
-        rookPromoCapture:   0b1110,  
-        queenPromoCapture:  0b1111,
+//         knightPromotion:    0b1000,
+//         bishopPromotion:    0b1001,
+//         rookPromotion:      0b1010,
+//         queenPromotion:     0b1011,
+//         knightPromoCapture: 0b1100,
+//         bishopPromoCapture: 0b1101,
+//         rookPromoCapture:   0b1110,  
+//         queenPromoCapture:  0b1111,
+//     }
+//     static IndexToLetter = new Array(64)
     
-    }
-    static IndexToLetter = new Array(64)
-    
-    static {
-        const letter = "abcdefgh"
-        for (let rank = 0; rank < 8; rank++){
-            for (let file = 0; file < 8; file++){
-                let index = rank * 8 + file
-                this.IndexToLetter[index] = letter[file] + String(rank+1)
-            }
-        }
-    } 
-    static AlgebraicNotation(board, move){
+//     static {
+//         const letter = "abcdefgh"
+//         for (let rank = 0; rank < 8; rank++){
+//             for (let file = 0; file < 8; file++){
+//                 let index = rank * 8 + file
+//                 this.IndexToLetter[index] = letter[file] + String(rank+1)
+//             }
+//         }
+//     } 
+//     static AlgebraicNotation(board, move){
         
-        let notation = ""
-        const piece = board.square[move.start]
+//         let notation = ""
+//         const piece = board.square[move.start]
         
-        const capture = move.flag >> 2 & 1 == 1
-        const IsPawn = Piece.IsType(piece, Piece.pawn)
-        //Capture
-        if (!IsPawn){
-            notation += Piece.From_Number[piece]
-        }
-        if (capture){
-            //Pawn
-            if (IsPawn){
-                const files = "abcdefg"
-                notation += files[move.start % 8]
-            }
+//         const capture = move.flag >> 2 & 1 == 1
+//         const IsPawn = Piece.IsType(piece, Piece.pawn)
+//         //Capture
+//         if (!IsPawn){
+//             notation += Piece.From_Number[piece]
+//         }
+//         if (capture){
+//             //Pawn
+//             if (IsPawn){
+//                 const files = "abcdefg"
+//                 notation += files[move.start % 8]
+//             }
             
             
-            notation += "x"
-        } 
+//             notation += "x"
+//         } 
         
-        notation += this.IndexToLetter[move.target]
+//         notation += this.IndexToLetter[move.target]
 
-        return notation
-    }
+//         return notation
+//     }
 
-    CoordinatesNotation(){
-        const files = "abcdefgh"
-        let notation = ""
+//     CoordinatesNotation(){
+//         const files = "abcdefgh"
+//         let notation = ""
 
-        let rank = String(Math.floor(this.start / 8) + 1)
-        let file = files[this.start % 8]
+//         let rank = String(Math.floor(this.start / 8) + 1)
+//         let file = files[this.start % 8]
 
-        notation += file + rank
+//         notation += file + rank
         
-        rank = String(Math.floor(this.target / 8) + 1)
-        file = files[this.target % 8]
+//         rank = String(Math.floor(this.target / 8) + 1)
+//         file = files[this.target % 8]
 
-        notation += file + rank
+//         notation += file + rank
 
-        if (this.IsPromotion()){
-            const promotionTags = "nbrq"
-            notation += promotionTags[this.flag & 0b11]
-        }
-        return notation
+//         if (this.IsPromotion()){
+//             const promotionTags = "nbrq"
+//             notation += promotionTags[this.flag & 0b11]
+//         }
+//         return notation
 
-    }
+//     }
 
-    IsPromotion(){
-        return (this.flag & 0b1000) == 0b1000
-    }
+//     IsPromotion(){
+//         return (this.flag & 0b1000) == 0b1000
+//     }
 
-    IsCapture(){
-        return (this.flag & 0b0100) == 0b0100
-    }
+//     IsCapture(){
+//         return (this.flag & 0b0100) == 0b0100
+//     }
 
-    IsCastleKing(){
-        return this.flag == Move.flags.kingCastle 
+//     IsCastleKing(){
+//         return this.flag == Move.flags.kingCastle 
 
-    }
-    IsCastleQueen(){
-        return this.flag == Move.flags.queenCastle
-    }
+//     }
+//     IsCastleQueen(){
+//         return this.flag == Move.flags.queenCastle
+//     }
 
-    IsEnPassantCapture(){
-        return this.flag == Move.flags.epCapture
-    }
-}
+//     IsEnPassantCapture(){
+//         return this.flag == Move.flags.epCapture
+//     }
+// }
 
 //Klassen Piece vil fungere som eit bibliotek for sjakkbrikkene.
 export class Piece {
