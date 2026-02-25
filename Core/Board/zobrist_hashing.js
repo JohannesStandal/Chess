@@ -1,6 +1,6 @@
 import { zobrist_hash_values, hash_white_to_move} from "../../Core/Constants/zobrist_hash_values.js"
 import { Piece } from "./piece.js"
-import { Move } from "./piece.js"
+import { Move } from "./move.js"
 
 export class zobrist_hashing {
     constructor(){
@@ -29,20 +29,25 @@ export class zobrist_hashing {
 
 
     incrementHash(move, board){
+        const start = Move.Start(move)
+        const target = Move.Target(move)
+        const flag = Move.Target(move)
+
+
         // increments a hash value based on move data
-        const movedPiece = board.square[move.start]
-        const capturedPiece = board.square[move.target]
+        const movedPiece = board.square[start]
+        const capturedPiece = board.square[target]
 
         // remove the pieces from the hash
-        this.togglePiece(move.start, movedPiece)
+        this.togglePiece(start, movedPiece)
 
         // general logic
         // remove old piece -> check for en passant -> remove captured -> check promotion -> place new piece -> flip turn
         // extra logic for rook move in case of castling
 
         // remove captured piece
-        if (move.IsCapture()){
-            if (move.flag == Move.flags.epCapture){
+        if (Move.IsCapture(Move)){
+            if (flag == Move.flags.epCapture){
                 // remove pawn from en passant
                 const pawn = board.square[board.enPassantSquare]
                 this.togglePiece(board.enPassantSquare, pawn)
@@ -55,28 +60,28 @@ export class zobrist_hashing {
         
         let pieceToAdd = movedPiece
         // in case of promotion add the promotion piece, and not the orginally moved piece
-        if (move.IsPromotion()){
+        if (Move.IsPromotion(move)){
             // generate promotion piece
              // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
             const color = movedPiece & 0b11000
-            const pieceType = pieceTypes[move.flag & 0b0011]
+            const pieceType = pieceTypes[flag & 0b0011]
             pieceToAdd = color | pieceType
         }
         // add piece to hash
-        this.togglePiece(move.target, pieceToAdd)
+        this.togglePiece(target, pieceToAdd)
 
         // castling logic
-        if (move.flag == Move.flags.kingCastle){
-            const rookStart = move.start + 3
-            const rookTarget = move.start + 1
+        if (flag == Move.flags.kingCastle){
+            const rookStart = start + 3
+            const rookTarget = start + 1
             const rook = board.square[rookStart]
             this.togglePiece(rookStart, rook)
             this.togglePiece(rookTarget, rook)
         }
-        else if (move.flag == Move.flags.queenCastle){
-            const rookStart = move.start - 4
-            const rookTarget = move.start - 1
+        else if (flag == Move.flags.queenCastle){
+            const rookStart = start - 4
+            const rookTarget = start - 1
             const rook = board.square[rookStart]
             this.togglePiece(rookStart, rook)
             this.togglePiece(rookTarget, rook)
