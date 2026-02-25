@@ -26,12 +26,10 @@ export class zobrist_hashing {
         this.hash ^= zobrist_hash_values[piece][squareIndex]
     }
 
-
-
     incrementHash(move, board){
         const start = Move.Start(move)
         const target = Move.Target(move)
-        const flag = Move.Target(move)
+        const flag = Move.Flag(move)
 
 
         // increments a hash value based on move data
@@ -46,7 +44,7 @@ export class zobrist_hashing {
         // extra logic for rook move in case of castling
 
         // remove captured piece
-        if (Move.IsCapture(Move)){
+        if (Move.IsCapture(move)){
             if (flag == Move.flags.epCapture){
                 // remove pawn from en passant
                 const pawn = board.square[board.enPassantSquare]
@@ -54,7 +52,7 @@ export class zobrist_hashing {
             }
             else {
                 // remove general captured piece
-                this.togglePiece(move.target, capturedPiece)
+                this.togglePiece(target, capturedPiece)
             }
         }
         
