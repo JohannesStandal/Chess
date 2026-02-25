@@ -1,4 +1,5 @@
-import { Piece, Move } from "../Core/Board/piece.js"
+import { Piece } from "../Core/Board/piece.js"
+import { Move } from "../Core/Board/move.js";
 import {GameLoop, gameData, board, sounds } from "./index.js"
 
 // main element containing the chessboard
@@ -20,11 +21,7 @@ export function FlipBoard(){
 
 function RenderBoard(board, legalMoves=[]){
     //Byttar om på rekkene dersom du spelar frå svart perspektiv
-    const rankStart = gameData.fromWhitePerspective ? 7 : 0
-    const rankStop =  gameData.fromWhitePerspective ? 0 : 7
-    const increment = gameData.fromWhitePerspective ? -1 : 1
-
-    let rank = rankStart
+    
 
     //Fjernar eksisterande brett
     boardElements = new Array(64)
@@ -34,7 +31,7 @@ function RenderBoard(board, legalMoves=[]){
     }
 
     // potential move squares
-    const moveTargets = legalMoves.map(move => {return move.target})
+    const moveTargets = legalMoves.map(move => {return Move.Target(move)})
 
     //Genererer nytt brett i HTML kode
     for (let rank = 7; 0 <= rank; rank--){
@@ -91,7 +88,7 @@ function RenderBoard(board, legalMoves=[]){
     for (let i = 0; i < 64; i++){
         // square and potential moves
         const square = boardElements[i] 
-        const movesToThisSquare = legalMoves.filter(move => move.target == i)
+        const movesToThisSquare = legalMoves.filter(move => Move.Target(move) == i)
         
         // add related event
         if (movesToThisSquare.length == 0){
@@ -114,24 +111,32 @@ function UpdateLegalMovesLookUp(){
     }
 
     board.GenerateLegalMoves().forEach(move =>{
-        gameData.moveLookUpTable[move.start].push(move)
+        gameData.moveLookUpTable[Move.Start(move)].push(move)
     })
 }
 
 function AnimateMove(move){
+    const start = Move.Start(move)
+    const target = Move.Target(move)
+    
+
     //Animasjon for flytting av brikker
-    const startCoords = boardElements[move.start].getBoundingClientRect()
-    const targetCoords = boardElements[move.target].getBoundingClientRect()
+    const startCoords = boardElements[start].getBoundingClientRect()
+    const targetCoords = boardElements[target].getBoundingClientRect()
     
     const dx = targetCoords.x - startCoords.x
     const dy = targetCoords.y - startCoords.y
     
-    let piece_IMG = boardElements[move.start].childNodes[0]
+    let piece_IMG = boardElements[start].childNodes[0]
     piece_IMG.style = "top: " + String(dy) + "px; left: " + String(dx) + "px; z-index: 200;"
 }
 
 function Make_Move_On_Board(move){
-    boardElements[move.start].classList.add("yellow")
+    const start = Move.Start(move)
+    const target = Move.Target(move)
+    const flag = Move.Flag(move)
+
+    boardElements[start].classList.add("yellow")
     // update global scope variables
     previousMove = move
     selecetedSquareIndex = null
@@ -143,12 +148,12 @@ function Make_Move_On_Board(move){
     AnimateMove(move)
 
     // animate rook move for castling
-    if (move.flag == Move.flags.kingCastle){
-        const rookMove = new Move (move.start + 3, move.start + 1, 0b0000)
+    if (flag == Move.flags.kingCastle){
+        const rookMove = Move.EncodeUINT16(start + 3, start + 1, 0b0000)
         AnimateMove(rookMove)
     } 
-    else if (move.flag == Move.flags.queenCastle){
-        const rookMove = new Move (move.start - 4, move.start - 1, 0b0000)
+    else if (flag == Move.flags.queenCastle){
+        const rookMove = Move.EncodeUINT16(start - 4, start - 1, 0b0000)
         AnimateMove(rookMove)
     } 
 
@@ -156,7 +161,7 @@ function Make_Move_On_Board(move){
     UpdateLegalMovesLookUp()
 
     // play sounds
-    if ((move.flag >> 2  & 1) == 1){
+    if (Move.IsCapture(move)){
         sounds.capture.play()
     }
     else {
@@ -184,10 +189,15 @@ function Promotion(move){
         Move.flags.bishopPromotion,
     ]
     // create correct promotion flag
-    move.flag = (move.flags & 0b1100) | flags[index]
+    
+    const start = Move.Start(move)
+    const target = Move.Target(move)
+    const oldFlag = Move.Flag(move)
+    const flag = (oldFlag & 0b1100) | flags[index]
 
     // make the move on the board
-    Make_Move_On_Board(move)
+    const promotionMove = Move.EncodeUINT16(start, target, flag)
+    Make_Move_On_Board(promotionMove)
 }
 
 function SelectPiece(squareIndex){

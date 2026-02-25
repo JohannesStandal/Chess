@@ -2,7 +2,7 @@
 import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
-import { Move } from "../Core/Board/piece.js"
+import { Move } from "../Core/Board/move.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
@@ -12,7 +12,7 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: false, //false betyr at AI speler
+    playAsWhite: true, //false betyr at AI speler
     playAsBlack: true, // ^ --||--
     playerTurn: false,
     active: false, 
