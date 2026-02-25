@@ -41,7 +41,13 @@ export class Move {
     }
 
     static IsPromototion(move){
+        const flag = this.Flag(move)
         return (flag >> 3 == 1)
+    }
+
+    static IsCapture(move){
+        const flag = this.Flag(move)
+        return (flag & 0b0100) != 0  
     }
 
     static ToUCI(move){
