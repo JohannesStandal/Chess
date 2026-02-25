@@ -1,3 +1,5 @@
+import { ChessHelper } from "../Utils/Chess_Helper.js"
+
 export class Move {
     static flags = {
         quietMove:          0b0000,
@@ -42,7 +44,7 @@ export class Move {
 
     static IsPromotion(move){
         const flag = this.Flag(move)
-        return (flag >> 3 == 1)
+        return (flag & 0b1000) != 0
     }
 
     static IsCapture(move){
@@ -51,7 +53,21 @@ export class Move {
     }
 
     static ToUCI(move){
+        const start = Move.Start(move)
+        const target = Move.Target(move)
+        
+        const startCoord = ChessHelper.indexToLetter[start]
+        const targetCoord = ChessHelper.indexToLetter[target]
 
+        if (Move.IsPromotion(move)){
+            const type = Move.Flag(move) & 0b11
+            const letters = "kbrq"
+            const promotion = letters[type]
+
+            return startCoord + targetCoord + promotion
+        }
+
+        return startCoord + targetCoord
     }
 
     static toUINT16(UCI, board){

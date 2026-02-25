@@ -24,17 +24,7 @@
 //         rookPromoCapture:   0b1110,  
 //         queenPromoCapture:  0b1111,
 //     }
-//     static IndexToLetter = new Array(64)
-    
-//     static {
-//         const letter = "abcdefgh"
-//         for (let rank = 0; rank < 8; rank++){
-//             for (let file = 0; file < 8; file++){
-//                 let index = rank * 8 + file
-//                 this.IndexToLetter[index] = letter[file] + String(rank+1)
-//             }
-//         }
-//     } 
+//      
 //     static AlgebraicNotation(board, move){
         
 //         let notation = ""
