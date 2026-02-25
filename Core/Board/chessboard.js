@@ -172,7 +172,7 @@ export class Board {
 
         // updates en-passant square
         if (flag == Move.flags.doublePush){
-            this.enPassantSquare = move.target
+            this.enPassantSquare = target
         }
         else {
             this.enPassantSquare = null
@@ -182,7 +182,7 @@ export class Board {
         let movedPiece = this.square[start]
 
         // promotion logic
-        if (Move.IsPromotion(flag)){
+        if (Move.IsPromotion(move)){
             // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
             const color = movedPiece & 0b11000
@@ -618,16 +618,20 @@ export class Board {
         //Forfremming
         let filteredMoves = []
         moves.forEach(move=>{
+            const start = Move.Start(move)
+            const target = Move.Target(move)
+
             //Bonde har nådd siste rekke
-            const promotion = (pawnIsWhite) ? (55 < move.target) : (move.target < 8)
+            const promotion = (pawnIsWhite) ? (55 < target) : (target < 8)
             if (promotion){
                 const capture = Move.IsCapture(move) 
                 const captureFlag = capture ? 0b100 : 0b000
+
                 //1|0|00: tredje siffer refererer til capture
-                filteredMoves.push(Move.EncodeUINT16(move.start, move.target, Move.flags.bishopPromotion | captureFlag))
-                filteredMoves.push(Move.EncodeUINT16(move.start, move.target, Move.flags.knightPromotion | captureFlag))
-                filteredMoves.push(Move.EncodeUINT16(move.start, move.target, Move.flags.rookPromotion   | captureFlag))
-                filteredMoves.push(Move.EncodeUINT16(move.start, move.target, Move.flags.queenPromotion  | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.bishopPromotion | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.knightPromotion | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.rookPromotion   | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.queenPromotion  | captureFlag))
             }
             else{
                 filteredMoves.push(move)
