@@ -191,12 +191,12 @@ export class Evaluation {
         }
 
         // friendly king
-        const friendlyKingRank = ChessHelper.Rank(friendlyKingSquare)
-        const friendlyKingFile = ChessHelper.File(friendlyKingSquare)
+        const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare)
+        const friendlyKingFile = ChessHelper.FileIndex(friendlyKingSquare)
        
         // rekn ut avstand til midthen for fiendtleg konge
-        const enemyKingRank = ChessHelper.Rank(enemyKingSquare)
-        const enemyKingFile = ChessHelper.File(enemyKingSquare)
+        const enemyKingRank = ChessHelper.RankIndex(enemyKingSquare)
+        const enemyKingFile = ChessHelper.FileIndex(enemyKingSquare)
 
         // oppfordre til å få fiendtlig konge til hjørne av brettet
         const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5)
