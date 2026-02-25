@@ -182,7 +182,7 @@ export class Board {
         let movedPiece = this.square[start]
 
         // promotion logic
-        if (Move.IsPromototion(flag)){
+        if (Move.IsPromotion(flag)){
             // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
             const color = movedPiece & 0b11000
@@ -255,7 +255,7 @@ export class Board {
         
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
         // checking if the moved piece was a promoted pawn
-        if (move.IsPromotion()){
+        if (Move.IsPromotion(move)){
             movedPiece = Piece.pawn | friendlyColor
         }
 

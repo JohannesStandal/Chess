@@ -18,12 +18,12 @@ export class Move {
         queenPromoCapture:  0b1111,
     }
     
-    static EncodeUINT16(start, target, flag){
+    static EncodeUINT16(startIndex, targetIndex, moveFlag){
         // binary:   1111  101010  100101
         // Meaning:  flag  target  start
-        const start = start
-        const target = target << 6 
-        const flag = flag << 12
+        const start = startIndex
+        const target = targetIndex << 6 
+        const flag = moveFlag << 12
         
         return (start | target | flag)
     }
@@ -40,7 +40,7 @@ export class Move {
         return (move >> 12) & 0b1111
     }
 
-    static IsPromototion(move){
+    static IsPromotion(move){
         const flag = this.Flag(move)
         return (flag >> 3 == 1)
     }
