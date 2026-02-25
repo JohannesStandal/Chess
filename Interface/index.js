@@ -12,7 +12,7 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: true, //false betyr at AI speler
+    playAsWhite: false, //false betyr at AI speler
     playAsBlack: true, // ^ --||--
     playerTurn: false,
     active: false, 
@@ -78,13 +78,8 @@ window.board = board
 const engine = new Worker("./Engine.worker.js", {type: "module"})
 engine.onmessage = (e) =>{
     if (! gameData.active) return
-    const moveData = e.data.move
-    const move = new Move(
-        moveData.start,
-        moveData.target,
-        moveData.flag
-    )
-    console.log("engine move:", move)
+    const move = e.data.move
+    console.log("engine move:", Move.ToUCI(move))
     Make_Move_On_Board(move)
 }
 

@@ -1,10 +1,10 @@
 import { Engine } from "../Core/Engine/Engine.js";
-import { Move } from "../Core/Board/piece.js";
 
 const engine = new Engine(1000)
 
 self.onmessage = (e) => {
     const {type, fen} = e.data
+    console.log("lets go")
     
     if (type === "SEARCH"){
         engine.SetPosition(fen)
