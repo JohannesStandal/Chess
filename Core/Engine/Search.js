@@ -53,18 +53,19 @@ export class Search {
             return null
         }
         nodesSearched ++
-        //Generer lovlege trekk
+
+        // Save old hash
         const hash = this.board.zobrist.hash
     
-        // generer trekk
+        // Generate legal moves
         const UnsortedlegalMoves = this.board.GenerateLegalMoves()
         
-        //Ingen lovlege trekk, sjekk etter sjakkmatt / sjakk patt
+        // No legal moves means checkmate or stalemate
         if (UnsortedlegalMoves.length == 0){    
             //Checkmate
             if (this.board.InCheck(this.board.white_To_Move)){
                 const mateScore = -(checkMateScore - ply)
-                this.TT.AddPosition(hash, mateScore, depth, "EXACT")
+                this.TT.AddPosition(hash, mateScore, depth, "EXACT", null)
                 return mateScore
     
             }
@@ -81,20 +82,25 @@ export class Search {
         }
 
         //transposition table
+        let TTbestMove = null
+        let bestMoveThisIteration = null
+
         if (this.TT.IsValidTransposition(hash, depth) && 
             depth != this.currentDepth){
-
+            
             const entry = this.TT.table.get(hash)
+            TTbestMove = entry.bestMove
+
             // TT position is accurate
             if (entry.flag == "EXACT"){
                 // Scale checmates to match depth
                 // a M2 found at 3ply -> M3
                 if (mateTreshold < entry.score){
-                    return entry.score + ply
-                }
-                // same but when losing
-                else if (-mateTreshold > entry.score){
                     return entry.score - ply
+                }
+                // same concept but when losing
+                else if (-mateTreshold > entry.score){
+                    return entry.score + ply
                 }
                 // default
                 return entry.score
@@ -119,10 +125,14 @@ export class Search {
         } 
         
         // sorter trekk etter kor bra du GJETTAR at trekket er
-        let moves = MoveOrder(this.board, UnsortedlegalMoves)
+        let moves = MoveOrder(this.board, UnsortedlegalMoves, TTbestMove)
     
         //Sørger for at det beste trekket vi har funne så langt blir utforska først
-        if (depth == this.currentDepth && this.bestMove != null) moves.unshift(this.bestMove)
+        if (depth == this.currentDepth && this.bestMove != null){
+            moves = moves.filter(move => move != this.bestMove)
+            moves.unshift(this.bestMove)
+        }
+            
         
             
         //Lagre beste poengsum og beste trekk
@@ -143,6 +153,7 @@ export class Search {
             //beste trekk og poengsum
             if (alpha < score){
                 alpha = score
+                bestMoveThisIteration = move
                 if (depth == this.currentDepth){
                     this.bestMove = move
                 }
@@ -150,7 +161,13 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= score){
-                this.TT.AddPosition(hash, score, depth, "LOWER")
+                let scoreToStore = alpha
+                if (scoreToStore > mateTreshold)
+                    scoreToStore += ply
+                else if (scoreToStore < -mateTreshold)
+                    scoreToStore -= ply
+                this.TT.AddPosition(hash, scoreToStore, depth, "LOWER", move)
+
                 return score    
             }
         }
@@ -159,8 +176,15 @@ export class Search {
         if (alpha <= originalAlpha) flag = "UPPER";
         else if (alpha >= beta) flag = "LOWER";
         else flag = "EXACT";
+
+        let scoreToStore = alpha
+
+        if (scoreToStore > mateTreshold)
+            scoreToStore += ply
+        else if (scoreToStore < -mateTreshold)
+            scoreToStore -= ply
     
-        this.TT.AddPosition(hash, alpha, depth, flag)
+        this.TT.AddPosition(hash, scoreToStore, depth, flag, bestMoveThisIteration)
     
         return alpha
     }
