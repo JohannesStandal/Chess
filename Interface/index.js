@@ -122,7 +122,7 @@ export function GameLoop(){
             engine.postMessage({
                 type: "SEARCH",
                 fen: board.Export_Fen(),
-                playedMoves: board.playedMoves,
+                repetitionTable: board.repetitionTable,
             })
         },300)
     }

@@ -111,8 +111,8 @@ export class Evaluation {
 
         const materialWeight = 1
         const positionWeight = 1
-        const mobilityWeight = 2
-        const kingWeight = 10
+        const mobilityWeight = 0
+        const kingWeight = 30
 
         // material
         score += this.countMaterial(board) * materialWeight

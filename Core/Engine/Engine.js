@@ -51,8 +51,8 @@ export class Engine {
         this.board.Load_Fen(fen)
     }
 
-    ImportMoveHistory(playedMoves){
-        this.board.playedMoves = playedMoves
+    ImportGameHistory(repetitionTable){
+        this.board.repetitionTable = repetitionTable
     }
 
     ThinkingTime(thinkingTime){

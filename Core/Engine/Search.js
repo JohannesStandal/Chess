@@ -3,12 +3,9 @@ import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiesenceSearch } from "./QuiesenceSearch.js"
 import { Move } from "../Board/move.js"
+import { checkMateScore, drawScore, mateTreshold, maxSearchDepth} from "../Constants/SearchConstants.js"
 
 // constants
-const maxSearchDepth = 24
-const checkMateScore = 100000
-const mateTreshold = checkMateScore - maxSearchDepth
-const drawScore = -1
 var nodesSearched;
 
 
@@ -26,6 +23,8 @@ export class Search {
         this.timeManager.Start()
         this.bestMove = null
 
+        console.log("EndgameWGH: ",  ChessHelper.CalculateEndgameWeight(this.board))
+
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){
             // tracking nodes too see improvement
@@ -34,7 +33,7 @@ export class Search {
             // search the position
             this.currentDepth = depth
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
-            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched)
+            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
             if (mateTreshold <= score){
                 console.log("Found forced checkmate at M" + Math.ceil(this.currentDepth / 2))
                 this.timeManager.Stop()
@@ -50,41 +49,22 @@ export class Search {
 
     Negamax(depth, ply, alpha, beta){
         if (this.timeManager.ExceededTimeLimit()){
-            return null
+            return undefined
         }
         nodesSearched ++
 
-        // Save old hash
-        const hash = this.board.zobrist.hash
-    
-        // Generate legal moves
-        const UnsortedlegalMoves = this.board.GenerateLegalMoves()
-        
-        // No legal moves means checkmate or stalemate
-        if (UnsortedlegalMoves.length == 0){    
-            //Checkmate
-            if (this.board.InCheck(this.board.white_To_Move)){
-                const mateScore = -(checkMateScore - ply)
-                this.TT.AddPosition(hash, mateScore, depth, "EXACT", null)
-                return mateScore
-    
-            }
-            
-            //Stalemate
-            this.TT.AddPosition(hash, drawScore, depth, "EXACT")
-            return drawScore
-        }
-    
         // check for threefold repetition
         if (ChessHelper.checkForRepetitions(this.board.repetitionTable)) {
-            //console.log("found threefold repetition in search")
+            console.log("found threefold repetition in search at ply: ", ply)
             return drawScore
         }
+
+        // Save old hash
+        const hash = this.board.zobrist.hash
 
         //transposition table
         let TTbestMove = null
-        let bestMoveThisIteration = null
-
+        
         if (this.TT.IsValidTransposition(hash, depth) && 
             depth != this.currentDepth){
             
@@ -117,28 +97,51 @@ export class Search {
                 return entry.score
             }
         }
-    
-        
+
         // Start quiesence search at leaf nodes
         if (depth == 0){
-            return QuiesenceSearch(this.board, this.timeManager, alpha, beta)
+            return QuiesenceSearch(this.board, this.timeManager, ply + 1, alpha, beta)
         } 
+
+        // Generate legal moves
+        const UnsortedlegalMoves = this.board.GenerateLegalMoves()
         
-        // sorter trekk etter kor bra du GJETTAR at trekket er
+        // Checkmate or stalemate detection
+        if (UnsortedlegalMoves.length == 0){    
+            //Checkmate
+            if (this.board.InCheck(this.board.white_To_Move)){
+                const mateScore = -(checkMateScore - ply)
+                this.TT.AddPosition(hash, mateScore, depth, "EXACT", null)
+                return mateScore
+    
+            }
+            
+            //Stalemate
+            this.TT.AddPosition(hash, drawScore, depth, "EXACT")
+            return drawScore
+        }
+        
+
+        // Sort moves based on how good they are predicted to be
+        // Make sure the TTbestMove always comes first
         let moves = MoveOrder(this.board, UnsortedlegalMoves, TTbestMove)
     
-        //Sørger for at det beste trekket vi har funne så langt blir utforska først
+        // Just double check that if we are at root depth, the previous best move
+        // Will be first in the list. In the case where the bestMove == TTbestMove
+        // There will be no change
         if (depth == this.currentDepth && this.bestMove != null){
             moves = moves.filter(move => move != this.bestMove)
             moves.unshift(this.bestMove)
         }
-            
         
             
-        //Lagre beste poengsum og beste trekk
+        // Store the original lowerbound value before starting the search
+        // This will be used later when storing results in the transposition table
         const originalAlpha = alpha
     
         // Iterate over every legal move
+        let bestMoveThisIteration = null
+
         for (let move of moves){
             
             // Evaluate future position
@@ -146,14 +149,18 @@ export class Search {
             const score = - this.Negamax(depth - 1, ply + 1, -beta, -alpha)
             this.board.Unmake_Move(move)
             
-            //exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return null
+            // exit point for iterative deepening
+            if (this.timeManager.cancelSearch) return undefined
             
             //Om poengsummen er betre enn noko som er funne så langt så kan du lagre
             //beste trekk og poengsum
+
+            // If the best possible outcome exceeds precious search results, overwrite
+            // the best move and the best score in this position
             if (alpha < score){
                 alpha = score
                 bestMoveThisIteration = move
+                // Keep track of the best move from the root position as well
                 if (depth == this.currentDepth){
                     this.bestMove = move
                 }
@@ -162,23 +169,29 @@ export class Search {
             // lowerbound fail high node
             if (beta <= score){
                 let scoreToStore = alpha
+                // adjust checkmate scores to our depth
+                // when storing in transposition table
                 if (scoreToStore > mateTreshold)
                     scoreToStore += ply
                 else if (scoreToStore < -mateTreshold)
                     scoreToStore -= ply
+
                 this.TT.AddPosition(hash, scoreToStore, depth, "LOWER", move)
 
                 return score    
             }
         }
         
+        // Store final result in Transposition Table
         let flag = ""
         if (alpha <= originalAlpha) flag = "UPPER";
         else if (alpha >= beta) flag = "LOWER";
         else flag = "EXACT";
 
-        let scoreToStore = alpha
 
+        let scoreToStore = alpha
+        // adjust checkmate scores to our depth
+        // when storing in transposition table
         if (scoreToStore > mateTreshold)
             scoreToStore += ply
         else if (scoreToStore < -mateTreshold)

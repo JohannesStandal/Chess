@@ -3,13 +3,12 @@ import { Engine } from "../Core/Engine/Engine.js";
 const engine = new Engine(1000)
 
 self.onmessage = (e) => {
-    const {type, fen, playedMoves} = e.data
-    console.log(playedMoves)
+    const {type, fen, repetitionTable} = e.data
     console.log("lets go")
     
     if (type === "SEARCH"){
         engine.SetPosition(fen)
-        engine.ImportMoveHistory(playedMoves)
+        engine.ImportGameHistory(repetitionTable)
         const move = engine.Bestmove()
         self.postMessage({move})
     }

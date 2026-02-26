@@ -776,11 +776,12 @@ export class Board {
         return legalMoves
     } 
 
-    GenerateCaptures(){
+    GenerateTacticalMoves(){
+        // generates tactical moves like promotions or captures
         let captureMoves = []
         const legalMoves = this.GenerateLegalMoves()
         legalMoves.forEach(move =>{
-            if (Move.IsCapture(move)) captureMoves.push(move)
+            if (Move.IsCapture(move) || Move.IsPromotion(move)) captureMoves.push(move)
         })
         
         return captureMoves
