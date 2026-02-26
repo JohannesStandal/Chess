@@ -12,8 +12,8 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: false, //false betyr at AI speler
-    playAsBlack: true, // ^ --||--
+    playAsWhite: true, //false betyr at AI speler
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -122,13 +122,14 @@ export function GameLoop(){
             engine.postMessage({
                 type: "SEARCH",
                 fen: board.Export_Fen(),
+                playedMoves: board.playedMoves,
             })
         },300)
     }
 }
 
 //StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
+StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1")
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
