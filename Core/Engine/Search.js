@@ -1,7 +1,7 @@
 import { Transposition_Table } from "./Transposition_Table.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { MoveOrder } from "./MoveOrdering.js"
-import { QuiesenceSearch } from "./QuiesenceSearch.js"
+import { QuiescenceSearch } from "./QuiesenceSearch.js"
 import { Move } from "../Board/move.js"
 import { checkMateScore, drawScore, mateTreshold, maxSearchDepth} from "../Constants/SearchConstants.js"
 
@@ -35,7 +35,8 @@ export class Search {
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
             console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
             if (mateTreshold <= score){
-                console.log("Found forced checkmate at M" + Math.ceil(this.currentDepth / 2))
+                const mateDepth = checkMateScore - score
+                console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
                 this.timeManager.Stop()
             }
             // stop search if time limit is exceeded
@@ -55,7 +56,7 @@ export class Search {
 
         // check for threefold repetition
         if (ChessHelper.checkForRepetitions(this.board.repetitionTable)) {
-            console.log("found threefold repetition in search at ply: ", ply)
+            //console.log("found threefold repetition in search at ply: ", ply)
             return drawScore
         }
 
@@ -100,7 +101,7 @@ export class Search {
 
         // Start quiesence search at leaf nodes
         if (depth == 0){
-            return QuiesenceSearch(this.board, this.timeManager, ply + 1, alpha, beta)
+            return QuiescenceSearch(this.board, this.timeManager, ply + 1, alpha, beta)
         } 
 
         // Generate legal moves
