@@ -71,31 +71,42 @@ export class Search {
             
             const entry = this.TT.table.get(hash)
             TTbestMove = entry.bestMove
+            
+            // Scale checkmates to match depth
+            // a M2 found at 3ply -> M3
+            
+            // 5 -> 9995 m in 5 ply "10 total ply" -> 9990
+            // same pos
+            // 3 -> 9995 m in 5 ply " 8 total ply" -> 9992
+            
+            // 5 -> -9995 m in 5 ply "10 total ply" -> -9990
+            // same pos
+            // 3 -> -9995 m in 5 ply " 8 total ply" -> -9992
+            
+            // Positive checkmate -> subtract ply
+            let mutatedScore = entry.score
+
+            if (mateTreshold < entry.score){    
+                mutatedScore = entry.score - ply
+            }
+            else if (entry.score < -mateTreshold){
+                mutatedScore = entry.score + ply 
+            }
 
             // TT position is accurate
             if (entry.flag == "EXACT"){
-                // Scale checmates to match depth
-                // a M2 found at 3ply -> M3
-                if (mateTreshold < entry.score){
-                    return entry.score - ply
-                }
-                // same concept but when losing
-                else if (-mateTreshold > entry.score){
-                    return entry.score + ply
-                }
-                // default
-                return entry.score
+                return mutatedScore
             }
             // update upper or lower bound
             if (entry.flag == "UPPER"){
-                beta = Math.min(beta, entry.score)
+                beta = Math.min(beta, mutatedScore)
             }
             else if (entry.flag == "LOWER"){
-                alpha = Math.max(alpha, entry.score)
+                alpha = Math.max(alpha, mutatedScore)
             }
             // early cutoff
             if (alpha >= beta){
-                return entry.score
+                return mutatedScore
             }
         }
 
@@ -112,7 +123,7 @@ export class Search {
             //Checkmate
             if (this.board.InCheck(this.board.white_To_Move)){
                 const mateScore = -(checkMateScore - ply)
-                this.TT.AddPosition(hash, mateScore, depth, "EXACT", null)
+                this.TT.AddPosition(hash, -checkMateScore, depth, "EXACT", null)
                 return mateScore
     
             }
@@ -169,10 +180,17 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= score){
-                let scoreToStore = alpha
-                // adjust checkmate scores to our depth
-                // when storing in transposition table
-                if (scoreToStore > mateTreshold)
+                // 5: 9990 -> m in 10 ply -> 9995
+                // 
+                // 2: 9997 -> m in 3 ply -> 9999
+
+                // 5: -9990 -> m in 10 ply -> -9995
+                // 
+                // 2: -9997 -> m in 3 ply -> -9999
+
+                let scoreToStore = score
+                
+                if (mateTreshold < scoreToStore)
                     scoreToStore += ply
                 else if (scoreToStore < -mateTreshold)
                     scoreToStore -= ply
@@ -193,10 +211,11 @@ export class Search {
         let scoreToStore = alpha
         // adjust checkmate scores to our depth
         // when storing in transposition table
-        if (scoreToStore > mateTreshold)
+        if (mateTreshold < scoreToStore)
             scoreToStore += ply
         else if (scoreToStore < -mateTreshold)
             scoreToStore -= ply
+
     
         this.TT.AddPosition(hash, scoreToStore, depth, flag, bestMoveThisIteration)
     

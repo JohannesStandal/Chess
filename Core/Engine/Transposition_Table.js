@@ -8,7 +8,6 @@ export class Transposition_Table {
     }
 
     AddPosition(hash, score, depth, flag, bestMove){
-        return
         const entry = this.table.get(hash) 
         if (entry == undefined){
             // add position to the table
