@@ -40,6 +40,7 @@ export class Tests {
     }
 
     perft(depth){
+        this.board.playedMoves.length = 0
         // a debugger tool for locating the bugs in movegeneration
         // results can be compared with stockfish to find out wich moves lead to the wrong results
         let startTime = performance.now()

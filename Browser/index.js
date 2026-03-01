@@ -131,7 +131,7 @@ export function GameLoop(){
 }
 
 //StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ")
+StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
 /**
  * Positions:

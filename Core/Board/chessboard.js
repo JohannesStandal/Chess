@@ -786,6 +786,7 @@ export class Board {
                 const piece = this.square[start]
 
                 if (Piece.IsType(piece, Piece.king)) return true
+                if (Move.Flag(move) == Move.flags.epCapture) return true
                 
                 return (this.blockingSquares.includes(target))
             });
