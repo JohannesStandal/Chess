@@ -47,6 +47,8 @@ export class Tests {
         console.log(`Total nodes: ${nodes}. Finished in ${endTime-startTime}ms`)
     }
 
+    // initial movegeneration testsuites runs in roughly 10000ms
+    // lets improve it
     moveGeneration_full_suite(depth = 4){
         // A test for catching bugs in the movegeneration 
 
