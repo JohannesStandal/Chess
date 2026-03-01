@@ -62,18 +62,18 @@ export class ChessHelper {
     }
 
     static checkForRepetitions(repetetionTable){
-        var dict = {}
-        for (let value of repetetionTable){
-            if (value in dict){
-                dict[value] += 1
-                if (dict[value] == 3) return true
-            }
-            else {
-                dict[value] = 1
-            }
+        // we only need to check the most recent added hash
+        const copiedTable = repetetionTable
+        const hashToCheck = copiedTable.pop()
+
+        // count number of appearances
+        let counter = 1
+        for (const hash of copiedTable){
+            if (hash == hashToCheck) counter++
+            if (2 < counter) return true
         }
+
         return false
-        
     }
 
     static isInsufficientMaterial(board) {
