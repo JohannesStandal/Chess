@@ -19,13 +19,14 @@ export class Tests {
             this.board.Make_Move(move)
             sum += this.MoveGenerationCount(depth-1, log_moves)
             
-            if (log_moves && this.board.playedMoves.length == 1){
-                console.log(Move.ToUCI(move), sum)
-            }
             
             this.board.Unmake_Move(move)
         }
-
+        
+        if (log_moves && this.board.playedMoves.length == 1){
+            const move = this.board.playedMoves[0]
+            console.log(Move.ToUCI(move), sum)
+        }
 
         return sum
     }

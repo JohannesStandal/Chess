@@ -7,6 +7,7 @@ import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { AttackTables } from "../Constants/AttackTables.js"
+import { board } from "../../Browser/UI.js"
 
 export class Board {
     constructor(){
@@ -26,12 +27,10 @@ export class Board {
         this.zobrist = new zobrist_hashing()
         
         // Important data for generating legal moves
+        this.pinMask = new Array(64).fill(0)
         this.blockingSquares = []
         this.checkers = []
-        this.pinMask = new Array(64).fill(0)
         
-        this.friendlyKingSquare = 0
-        this.enemyKingSquare = 0 
     }
 
     Reset(){
@@ -377,7 +376,6 @@ export class Board {
                 const pieceOnTargetSquare = this.square[target]
                 blockingSquares.push(target)
                 
-                console.log(target, pieceOnTargetSquare)
                 // If the square is empty we continue
                 if (pieceOnTargetSquare == 0){
                     continue
@@ -387,12 +385,14 @@ export class Board {
                 // Enemy checker
                 else if (pieceOnTargetSquare == (Piece.queen | enemyColor) || 
                          pieceOnTargetSquare == (otherSlidingPiece | enemyColor)){
-                    this.checkers.push(target)
-                    this.blockingSquares = [...blockingSquares]
-                    console.log(offset)
-                    
+                        
+                    // if there is no pinned piece our king is in danger
+                    if (potentialPinnedPiece == null){
+                        this.blockingSquares = [...blockingSquares]
+                        this.checkers.push(target)
+                    }
                     // Add pinmask if there is a potentially pinned piece
-                    if (potentialPinnedPiece != null){
+                    else {
                         this.pinMask[potentialPinnedPiece] = pinType
                     }
                     break
@@ -441,22 +441,15 @@ export class Board {
         }
 
         // Check for potential attacking pawns
-        const offsets = (whiteAttacks) ? [-9, -7] : [7, 9]
+        const pawnAttacks = (whiteAttacks) ? 
+            AttackTables.blackPawn[squareIndex] :
+            AttackTables.whitePawn[squareIndex]  
+        
+        for (let i = 0; i < pawnAttacks.length; i++){
+            const attackIndex = pawnAttacks[i]
+            const piece = this.square[attackIndex]
 
-        for (let i = 0; i < 2; i++){
-            // relevant data
-            const offset = offsets[i]
-            const numSquaresToEdge = ChessHelper.numSquaresToEdge[squareIndex][i]
-            // Clamp to board edges
-            if (numSquaresToEdge == 0){
-                continue
-            }
-
-            // find piece on target square
-            const pieceOnTargetSquare = this.square[squareIndex + offset]
-
-            // check if it is an enemy pawn
-            if (pieceOnTargetSquare == (Piece.pawn | opponentColor)) return true
+            if (piece == (Piece.pawn | opponentColor)) return true
         }
 
 
@@ -510,19 +503,27 @@ export class Board {
     GenerateSlidingMoves(piece, start){
         let moves = []
 
-        //Definerer nokre variablar
+        // Get the piece type and position data
         let pieceType = piece & 0b111
         let data = ChessHelper.numSquaresToEdge[start]
 
         
         //directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
 
-        //Om brikka skal bevegast i rette linjer, tar den med desse retningane
+        // horizontal movement
         let startIndex = (pieceType == Piece.bishop) ? 4 : 0
-        //Om brikka skal bevegast i diagonale linjer, tar den med desse retningane
+        // diagonal movement
         let endIndex = (pieceType == Piece.rook) ? 4 : 8
 
         for (let i = startIndex; i < endIndex; i++){
+            
+            // Piece is pinned in this direction
+            const PinType = this.pinMask[start]
+            const PinTypeForThisDirection = Piece.pins[i]
+           
+            // Force the piece to move along the pin line
+            if (! (PinType == 0 || PinType == PinTypeForThisDirection)) continue
+
             let offset = Piece.directionOffsets[i]
             
             for (let n = 0; n < data[i]; n++){
@@ -550,6 +551,10 @@ export class Board {
     }
 
     GenerateKnightMoves(start){
+        // if pinned it cant move
+        const pin = this.pinMask[start]
+        if (pin != 0) return []
+
         let targetSquares = AttackTables.knight[start]
         let moves = []
 
@@ -576,105 +581,109 @@ export class Board {
 
     }
 
-    GeneratePawnMoves(start, GenerateAttackSquares = false){
+    GeneratePawnMoves(start){
         let moves = []
         //finner retning avhengig av farge 
         const pawnIsWhite = this.white_To_Move
 
+        // Parameters for black / white pawns
         const dir = (pawnIsWhite) ? 1 : -1
         const doublePush = (pawnIsWhite) ? (start < 16) : (47 < start)
+        const promotion = (pawnIsWhite) ? (47 < start) : (start < 16)
         
-       
-        for (let n = 0; n<2; n++){
-            //Treng ikkje å generer flytt framover dersom vi bare generer angrep
-            if (GenerateAttackSquares) break
+        const pinType = this.pinMask[start]
+        const canMoveForward = (pinType == Piece.pin_N_S || pinType == 0)
+        
+
+        for (let n = 1; n<3; n++){
+            // Constrain the piece to the pin
+            if (!canMoveForward) break
             
-            //vanleg rett fram + dobbel push på start
-            const targetSquare = start + 8 * (n+1) * dir
-            if (this.square[targetSquare] != 0){
+            // Double push at start index
+            const target = start + 8 * n * dir
+            if (this.square[target] != 0){
                 break
             }
-            const flag = (n == 1) ? Move.flags.doublePush : Move.flags.quietMove
-            //console.log(new Move(start, targetSquare, flag))
-            const move = Move.EncodeUINT16(start, targetSquare, flag)
-            moves.push(move)
+            const flag = (n == 2) ? Move.flags.doublePush : Move.flags.quietMove
+            
+            if (promotion){
+                moves.push(Move.EncodeUINT16(start, target, Move.flags.bishopPromotion ))
+                moves.push(Move.EncodeUINT16(start, target, Move.flags.knightPromotion ))
+                moves.push(Move.EncodeUINT16(start, target, Move.flags.rookPromotion   ))
+                moves.push(Move.EncodeUINT16(start, target, Move.flags.queenPromotion  ))
+            }
+            else {
+                moves.push(Move.EncodeUINT16(start, target, flag))
+            }
+
             if (! doublePush) break
         }
         
-        //Generer angrep inkludert en passant
-        const offset = pawnIsWhite ? 0 : 1
+        // Generate Attacks
+        const pawnAttacks = (pawnIsWhite) ? AttackTables.whitePawn[start] : AttackTables.blackPawn[start]
         
-        for (let i = 0; i<2; i++){
-            if (ChessHelper.numSquaresToEdge[start][Math.abs(offset - i)] >= 1){
-                
-                const targetSquare = start + (7 + 2*i) * dir
-                const targetedPiece = this.square[targetSquare]
-                
-                //Sjekker om den angriper ei fiendtleg brikke (gitt at vi filtrer ulovlige angrep)
-                //blir overstyrt dersom vi angriper angrep => or GenerateAttackSquares
-                const enemyUnderAttack = Piece.CheckPieceColor(targetedPiece, !pawnIsWhite) | GenerateAttackSquares
+        // en passant target
+        let epTarget = null
+        if (this.enPassantSquare != null){
+            epTarget = this.enPassantSquare + 8 * dir
+        }
+        
+        for (const target of pawnAttacks){
+            // limit captures to diagonal pins
+            const offset = Math.abs(target - start)
+            if (pinType != 0){
+                if (offset == 7 && pinType != Piece.pin_NW_SE) continue 
+                if (offset == 9 && pinType != Piece.pin_NE_SW) continue
+            }
 
-                //Sjekker etter en passant trekk
-                if (this.enPassantSquare != null){
-                    const epTarget = this.enPassantSquare + 8 * dir
-                    
-                    if (targetSquare == epTarget){
-                        const move = Move.EncodeUINT16(start, targetSquare, Move.flags.epCapture) 
-                        moves.push(move)
-                    }
-                    
+            // En passant
+            if (target == epTarget){
+                const move = Move.EncodeUINT16(start, target, Move.flags.epCapture)
+                moves.push(move)
+            }
+            
+            // Check if there is an enemy piece on the capture square
+            const targetPiece = this.square[target]
+            if (Piece.CheckPieceColor(targetPiece, !this.white_To_Move)){
+                if (promotion){
+                    moves.push(Move.EncodeUINT16(start, target, Move.flags.bishopPromoCapture))
+                    moves.push(Move.EncodeUINT16(start, target, Move.flags.knightPromoCapture))
+                    moves.push(Move.EncodeUINT16(start, target, Move.flags.rookPromoCapture))
+                    moves.push(Move.EncodeUINT16(start, target, Move.flags.queenPromoCapture))
                 }
-                if (enemyUnderAttack){
-                    const move = Move.EncodeUINT16(start, targetSquare, Move.flags.captures)
-                    moves.push(move)
+                else {
+                    moves.push(Move.EncodeUINT16(start, target, Move.flags.captures))
                 }
             }
         }
 
-        //Forfremming
-        let filteredMoves = []
-        moves.forEach(move=>{
-            const start = Move.Start(move)
-            const target = Move.Target(move)
-
-            //Bonde har nådd siste rekke
-            const promotion = (pawnIsWhite) ? (55 < target) : (target < 8)
-            if (promotion){
-                const capture = Move.IsCapture(move) 
-                const captureFlag = capture ? 0b100 : 0b000
-
-                //1|0|00: tredje siffer refererer til capture
-                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.bishopPromotion | captureFlag))
-                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.knightPromotion | captureFlag))
-                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.rookPromotion   | captureFlag))
-                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.queenPromotion  | captureFlag))
-            }
-            else{
-                filteredMoves.push(move)
-            }
-        })
-        return filteredMoves
+        return moves
     }
 
     GenerateKingMoves(start){
         let moves = []
-        //Vanlege trekk
-        AttackTables.king[start].forEach(targetIndex => {
-            const targetPiece = this.square[targetIndex]
-            //Om ruta er tom er trekket eit quiet move
-            if (targetPiece == 0){
-                const move = Move.EncodeUINT16(start, targetIndex, Move.flags.quietMove)
-                moves.push(move)
-            } 
-            //Om ruta har ei fientleg brikke er trekket ulovleg
-            else if (Piece.CheckPieceColor(targetPiece, !this.white_To_Move)){
-                const move = Move.EncodeUINT16(start, targetIndex, Move.flags.captures)
-                moves.push(move)
+
+        // remove king from the board
+        const king = this.square[start]
+        this.square[start] = 0
+
+        const kingAttacks = AttackTables.king[start]
+        for (let target of kingAttacks){
+            // King shouldnt wander into danger
+            if (this.squareUnderAttack(target, !this.white_To_Move)) continue
+
+            const pieceOnTargetSquare = this.square[target]
+            if (pieceOnTargetSquare == 0){
+                moves.push(Move.EncodeUINT16(start, target, Move.flags.quietMove))
             }
-            //Ellers er det ei vennleg brikke på ruta og vi treng ikkje å gjere noko
-        })
+            if (Piece.CheckPieceColor(pieceOnTargetSquare, !this.white_To_Move)){
+                moves.push(Move.EncodeUINT16(start, target, Move.flags.captures))
+            }
+        }
+        // Add king back
+        this.square[start] = king
         
-       // castle rights
+        // castle rights
         const castleRights = (this.white_To_Move) ? this.castlingRights >> 2 : this.castlingRights
         const myKingSquare = (this.white_To_Move) ? 4 : 60
 
@@ -727,69 +736,84 @@ export class Board {
         return moves
     }
 
-    GeneratePseudoLegalMoves(GenerateAttackSquares = false){
-        //Lager moves for posisjonen på brettet
+    GenerateLegalMoves(){
+        // returns a list of the legal moves for the given position
         let moves = []
-        for (let i = 0; i<64; i++){
-            let piece = this.square[i]
 
+        // Calculate pins, checkers and blocking squares
+        this.computeKingSafety()
+
+        // In a double check scenario you can only move the king
+        if (1 < this.checkers.length){
+            const kings = ChessHelper.LocateKings(this)
+            const KingSquare = (this.white_To_Move) ? kings[0] : kings[1]
+            return this.GenerateKingMoves(KingSquare)
+        }
+
+        // Generate normal moves
+        for (let squareIndex = 0; squareIndex < 64; squareIndex++){
+            const piece = this.square[squareIndex]
             if (piece == 0) continue
+            if (Piece.CheckPieceColor(piece, !this.white_To_Move)) continue
+            
+            // King Moves
+            if (Piece.IsType(piece, Piece.king)){
+                moves.push(...this.GenerateKingMoves(squareIndex))
+            }
 
-            //Sjekker om brikka er ei vennleg brikke
-            if (Piece.CheckPieceColor(piece, this.white_To_Move)){
-                if (Piece.IsSlidingPiece(piece)){
-                    //console.log("Sliding piece", i)
-                    moves.push(...this.GenerateSlidingMoves(piece, i))
-                }
-               
-                if ((piece & 0b111) == Piece.knight){
-                    //console.log("knight", i)
-                    moves.push(...this.GenerateKnightMoves(i))
-                }
+            // Pawn Moves
+            if (Piece.IsType(piece, Piece.pawn)){
+                moves.push(...this.GeneratePawnMoves(squareIndex))
+            }
 
-                if ((piece & 0b111) == Piece.pawn){
-                    //console.log("pawn", i)
-                    moves.push(...this.GeneratePawnMoves(i, GenerateAttackSquares))
-                }
+            // Knight Moves
+            if (Piece.IsType(piece, Piece.knight)){
+                moves.push(...this.GenerateKnightMoves(squareIndex))
+            }
 
-                if ((piece & 0b111) == Piece.king){
-                    //console.log("pawn", i)
-                    moves.push(...this.GenerateKingMoves(i))
-                }
+            // Sliding
+            if (Piece.IsSlidingPiece(piece)){
+                moves.push(...this.GenerateSlidingMoves(piece, squareIndex))
             }
 
         }
 
-        return moves
-    }
+        // Make sure that moves resolve any exisitng checks
+        if (this.checkers.length == 1){
+            moves = moves.filter(move => {
+                const start = Move.Start(move)
+                const target = Move.Target(move)
+                const piece = this.square[start]
 
-    GenerateLegalMoves(){
-        // returns a list of the legal moves for the given position
-        let legalMoves = []
+                if (Piece.IsType(piece, Piece.king)) return true
+                
+                return (this.blockingSquares.includes(target))
+            });
+        }
 
-        //brikkenummer til vennleg konge
-        
-        
-        //genererer og itererer gjennom alle pseudolovlige trekk
-        const pseudoLegalMoves = this.GeneratePseudoLegalMoves()
-        //return pseudoLegalMoves
-        
-        pseudoLegalMoves.forEach(moveToCheck => {
+        // If there is no en passant move everything should be good
+        if (this.enPassantSquare == null) return moves
 
-            const colorToCheck = this.white_To_Move
-            this.Make_Move(moveToCheck)
-            
-            // if not in check the move is legal
-            if (! this.InCheck(colorToCheck)){
-                legalMoves.push(moveToCheck)
+        // Filter ep moves
+        const filteredMoves = []
+        const colorToCheck = this.white_To_Move
+        for (let move of moves){
+            if (true && Move.Flag(move) == Move.flags.epCapture){
+                // Filter: Make -> detect check -> Unmake move
+                
+                // if not in check the move is legal
+                this.Make_Move(move)
+                if (! this.InCheck(colorToCheck)){
+                    filteredMoves.push(move)
+                }
+                this.Unmake_Move(move)
             }
-
-            //returner til opprinnelig posisjon
-            this.Unmake_Move(moveToCheck)
-            
-        })
+            else {
+                filteredMoves.push(move)
+            }
+        }
         
-        return legalMoves
+        return filteredMoves
     } 
 
     GenerateTacticalMoves(){
