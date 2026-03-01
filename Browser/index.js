@@ -88,7 +88,7 @@ engine.onmessage = (e) =>{
 export function GameLoop(){
 
     const gameOver = (board.GenerateLegalMoves().length == 0)
-    const threefoldRepetition =false // ChessHelper.checkForRepetitions(board.repetitionTable)
+    const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
     const check = board.InCheck(board.white_To_Move)
 
     if (gameOver){

@@ -72,7 +72,7 @@ export class ChessHelper {
             if (hash == hashToCheck) counter++
             if (2 < counter) return true
         }
-
+        
         return false
     }
 
