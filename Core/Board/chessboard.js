@@ -6,6 +6,7 @@ import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
+import { AttackTables } from "../Constants/AttackTables.js"
 
 export class Board {
     constructor(){
@@ -26,7 +27,7 @@ export class Board {
         
         // Important data for generating legal moves
         this.blockingSquares = []
-        this.kingAttackers = []
+        this.checkers = []
         this.pinMask = new Array(64).fill(0)
         
         this.friendlyKingSquare = 0
@@ -161,8 +162,8 @@ export class Board {
         this.zobrist.incrementHash(move, this)
         
         // update castling rights
-        this.castlingRights &= Piece.updateCastleRights[start] 
-        this.castlingRights &= Piece.updateCastleRights[target]
+        this.castlingRights &= ChessHelper.updateCastleRights[start] 
+        this.castlingRights &= ChessHelper.updateCastleRights[target]
 
         // en-passant capture
         if (flag == Move.flags.epCapture){
@@ -283,7 +284,7 @@ export class Board {
         this.repetitionTable.pop()
     }
 
-    dontknowgoodname(){
+    computeKingSafety(){
         
         /**
          *  This is a complex function to; locate kings, detect pinned pieces, find checks and doublecheks, as well as keep track of ways to resolve checks 
@@ -297,104 +298,119 @@ export class Board {
          *  - If the kingAttackers array has two elements, then there is a double check. In this case we only care about the king moves.
          * 
          */
-        this.pinMask = new Array(64).fill(0)
-        this.kingAttackers = []
+
+        // Clear arrays
+        this.pinMask.fill(0)
+        this.checkers.length = 0
+        this.blockingSquares.length = 0
         
         // the squares you can move to in order to resolve a check (either by blocking path or capturing the attacker)
         // This will be countered by a double check in wich we only generate king moves
-        this.blockingSquares = [] 
 
         // update king locations
         let kings = ChessHelper.LocateKings(this)
-        this.friendlyKingSquare = kings[0]
-        this.enemyKingSquare = kings[1]
+        const friendlyKingSquare = (this.white_To_Move) ? kings[0] : kings[1]
+        
+        const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
+
+         
 
         // The algoritm is going to generate moves from the friendly king square. If it finds a hostile piece that attacks it
         // it will add them to the kingAttackers array.
         
         // Generate knight moves from friendly king square. Check if any knight is attacking the king
-        const potentialKnightAttackers = Piece.knightAttacks[this.friendlyKingSquare]
-        for (let startSquare of potentialKnightAttackers){
-            let piece = this.square[startSquare]
-            if (
-                Piece.CheckPieceColor(piece, !this.white_To_Move) &&
-                Piece.IsType(piece, Piece.knight)
-            ){
-                this.kingAttackers.push(startSquare)
+        const KnightAttackers = AttackTables.knight[friendlyKingSquare]
+        for (let startSquare of KnightAttackers){
+            const piece = this.square[startSquare]
+            if (piece == (Piece.knight | enemyColor) ){
+                this.checkers.push(startSquare)
                 this.blockingSquares.push(startSquare)
             }
         }
 
         // Do the same for attacking pawns
-        const offsets = (this.white_To_Move) ? [7, 9] : [-7, 9]
-        
-        for (let offset of offsets){
-            const target = this.friendlyKingSquare + offset
-            const piece = this.square[target]
-            if (Piece.IsType(piece, Piece.pawn) && ! Piece.CheckPieceColor(piece, this.white_To_Move)){
-                this.kingAttackers.push(target)
-                this.blockingSquares.push(target)
+        const pawnAttackers = (this.white_To_Move) ? 
+            AttackTables.whitePawn[friendlyKingSquare] : 
+            AttackTables.blackPawn[friendlyKingSquare]
+
+        for (let startSquare of pawnAttackers){
+            const piece = this.square[startSquare]
+            if (piece == (Piece.pawn | enemyColor) ){
+                this.checkers.push(startSquare)
+                this.blockingSquares.push(startSquare)
             }
         }
 
-        // Generate sliding moves from the friendly king square. If it finds a friendly piece it is marked as a potenially pinned piece. If it finds another friendly piece
-        // there is no pin in this direction. However if there is a hostile piece that can slide in the given direction, the potential pinned piece will be pinned in the current direction
-        // If it finds a hostile piece with the ability to slide in the given direction it is added to the kingAttackers array. It also lists all the squares between itself and the king
-        // as valid targetsquares for blocking the check or capturing the piece
+        // Generate sliding moves from the friendly king square. If it finds a friendly piece 
+        // it is marked as a potenially pinned piece. If the next piece it finds is a valid sliding 
+        // piece for the given direction, we confirm that the piece is pinned.
+
+        // If the first piece we find is a valid attacker, we mark it as a checker. We store 
+        // the squareIndexes along the path of the sliding piece as blocking squares. In order to resolve
+        // the check we must move a non king piece to one of the blocker squares
         
-        //Definerer nokre variablar
-        let data = Piece.numSquaresToEdge[this.friendlyKingSquare]
+        
+        let data = ChessHelper.numSquaresToEdge[friendlyKingSquare]
+        const blockingSquares = []
+        let potentialPinnedPiece;
         
         //directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
         //  0 -> 3: Rette trekk
         //  4 -> 7: Diagonale trekk
 
         for (let i = 0; i < 8; i++){
+            // Double check means there are only king moves and no need to compute pins
+            if (2 == this.checkers.length) return
+            
+            // Valid sliding piece type
+            const otherSlidingPiece = (i < 4) ? Piece.rook : Piece.bishop
+            
             const offset = Piece.directionOffsets[i]
             const pinType = Piece.pins[i]
             
-            let potentialPinnedPiece = null
-            let blockingSquares = []
+            blockingSquares.length = 0
+            potentialPinnedPiece = null
 
             for (let n = 0; n < data[i]; n++){
-                const target = this.friendlyKingSquare + offset * (n+1)
+                // Move along path
+                const target = friendlyKingSquare + offset * (n+1)
                 const pieceOnTargetSquare = this.square[target]
-                
                 blockingSquares.push(target)
                 
-                //Om brikka er vennleg lagrar vi ruta som ein potensiell pin
-                if (Piece.CheckPieceColor(pieceOnTargetSquare, this.white_To_Move)){
-                    if (potentialPinnedPiece != null) break
-                    potentialPinnedPiece = target
+                console.log(target, pieceOnTargetSquare)
+                // If the square is empty we continue
+                if (pieceOnTargetSquare == 0){
+                    continue
                 }
 
-                //Dersom brikka er fientleg må ein sjekke om den kan bevege seg i same retning
-                if (Piece.CheckPieceColor(pieceOnTargetSquare, !this.white_To_Move)){
-
-                    const isQueen  = Piece.IsType(pieceOnTargetSquare, Piece.queen)
-                    const isBishop = Piece.IsType(pieceOnTargetSquare, Piece.bishop)
-                    const isRook   = Piece.IsType(pieceOnTargetSquare, Piece.rook)
-
-                    // vi sjekker etter eit rett trekk
-                    if ((i < 4) && (isQueen || isRook)){
-                        if (potentialPinnedPiece != null) this.pinMask[potentialPinnedPiece] = pinType
-                        else {
-                            // Kongen er i sjakk på grunn av denne angriparen
-                            this.kingAttackers.push(target)
-                            this.blockingSquares = blockingSquares
-                        }
-                    } 
-                    else if ((4 <= i) && (isQueen || isBishop)){
-                        if (potentialPinnedPiece != null) this.pinMask[potentialPinnedPiece] = pinType
-                        else {
-                            // Kongen er i sjakk på grunn av denne angriparen
-                            this.kingAttackers.push(target)
-                            this.blockingSquares = blockingSquares
-                        }
+               
+                // Enemy checker
+                else if (pieceOnTargetSquare == (Piece.queen | enemyColor) || 
+                         pieceOnTargetSquare == (otherSlidingPiece | enemyColor)){
+                    this.checkers.push(target)
+                    this.blockingSquares = [...blockingSquares]
+                    console.log(offset)
+                    
+                    // Add pinmask if there is a potentially pinned piece
+                    if (potentialPinnedPiece != null){
+                        this.pinMask[potentialPinnedPiece] = pinType
                     }
+                    break
                 }
-                
-                 
+
+                else {
+                    // Other Enemy piece
+                    if ((pieceOnTargetSquare & 0b11000) == enemyColor){
+                        break
+                    }
+                    // Friendly piece
+                    else {
+                        if (potentialPinnedPiece != null){
+                            break
+                        }
+                        potentialPinnedPiece = target
+                    }
+                } 
             }
         }
     }
@@ -404,7 +420,7 @@ export class Board {
         const opponentColor = (whiteAttacks) ? Piece.white : Piece.black 
         
         // Check for potential attacking knights
-        const knightAttacks = Piece.knightAttacks[squareIndex]
+        const knightAttacks = AttackTables.knight[squareIndex]
         for (let i = 0; i < knightAttacks.length; i++){
             // Find every possible knight attacker
             const attackIndex = knightAttacks[i]
@@ -416,7 +432,7 @@ export class Board {
         }
 
         // check for potential attacking king
-        const kingAttacks = Piece.kingAttacks[squareIndex]
+        const kingAttacks = AttackTables.king[squareIndex]
         for (let i = 0; i < kingAttacks.length; i++){
             const attackIndex = kingAttacks[i]
             const piece = this.square[attackIndex]
@@ -430,7 +446,7 @@ export class Board {
         for (let i = 0; i < 2; i++){
             // relevant data
             const offset = offsets[i]
-            const numSquaresToEdge = Piece.numSquaresToEdge[squareIndex][i]
+            const numSquaresToEdge = ChessHelper.numSquaresToEdge[squareIndex][i]
             // Clamp to board edges
             if (numSquaresToEdge == 0){
                 continue
@@ -448,7 +464,7 @@ export class Board {
         for (let i = 0; i < 8; i++){
 
             const offset = Piece.directionOffsets[i]
-            const numSquaresToEdge = Piece.numSquaresToEdge[squareIndex][i]
+            const numSquaresToEdge = ChessHelper.numSquaresToEdge[squareIndex][i]
             const slidingPiece = (i < 4) ? (Piece.rook | opponentColor) : (Piece.bishop | opponentColor)
 
             for (let n = 0; n < numSquaresToEdge; n++){
@@ -496,7 +512,7 @@ export class Board {
 
         //Definerer nokre variablar
         let pieceType = piece & 0b111
-        let data = Piece.numSquaresToEdge[start]
+        let data = ChessHelper.numSquaresToEdge[start]
 
         
         //directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
@@ -534,7 +550,7 @@ export class Board {
     }
 
     GenerateKnightMoves(start){
-        let targetSquares = Piece.knightAttacks[start]
+        let targetSquares = AttackTables.knight[start]
         let moves = []
 
         targetSquares.forEach(targetSquare =>{
@@ -589,7 +605,7 @@ export class Board {
         const offset = pawnIsWhite ? 0 : 1
         
         for (let i = 0; i<2; i++){
-            if (Piece.numSquaresToEdge[start][Math.abs(offset - i)] >= 1){
+            if (ChessHelper.numSquaresToEdge[start][Math.abs(offset - i)] >= 1){
                 
                 const targetSquare = start + (7 + 2*i) * dir
                 const targetedPiece = this.square[targetSquare]
@@ -643,7 +659,7 @@ export class Board {
     GenerateKingMoves(start){
         let moves = []
         //Vanlege trekk
-        Piece.kingAttacks[start].forEach(targetIndex => {
+        AttackTables.king[start].forEach(targetIndex => {
             const targetPiece = this.square[targetIndex]
             //Om ruta er tom er trekket eit quiet move
             if (targetPiece == 0){
