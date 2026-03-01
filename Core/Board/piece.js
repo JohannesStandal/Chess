@@ -16,10 +16,10 @@ export class Piece {
     //Brikkeverdi for evaluering
     static pieceValues = [
         0,
-        1,
+        20000,
         100,
-        300,
-        300,
+        320,
+        330,
         500,
         900,
     ]
