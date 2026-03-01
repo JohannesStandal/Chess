@@ -18,3 +18,10 @@ esbuild.build({
     'stream'
   ],
 }).catch(() => process.exit(1));
+
+/**
+ * Commands for building the engine.exe file.
+ * 
+ * 1: node Builder/build.js
+ * 2: pkg Builder/dist/engine.cjs --targets node18-win-x64 --output Builder/Builds/PrebenV2.exe
+ */

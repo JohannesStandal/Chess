@@ -9,13 +9,11 @@ import { Board } from "../Core/Board/chessboard.js"
 
 // Testsuite availability
 import { Tests } from "../Tests/Tests.js"
-import { AttackTables } from "../Core/Constants/AttackTables.js"
-
 
 export const board = new Board()
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: true, // ^ --||--
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -79,11 +77,16 @@ window.board = board
 
 const engine = new Worker("./Engine.worker.js", {type: "module"})
 engine.onmessage = (e) =>{
-    if (! gameData.active) return
-    const move = e.data.move
-    console.log("engine move:", Move.ToUCI(move))
-    Make_Move_On_Board(move)
-}
+        if (! gameData.active) return
+        const move = e.data.move
+        console.log("engine move:", Move.ToUCI(move))
+        Make_Move_On_Board(move)
+    }
+window.engine = engine
+
+
+
+
 
 export function GameLoop(){
 
@@ -131,8 +134,10 @@ export function GameLoop(){
 }
 
 //StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
-
+//StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
+setTimeout(()=>{
+    StartGame()
+},5000)
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
