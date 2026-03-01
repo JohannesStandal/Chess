@@ -1,6 +1,6 @@
 import { Piece } from "../Board/piece.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
-
+import { Move } from "../Board/move.js"
 export class Evaluation {
     
     static mirroredBoard = new Array(64)
@@ -111,8 +111,8 @@ export class Evaluation {
 
         const materialWeight = 1
         const positionWeight = 1
-        const mobilityWeight = 2
-        const kingWeight = 10
+        const mobilityWeight = 0
+        const kingWeight = 30
 
         // material
         score += this.countMaterial(board) * materialWeight
@@ -191,12 +191,12 @@ export class Evaluation {
         }
 
         // friendly king
-        const friendlyKingRank = ChessHelper.Rank(friendlyKingSquare)
-        const friendlyKingFile = ChessHelper.File(friendlyKingSquare)
+        const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare)
+        const friendlyKingFile = ChessHelper.FileIndex(friendlyKingSquare)
        
         // rekn ut avstand til midthen for fiendtleg konge
-        const enemyKingRank = ChessHelper.Rank(enemyKingSquare)
-        const enemyKingFile = ChessHelper.File(enemyKingSquare)
+        const enemyKingRank = ChessHelper.RankIndex(enemyKingSquare)
+        const enemyKingFile = ChessHelper.FileIndex(enemyKingSquare)
 
         // oppfordre til å få fiendtlig konge til hjørne av brettet
         const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5)
@@ -220,26 +220,28 @@ export class Evaluation {
     // Moves
     static Move(move, board){
         let score = 0
-        score += this.MVV_LVA_ordering(move, board)
-        score += this.PieceSquareTables(move, board)
+        const start = Move.Start(move)
+        const target = Move.Target(move) 
+        score += this.MVV_LVA_ordering(start, target, board)
+        score += this.PieceSquareTables(start, target, board)
         return score
     }
 
-    static MVV_LVA_ordering(move, board){
+    static MVV_LVA_ordering(start, target, board){
     //Most valuable victim - Least valuable attacker 
     //Prioritises moves where a low value piece captures a high value piece
-    let pieceTypeMoved = board.square[move.start] & 0b0111 
-    let pieceTypeAttacked = board.square[move.target] & 0b0111
+    let pieceTypeMoved = board.square[start] & 0b0111 
+    let pieceTypeAttacked = board.square[target] & 0b0111
 
     return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
     }
 
-    static PieceSquareTables(move, board){
-        const piece = board.square[move.start]
+    static PieceSquareTables(start, target, board){
+        const piece = board.square[start]
         const pieceType =  piece & 0b00111
         
-        const startIndex = (Piece.CheckPieceColor(piece, true)) ? move.start : Evaluation.mirroredBoard[move.start]
-        const targetIndex = (Piece.CheckPieceColor(piece, true)) ? move.target : Evaluation.mirroredBoard[move.target]
+        const startIndex = (Piece.CheckPieceColor(piece, true)) ? start : Evaluation.mirroredBoard[start]
+        const targetIndex = (Piece.CheckPieceColor(piece, true)) ? target : Evaluation.mirroredBoard[target]
 
         const bonusOld = Evaluation.mapFromPieceType[pieceType][startIndex]
         const bonusNew = Evaluation.mapFromPieceType[pieceType][targetIndex]

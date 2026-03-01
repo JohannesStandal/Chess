@@ -4,7 +4,8 @@
 
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { zobrist_hashing} from "./zobrist_hashing.js"
-import { Piece, Move } from "./piece.js"
+import { Piece} from "./piece.js"
+import { Move } from "./move.js"
 
 export class Board {
     constructor(){
@@ -140,8 +141,14 @@ export class Board {
         return fen
     }
     
-    Make_Move(move){  
-        let capturedPiece = this.square[move.target]
+    Make_Move(move){
+        // decode move
+        const start = Move.Start(move)
+        const target = Move.Target(move)
+        const flag = Move.Flag(move)
+
+
+        let capturedPiece = this.square[target]
         // lagrer spillhistorikk
         this.stack.push({
             // Posisjons info
@@ -154,50 +161,52 @@ export class Board {
         this.zobrist.incrementHash(move, this)
         
         // update castling rights
-        this.castlingRights &= Piece.updateCastleRights[move.start] 
-        this.castlingRights &= Piece.updateCastleRights[move.target]
+        this.castlingRights &= Piece.updateCastleRights[start] 
+        this.castlingRights &= Piece.updateCastleRights[target]
 
         // en-passant capture
-        if (move.flag == Move.flags.epCapture){
+        if (flag == Move.flags.epCapture){
             capturedPiece = this.square[this.enPassantSquare]
             this.square[this.enPassantSquare] = 0
         }
 
         // updates en-passant square
-        if (move.flag == Move.flags.doublePush){
-            this.enPassantSquare = move.target
+        if (flag == Move.flags.doublePush){
+            this.enPassantSquare = target
         }
         else {
             this.enPassantSquare = null
         }
 
         // Find original piece
-        let movedPiece = this.square[move.start]
+        let movedPiece = this.square[start]
 
         // promotion logic
-        if (move.flag >> 3 == 1){
+        if (Move.IsPromotion(move)){
             // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
             const color = movedPiece & 0b11000
-            const pieceType = pieceTypes[move.flag & 0b0011]
+
+            const pieceType = pieceTypes[flag & 0b0011]
+            
             movedPiece = color | pieceType
         } 
 
         // moving the piece
-        this.square[move.target] = movedPiece
-        this.square[move.start] = 0
+        this.square[target] = movedPiece
+        this.square[start] = 0
 
-        // if there is a castle, the rook shal be moved as well
-        if (move.flag == Move.flags.kingCastle){
-            const rookSquare = move.start + 3
-            const targetSquare = move.start + 1
+        // if there is a castle, the rook should be moved as well
+        if (flag == Move.flags.kingCastle){
+            const rookSquare = start + 3
+            const targetSquare = start + 1
 
             this.square[targetSquare] = this.square[rookSquare]
             this.square[rookSquare] = 0
         }
-        else if (move.flag == Move.flags.queenCastle){
-            const rookSquare = move.start - 4
-            const targetSquare = move.start - 1
+        else if (flag == Move.flags.queenCastle){
+            const rookSquare = start - 4
+            const targetSquare = start - 1
 
             this.square[targetSquare] = this.square[rookSquare]
             this.square[rookSquare] = 0
@@ -235,31 +244,36 @@ export class Board {
         this.enPassantSquare = previousPosition.enPassantSquare
         this.zobrist.hash = previousPosition.hash
         
+        // decode move
+        const start = Move.Start(move)
+        const target = Move.Target(move)
+        const flag = Move.Flag(move)
+
         // Reconstructing position
-        let movedPiece = this.square[move.target]
+        let movedPiece = this.square[target]
         const capturedPiece = previousPosition.capturedPiece
         
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
         // checking if the moved piece was a promoted pawn
-        if (move.IsPromotion()){
+        if (Move.IsPromotion(move)){
             movedPiece = Piece.pawn | friendlyColor
         }
 
-        this.square[move.start] = movedPiece
-        this.square[move.target] = capturedPiece
+        this.square[start] = movedPiece
+        this.square[target] = capturedPiece
 
         // move rook back in case of castling
-        if (move.IsCastleKing()){
-            this.square[move.start + 1] = 0
-            this.square[move.start + 3] = Piece.rook | friendlyColor
+        if (flag == Move.flags.kingCastle){
+            this.square[start + 1] = 0
+            this.square[start + 3] = Piece.rook | friendlyColor
         }
-        else if (move.IsCastleQueen()){
-            this.square[move.start - 1] = 0
-            this.square[move.start - 4] = Piece.rook | friendlyColor
+        else if (flag == Move.flags.queenCastle){
+            this.square[start - 1] = 0
+            this.square[start - 4] = Piece.rook | friendlyColor
         }
         
         // en passant capture
-        if (move.IsEnPassantCapture()){
+        if (flag == Move.flags.epCapture){
             const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
             this.square[this.enPassantSquare] = Piece.pawn | enemyColor
         }
@@ -505,11 +519,13 @@ export class Board {
                 }
                 //Dersom brikka er fientleg er det eit angrep
                 if (Piece.CheckPieceColor(pieceOnTargetSquare, !this.white_To_Move)){
-                    moves.push(new Move(start, target, Move.flags.captures))    
+                    const move = Move.EncodeUINT16(start, target, Move.flags.captures)
+                    moves.push(move)    
                     break
                 }
                 //Legger til quiet move
-                 moves.push(new Move(start, target, Move.flags.quietMove))
+                const move = Move.EncodeUINT16(start, target, Move.flags.quietMove)
+                moves.push(move)
             }
         
         }
@@ -525,11 +541,16 @@ export class Board {
             const pieceOnTargetSquare = this.square[targetSquare]
             //Dersom ruta er tom er trekket eit quiet move
             if (pieceOnTargetSquare == 0){
-                moves.push(new Move(start, targetSquare, Move.flags.quietMove))
+
+                const move = Move.EncodeUINT16(start, targetSquare, Move.flags.quietMove)
+                moves.push(move)
             }
+
             //Om brikka vi landar på er fientleg kan vi lagre som anrep
             else if (! Piece.CheckPieceColor(pieceOnTargetSquare, this.white_To_Move)){
-                moves.push(new Move(start, targetSquare, Move.flags.captures))
+                const move = Move.EncodeUINT16(start, targetSquare, Move.flags.captures)
+                moves.push(move)
+                
             }
             //Om brikka vi landar på er vennleg er gjeldande trekk er ulovleg
             //Vi tren derfor ikkje å gjere noko
@@ -559,7 +580,8 @@ export class Board {
             }
             const flag = (n == 1) ? Move.flags.doublePush : Move.flags.quietMove
             //console.log(new Move(start, targetSquare, flag))
-            moves.push(new Move(start, targetSquare, flag))
+            const move = Move.EncodeUINT16(start, targetSquare, flag)
+            moves.push(move)
             if (! doublePush) break
         }
         
@@ -581,12 +603,14 @@ export class Board {
                     const epTarget = this.enPassantSquare + 8 * dir
                     
                     if (targetSquare == epTarget){
-                        moves.push(new Move(start, targetSquare, Move.flags.epCapture))
+                        const move = Move.EncodeUINT16(start, targetSquare, Move.flags.epCapture) 
+                        moves.push(move)
                     }
                     
                 }
                 if (enemyUnderAttack){
-                    moves.push(new Move(start, targetSquare, Move.flags.captures))
+                    const move = Move.EncodeUINT16(start, targetSquare, Move.flags.captures)
+                    moves.push(move)
                 }
             }
         }
@@ -594,16 +618,20 @@ export class Board {
         //Forfremming
         let filteredMoves = []
         moves.forEach(move=>{
+            const start = Move.Start(move)
+            const target = Move.Target(move)
+
             //Bonde har nådd siste rekke
-            const promotion = (pawnIsWhite) ? (55 < move.target) : (move.target < 8)
+            const promotion = (pawnIsWhite) ? (55 < target) : (target < 8)
             if (promotion){
-                const capture = move.IsCapture() 
+                const capture = Move.IsCapture(move) 
                 const captureFlag = capture ? 0b100 : 0b000
-                //1|0|00: 3 siffer refererer til capture
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.bishopPromotion | captureFlag))
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.knightPromotion | captureFlag))
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.rookPromotion   | captureFlag))
-                filteredMoves.push(new Move(move.start, move.target, Move.flags.queenPromotion  | captureFlag))
+
+                //1|0|00: tredje siffer refererer til capture
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.bishopPromotion | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.knightPromotion | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.rookPromotion   | captureFlag))
+                filteredMoves.push(Move.EncodeUINT16(start, target, Move.flags.queenPromotion  | captureFlag))
             }
             else{
                 filteredMoves.push(move)
@@ -619,11 +647,13 @@ export class Board {
             const targetPiece = this.square[targetIndex]
             //Om ruta er tom er trekket eit quiet move
             if (targetPiece == 0){
-                moves.push(new Move(start, targetIndex, Move.flags.quietMove))
+                const move = Move.EncodeUINT16(start, targetIndex, Move.flags.quietMove)
+                moves.push(move)
             } 
             //Om ruta har ei fientleg brikke er trekket ulovleg
             else if (Piece.CheckPieceColor(targetPiece, !this.white_To_Move)){
-                moves.push(new Move(start, targetIndex, Move.flags.captures))
+                const move = Move.EncodeUINT16(start, targetIndex, Move.flags.captures)
+                moves.push(move)
             }
             //Ellers er det ei vennleg brikke på ruta og vi treng ikkje å gjere noko
         })
@@ -652,7 +682,7 @@ export class Board {
                 }
             }
 
-            if (legal) moves.push(new Move(myKingSquare, myKingSquare + 2, Move.flags.kingCastle))
+            if (legal) moves.push(Move.EncodeUINT16(myKingSquare, myKingSquare + 2, Move.flags.kingCastle))
 
         }
         //castle queenside
@@ -674,7 +704,7 @@ export class Board {
                     legal = false 
                 }
             }
-            if (legal) moves.push(new Move(myKingSquare, myKingSquare - 2, Move.flags.queenCastle))
+            if (legal) moves.push(Move.EncodeUINT16(myKingSquare, myKingSquare - 2, Move.flags.queenCastle))
 
         }
         
@@ -746,12 +776,12 @@ export class Board {
         return legalMoves
     } 
 
-    GenerateCaptures(){
+    GenerateTacticalMoves(){
+        // generates tactical moves like promotions or captures
         let captureMoves = []
         const legalMoves = this.GenerateLegalMoves()
         legalMoves.forEach(move =>{
-            const isCapture = (move.flag & 0b0100) == 0b0100
-            if (isCapture) captureMoves.push(move)
+            if (Move.IsCapture(move) || Move.IsPromotion(move)) captureMoves.push(move)
         })
         
         return captureMoves

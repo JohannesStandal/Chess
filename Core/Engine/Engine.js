@@ -51,6 +51,10 @@ export class Engine {
         this.board.Load_Fen(fen)
     }
 
+    ImportGameHistory(repetitionTable){
+        this.board.repetitionTable = repetitionTable
+    }
+
     ThinkingTime(thinkingTime){
         this.timeManager.SetTimeLimit(thinkingTime)
     }

@@ -7,28 +7,37 @@ export class Transposition_Table {
         this.table = new Map()
     }
 
-    AddPosition(hash, score, depth, flag){
-        if (this.table.has(hash)){
-            // if the entry alreadt exists for deeper depth, we dont want to overwrite it
-            const entry = this.table.get(hash)
-            if (depth < entry.depth){
-                return
-            }
+    AddPosition(hash, score, depth, flag, bestMove){
+        const entry = this.table.get(hash) 
+        if (entry == undefined){
+            // add position to the table
+            this.table.set(hash, {
+                score: score, 
+                depth: depth,
+                flag: flag,
+                bestMove: bestMove,
+            })
+            return
         }
-        // add position to the table
+        // if the entry alreadt exists for deeper depth, we dont want to overwrite it
+        if (depth < entry.depth){
+            return
+        }
         this.table.set(hash, {
-            score: score, 
-            depth: depth,
-            flag: flag,
+                score: score, 
+                depth: depth,
+                flag: flag,
+                bestMove: bestMove,
         })
+        
     }
 
     IsValidTransposition(hash, currentDepth){
-        const inTable = this.table.has(hash) 
-        if (inTable){
-            let depthSearched = this.table.get(hash).depth
-            return (depthSearched >= currentDepth)
+        const entry = this.table.get(hash) 
+        if (entry == undefined){
+            return false
         }
-        return false
+        let depthSearched = entry.depth
+        return (depthSearched >= currentDepth)
     }
 }

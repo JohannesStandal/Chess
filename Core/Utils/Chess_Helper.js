@@ -1,5 +1,23 @@
 import { Piece } from "../Board/piece.js"
 export class ChessHelper {
+    static indexToLetter = new Array(64)
+    static {
+        const letters = "abcdefgh"
+        for (let rank = 0; rank < 8; rank++){
+            for (let file = 0; file < 8; file++){
+                let index = rank * 8 + file
+                this.indexToLetter[index] = letters[file] + String(rank+1)
+            }
+        }
+    }
+    static letterToIndex = {}
+    static {
+        for (let i = 0; i < 64; i++){
+            const letter = this.indexToLetter[i]
+            this.letterToIndex[letter] = i
+        }
+    }
+
     static checkForRepetitions(repetetionTable){
         var dict = {}
         for (let value of repetetionTable){
@@ -46,11 +64,11 @@ export class ChessHelper {
     return false
 }
 
-    static Rank(squareIndex){
+    static RankIndex(squareIndex){
         return Math.floor(squareIndex / 8)
     }
 
-    static File(squareIndex){
+    static FileIndex(squareIndex){
         return (squareIndex % 8) - 1
     }
 

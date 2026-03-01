@@ -2,7 +2,7 @@
 import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
-import { Move } from "../Core/Board/piece.js"
+import { Move } from "../Core/Board/move.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
@@ -12,8 +12,8 @@ import { Tests } from "../Tests/Tests.js"
 
 export const board = new Board()
 export var gameData = {
-    playAsWhite: false, //false betyr at AI speler
-    playAsBlack: true, // ^ --||--
+    playAsWhite: true, //false betyr at AI speler
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -78,13 +78,8 @@ window.board = board
 const engine = new Worker("./Engine.worker.js", {type: "module"})
 engine.onmessage = (e) =>{
     if (! gameData.active) return
-    const moveData = e.data.move
-    const move = new Move(
-        moveData.start,
-        moveData.target,
-        moveData.flag
-    )
-    console.log("engine move:", move)
+    const move = e.data.move
+    console.log("engine move:", Move.ToUCI(move))
     Make_Move_On_Board(move)
 }
 
@@ -127,13 +122,14 @@ export function GameLoop(){
             engine.postMessage({
                 type: "SEARCH",
                 fen: board.Export_Fen(),
+                repetitionTable: board.repetitionTable,
             })
         },300)
     }
 }
 
 //StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
+StartGame("5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1")
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -141,7 +137,7 @@ StartGame("8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1")
  * Sliding moves test: "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
  *
  * Basic Endgames:
- *  - queen vs king: "8/5Q2/6K1/8/2k5/8/8/8 b - - 0 1"
+ *  - queen vs king: "8/5q2/6k1/8/2K5/8/8/8 b - - 0 1"
  *  - 2 rook vs king: "8/3K4/8/8/8/3k4/3r4/3r4 b - - 0 1"
  *  - 1 rook vs king: "8/3K4/8/8/8/3k4/8/3r4 b - - 0 1"
  *  - two knights vs king: "8/3K4/8/8/8/3k4/3n4/3n4 b - - 0 1"

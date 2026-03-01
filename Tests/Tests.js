@@ -1,8 +1,10 @@
 import { Board } from "../Core/Board/chessboard.js"
+import { Move } from "../Core/Board/move.js"
 
 export class Tests {
     constructor() {
         this.board = new Board()
+        this.board.Load_Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
     }
 
     MoveGenerationCount(depth, log_moves = false){
@@ -16,12 +18,14 @@ export class Tests {
         for (let move of moves){
             this.board.Make_Move(move)
             sum += this.MoveGenerationCount(depth-1, log_moves)
+            
+            if (log_moves && this.board.playedMoves.length == 1){
+                console.log(Move.ToUCI(move), sum)
+            }
+            
             this.board.Unmake_Move(move)
         }
 
-        if (log_moves && this.board.playedMoves.length == 1){
-            console.log(this.board.playedMoves[0].CoordinatesNotation(), sum)
-        }
 
         return sum
     }
@@ -29,7 +33,7 @@ export class Tests {
     ListMoves(){
         const moves = this.board.GenerateLegalMoves()
         moves.forEach(move => {
-            console.log(move.CoordinatesNotation())
+            console.log(Move.ToUCI(move))
         });
         console.log("Num nodes: ", moves.length)
     }
