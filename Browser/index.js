@@ -129,7 +129,7 @@ export function GameLoop(){
 }
 
 //StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1")
+StartGame("5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1")
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -137,7 +137,7 @@ StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1")
  * Sliding moves test: "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
  *
  * Basic Endgames:
- *  - queen vs king: "8/5Q2/6K1/8/2k5/8/8/8 b - - 0 1"
+ *  - queen vs king: "8/5q2/6k1/8/2K5/8/8/8 b - - 0 1"
  *  - 2 rook vs king: "8/3K4/8/8/8/3k4/3r4/3r4 b - - 0 1"
  *  - 1 rook vs king: "8/3K4/8/8/8/3k4/8/3r4 b - - 0 1"
  *  - two knights vs king: "8/3K4/8/8/8/3k4/3n4/3n4 b - - 0 1"
