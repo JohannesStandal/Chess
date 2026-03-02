@@ -8,6 +8,8 @@ esbuild.build({
   format: 'cjs',
   outfile: path.resolve(__dirname, 'dist/engine.cjs'),
   sourcemap: true,
+  minify: true,
+  drop: ["console"],
   external: [
     'readline',
     'fs',

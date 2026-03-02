@@ -33,7 +33,7 @@ export class Search {
             // search the position
             this.currentDepth = depth
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
-            //console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
+            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
             if (mateTreshold <= score){
                 const mateDepth = checkMateScore - score
                 //console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))

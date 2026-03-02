@@ -1,6 +1,6 @@
 const readline = require('readline');
 const { Engine } = require('../../Core/Engine/Engine.js');
-const { Move } = require('../Board/piece.js');
+const { Move } = require('../../Core/Board/move.js');
 
 export class UCI {
   constructor() {
@@ -104,10 +104,9 @@ export class UCI {
 
     this.engine.ThinkingTime(thinkingTime)
 
-    const bestMove = this.engine.Bestmove().CoordinatesNotation();
+    const bestMove = Move.ToUCI(this.engine.Bestmove())
       
     this.send(`bestmove ${bestMove}`);
-
   }
 
   send(msg) {
