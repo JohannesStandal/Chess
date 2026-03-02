@@ -7,7 +7,7 @@ import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { AttackTables } from "../Constants/AttackTables.js"
-import { board } from "../../Browser/UI.js"
+AttackTables.init()
 
 export class Board {
     constructor(){

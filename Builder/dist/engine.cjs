@@ -265,7 +265,7 @@ var init_Chess_Helper = __esm({
         }
       }
       static checkForRepetitions(repetetionTable) {
-        const copiedTable = repetetionTable;
+        const copiedTable = [...repetetionTable];
         const hashToCheck = copiedTable.pop();
         let counter = 1;
         for (const hash of copiedTable) {
@@ -274,11 +274,11 @@ var init_Chess_Helper = __esm({
         }
         return false;
       }
-      static isInsufficientMaterial(board2) {
+      static isInsufficientMaterial(board) {
         let whitePieces = [];
         let blackPieces = [];
         for (let i = 0; i < 64; i++) {
-          const piece = board2.square[i];
+          const piece = board.square[i];
           if (piece == 0) continue;
           if (Piece.CheckPieceColor(piece, true)) whitePieces.push(piece);
           else blackPieces.push(piece);
@@ -298,20 +298,20 @@ var init_Chess_Helper = __esm({
       static FileIndex(squareIndex) {
         return squareIndex % 8 - 1;
       }
-      static CalculateEndgameWeight(board2) {
+      static CalculateEndgameWeight(board) {
         let numOpponentPieces = 0;
-        for (let piece of board2.square) {
-          if (Piece.CheckPieceColor(piece, !board2.white_To_Move)) {
+        for (let piece of board.square) {
+          if (Piece.CheckPieceColor(piece, !board.white_To_Move)) {
             numOpponentPieces++;
           }
         }
         return (16 - numOpponentPieces) / 16;
       }
-      static LocateKings(board2) {
+      static LocateKings(board) {
         let whiteKingSquare = 0;
         let blackKingSquare = 0;
         for (let i = 0; i < 64; i++) {
-          const piece = board2.square[i];
+          const piece = board.square[i];
           if (piece == (Piece.king | Piece.white)) whiteKingSquare = i;
           if (piece == (Piece.king | Piece.black)) blackKingSquare = i;
         }
@@ -1247,7 +1247,7 @@ var init_move = __esm({
         }
         return startCoord + targetCoord;
       }
-      static toUINT16(UCI2, board2) {
+      static toUINT16(UCI2, board) {
       }
     };
   }
@@ -1264,10 +1264,10 @@ var init_zobrist_hashing = __esm({
       constructor() {
         this.hash = BigInt(0);
       }
-      createHash(board2, white_to_move) {
+      createHash(board, white_to_move) {
         this.hash = BigInt(0);
         for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
-          const pieceType = board2[squareIndex];
+          const pieceType = board[squareIndex];
           this.hash ^= zobrist_hash_values[pieceType][squareIndex];
         }
         if (white_to_move) this.hash ^= hash_white_to_move;
@@ -1278,17 +1278,17 @@ var init_zobrist_hashing = __esm({
       togglePiece(squareIndex, piece) {
         this.hash ^= zobrist_hash_values[piece][squareIndex];
       }
-      incrementHash(move, board2) {
+      incrementHash(move, board) {
         const start = Move.Start(move);
         const target = Move.Target(move);
         const flag = Move.Flag(move);
-        const movedPiece = board2.square[start];
-        const capturedPiece = board2.square[target];
+        const movedPiece = board.square[start];
+        const capturedPiece = board.square[target];
         this.togglePiece(start, movedPiece);
         if (Move.IsCapture(move)) {
           if (flag == Move.flags.epCapture) {
-            const pawn = board2.square[board2.enPassantSquare];
-            this.togglePiece(board2.enPassantSquare, pawn);
+            const pawn = board.square[board.enPassantSquare];
+            this.togglePiece(board.enPassantSquare, pawn);
           } else {
             this.togglePiece(target, capturedPiece);
           }
@@ -1304,13 +1304,13 @@ var init_zobrist_hashing = __esm({
         if (flag == Move.flags.kingCastle) {
           const rookStart = start + 3;
           const rookTarget = start + 1;
-          const rook = board2.square[rookStart];
+          const rook = board.square[rookStart];
           this.togglePiece(rookStart, rook);
           this.togglePiece(rookTarget, rook);
         } else if (flag == Move.flags.queenCastle) {
           const rookStart = start - 4;
           const rookTarget = start - 1;
-          const rook = board2.square[rookStart];
+          const rook = board.square[rookStart];
           this.togglePiece(rookStart, rook);
           this.togglePiece(rookTarget, rook);
         }
@@ -1326,72 +1326,44 @@ var init_AttackTables = __esm({
   "Core/Constants/AttackTables.js"() {
     init_Chess_Helper();
     AttackTables = class {
-      // Attacktables is a precomputet lookup array of the legal moves
-      // a piece would be able to make on an empty board.
-      //  
-      // AttackTable.pieceType[startindex] -> list of legal target squares
-      //
-      // The program no longer needs to compute move offsets at runtime, and erases edge case 
-      // issues such as board warping. Of courese there must a check for what pieces inhabits 
-      // the targetsquare.
-      static king = new Array(64);
-      static knight = new Array(64);
-      static whitePawn = new Array(64).fill([]);
-      static blackPawn = new Array(64).fill([]);
-      static {
+      static king;
+      static knight;
+      static whitePawn;
+      static blackPawn;
+      // Lazy init: kall denne før du trenger tabellene
+      static init() {
+        if (this.king) return;
+        this.king = new Array(64);
+        this.knight = new Array(64);
+        this.whitePawn = new Array(64).fill([]);
+        this.blackPawn = new Array(64).fill([]);
         for (let startIndex = 0; startIndex < 64; startIndex++) {
           const moves = [];
-          const west = 0 < ChessHelper.numSquaresToEdge[startIndex][0];
-          const east = 0 < ChessHelper.numSquaresToEdge[startIndex][1];
-          const north = 0 < ChessHelper.numSquaresToEdge[startIndex][2];
-          const south = 0 < ChessHelper.numSquaresToEdge[startIndex][3];
+          const west = ChessHelper.numSquaresToEdge[startIndex][0] > 0;
+          const east = ChessHelper.numSquaresToEdge[startIndex][1] > 0;
+          const north = ChessHelper.numSquaresToEdge[startIndex][2] > 0;
+          const south = ChessHelper.numSquaresToEdge[startIndex][3] > 0;
           const dir = [west, north, east, south, west];
           const offset = [-1, 8, 1, -8, 7, 9, -7, -9];
           for (let i = 0; i < 4; i++) {
-            if (dir[i]) {
-              const targetSquare = startIndex + offset[i];
-              moves.push(targetSquare);
-            }
-            if (dir[i] && dir[i + 1]) {
-              const targetSquare = startIndex + offset[i + 4];
-              moves.push(targetSquare);
-            }
+            if (dir[i]) moves.push(startIndex + offset[i]);
+            if (dir[i] && dir[i + 1]) moves.push(startIndex + offset[i + 4]);
           }
           this.king[startIndex] = moves;
         }
-      }
-      static {
         for (let startIndex = 0; startIndex < 64; startIndex++) {
           const moves = [];
           const data = ChessHelper.numSquaresToEdge[startIndex];
-          if (data[2] >= 2 && data[0] >= 1) {
-            moves.push(startIndex + 15);
-          }
-          if (data[2] >= 2 && data[1] >= 1) {
-            moves.push(startIndex + 17);
-          }
-          if (data[0] >= 2 && data[2] >= 1) {
-            moves.push(startIndex + 6);
-          }
-          if (data[1] >= 2 && data[2] >= 1) {
-            moves.push(startIndex + 10);
-          }
-          if (data[0] >= 2 && data[3] >= 1) {
-            moves.push(startIndex - 10);
-          }
-          if (data[1] >= 2 && data[3] >= 1) {
-            moves.push(startIndex - 6);
-          }
-          if (data[3] >= 2 && data[0] >= 1) {
-            moves.push(startIndex - 17);
-          }
-          if (data[3] >= 2 && data[1] >= 1) {
-            moves.push(startIndex - 15);
-          }
+          if (data[2] >= 2 && data[0] >= 1) moves.push(startIndex + 15);
+          if (data[2] >= 2 && data[1] >= 1) moves.push(startIndex + 17);
+          if (data[0] >= 2 && data[2] >= 1) moves.push(startIndex + 6);
+          if (data[1] >= 2 && data[2] >= 1) moves.push(startIndex + 10);
+          if (data[0] >= 2 && data[3] >= 1) moves.push(startIndex - 10);
+          if (data[1] >= 2 && data[3] >= 1) moves.push(startIndex - 6);
+          if (data[3] >= 2 && data[0] >= 1) moves.push(startIndex - 17);
+          if (data[3] >= 2 && data[1] >= 1) moves.push(startIndex - 15);
           this.knight[startIndex] = moves;
         }
-      }
-      static {
         for (let startIndex = 0; startIndex < 64; startIndex++) {
           const whiteMoves = [];
           const blackMoves = [];
@@ -1406,923 +1378,10 @@ var init_AttackTables = __esm({
             blackMoves.push(startIndex - 7);
           }
           if (startIndex < 56) this.whitePawn[startIndex] = whiteMoves;
-          if (7 < startIndex) this.blackPawn[startIndex] = blackMoves;
+          if (startIndex > 7) this.blackPawn[startIndex] = blackMoves;
         }
       }
     };
-  }
-});
-
-// Browser/App.js
-function RenderScene(key) {
-  scenes.forEach((scene) => {
-    scene.style.display = "none";
-  });
-  scenes[key].style.display = "block";
-}
-function EndGame(message) {
-  gameData.active = false;
-  resultScene.style.display = "block";
-  document.getElementById("resultMessage").innerHTML = message;
-}
-function Rematch() {
-  Reset();
-  gameData.playAsBlack = !gameData.playAsBlack;
-  gameData.playAsWhite = !gameData.playAsWhite;
-  StartGame();
-}
-var scenes;
-var init_App = __esm({
-  "Browser/App.js"() {
-    init_Browser();
-    init_UI();
-    document.addEventListener("DOMContentLoaded", () => {
-      const gameScene = document.getElementById("game");
-      const menuScene = document.getElementById("menu");
-      const resultScene2 = document.getElementById("result");
-      scenes = [menuScene, gameScene, resultScene2];
-    });
-  }
-});
-
-// Core/Engine/evaluation.js
-var Evaluation;
-var init_evaluation = __esm({
-  "Core/Engine/evaluation.js"() {
-    init_piece();
-    init_Chess_Helper();
-    init_move();
-    Evaluation = class _Evaluation {
-      static mirroredBoard = new Array(64);
-      static mapFromPieceType = Array(12);
-      static kingMap = [
-        40,
-        40,
-        100,
-        0,
-        0,
-        40,
-        100,
-        40,
-        30,
-        30,
-        10,
-        0,
-        0,
-        10,
-        30,
-        30,
-        10,
-        10,
-        5,
-        0,
-        0,
-        5,
-        10,
-        10,
-        0,
-        0,
-        0,
-        -10,
-        -10,
-        0,
-        0,
-        0,
-        -10,
-        -10,
-        -10,
-        -20,
-        -20,
-        -10,
-        -10,
-        -10,
-        -20,
-        -20,
-        -20,
-        -30,
-        -30,
-        -20,
-        -20,
-        -20,
-        -30,
-        -30,
-        -30,
-        -40,
-        -40,
-        -30,
-        -30,
-        -30,
-        -40,
-        -40,
-        -40,
-        -50,
-        -50,
-        -40,
-        -40,
-        -40
-      ];
-      static pawnMap = [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        10,
-        10,
-        10,
-        -10,
-        -10,
-        10,
-        10,
-        10,
-        5,
-        5,
-        10,
-        20,
-        20,
-        10,
-        5,
-        5,
-        5,
-        5,
-        15,
-        25,
-        25,
-        15,
-        5,
-        5,
-        10,
-        10,
-        20,
-        30,
-        30,
-        20,
-        10,
-        10,
-        20,
-        20,
-        30,
-        35,
-        35,
-        30,
-        20,
-        20,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ];
-      static knightMap = [
-        -50,
-        -40,
-        -30,
-        -30,
-        -30,
-        -30,
-        -40,
-        -50,
-        -40,
-        -20,
-        0,
-        5,
-        5,
-        0,
-        -20,
-        -40,
-        -30,
-        5,
-        15,
-        20,
-        20,
-        15,
-        5,
-        -30,
-        -30,
-        10,
-        20,
-        30,
-        30,
-        20,
-        10,
-        -30,
-        -30,
-        5,
-        20,
-        30,
-        30,
-        20,
-        5,
-        -30,
-        -30,
-        0,
-        15,
-        20,
-        20,
-        15,
-        0,
-        -30,
-        -40,
-        -20,
-        0,
-        0,
-        0,
-        0,
-        -20,
-        -40,
-        -50,
-        -40,
-        -30,
-        -30,
-        -30,
-        -30,
-        -40,
-        -50
-      ];
-      static bishopMap = [
-        -20,
-        -10,
-        -10,
-        -10,
-        -10,
-        -10,
-        -10,
-        -20,
-        -10,
-        5,
-        0,
-        0,
-        0,
-        0,
-        5,
-        -10,
-        -10,
-        10,
-        10,
-        10,
-        10,
-        10,
-        10,
-        -10,
-        -10,
-        0,
-        10,
-        15,
-        15,
-        10,
-        0,
-        -10,
-        -10,
-        5,
-        5,
-        15,
-        15,
-        5,
-        5,
-        -10,
-        -10,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        -10,
-        -10,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        -10,
-        -20,
-        -10,
-        -10,
-        -10,
-        -10,
-        -10,
-        -10,
-        -20
-      ];
-      static rookMap = [
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        0,
-        0,
-        5,
-        10,
-        15,
-        15,
-        10,
-        5,
-        0,
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        0,
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        0,
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        0,
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        0,
-        5,
-        10,
-        10,
-        10,
-        10,
-        10,
-        10,
-        5,
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        0
-      ];
-      static queenMap = [
-        -20,
-        -10,
-        -10,
-        -5,
-        -5,
-        -10,
-        -10,
-        -20,
-        -10,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        -10,
-        -10,
-        0,
-        5,
-        5,
-        5,
-        5,
-        0,
-        -10,
-        -5,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        -5,
-        0,
-        0,
-        5,
-        10,
-        10,
-        5,
-        0,
-        -5,
-        -10,
-        5,
-        5,
-        5,
-        5,
-        5,
-        0,
-        -10,
-        -10,
-        0,
-        5,
-        0,
-        0,
-        0,
-        0,
-        -10,
-        -20,
-        -10,
-        -10,
-        -5,
-        -5,
-        -10,
-        -10,
-        -20
-      ];
-      static {
-        let i = 0;
-        for (let rank = 7; rank >= 0; rank--) {
-          for (let file = 0; file < 8; file++) {
-            const squareIndex = rank * 8 + file;
-            this.mirroredBoard[squareIndex] = i;
-            i++;
-          }
-        }
-        this.mapFromPieceType[Piece.king] = this.kingMap;
-        this.mapFromPieceType[Piece.pawn] = this.pawnMap;
-        this.mapFromPieceType[Piece.knight] = this.knightMap;
-        this.mapFromPieceType[Piece.bishop] = this.bishopMap;
-        this.mapFromPieceType[Piece.rook] = this.rookMap;
-        this.mapFromPieceType[Piece.queen] = this.queenMap;
-      }
-      // Board
-      static evaluate(board2) {
-        const endgameWeight = ChessHelper.CalculateEndgameWeight(board2);
-        let score = 0;
-        const materialWeight = 1;
-        const positionWeight = 1;
-        const mobilityWeight = 0;
-        const kingWeight = 30;
-        score += this.countMaterial(board2) * materialWeight;
-        score += this.positionBonus(board2, endgameWeight) * positionWeight;
-        score += this.mobilityBonus(board2) * mobilityWeight;
-        score += this.forceKingToCornerWithKing(board2, endgameWeight) * kingWeight;
-        return score;
-      }
-      static countMaterial(board2) {
-        let materialScore = 0;
-        for (let i = 0; i < 64; i++) {
-          const piece = board2.square[i];
-          if (piece == 0) continue;
-          const sign = Piece.CheckPieceColor(piece, board2.white_To_Move) ? 1 : -1;
-          materialScore += sign * Piece.getPieceValue(piece);
-        }
-        return materialScore;
-      }
-      static positionBonus(board2, endgameWeight) {
-        let score = 0;
-        for (let i = 0; i < 64; i++) {
-          const piece = board2.square[i];
-          if (piece == 0) continue;
-          const sign = Piece.CheckPieceColor(piece, board2.white_To_Move) ? 1 : -1;
-          const pieceType = piece & 7;
-          const mapIndex = Piece.CheckPieceColor(piece, true) ? i : _Evaluation.mirroredBoard[i];
-          const bonus = _Evaluation.mapFromPieceType[pieceType][mapIndex];
-          score += sign * bonus * 0.2;
-        }
-        return score * (1 - endgameWeight);
-      }
-      static mobilityBonus(board2) {
-        const myMobility = board2.GenerateLegalMoves().length;
-        return myMobility;
-      }
-      static forceKingToCornerWithKing(board2, endgameWeight) {
-        let score = 0;
-        let friendlyKingSquare = 0;
-        let enemyKingSquare = 0;
-        for (let i = 0; i < 64; i++) {
-          const piece = board2.square[i];
-          if (!Piece.IsType(piece, Piece.king)) continue;
-          const isFriendly = Piece.CheckPieceColor(piece, board2.white_To_Move);
-          if (isFriendly) friendlyKingSquare = i;
-          else enemyKingSquare = i;
-        }
-        const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare);
-        const friendlyKingFile = ChessHelper.FileIndex(friendlyKingSquare);
-        const enemyKingRank = ChessHelper.RankIndex(enemyKingSquare);
-        const enemyKingFile = ChessHelper.FileIndex(enemyKingSquare);
-        const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5);
-        const enemyKingDstToCenterFile = Math.abs(enemyKingFile - 3.5);
-        const enemyKingDstToCenter = enemyKingDstToCenterRank + enemyKingDstToCenterFile;
-        score += enemyKingDstToCenter / 7;
-        const RankDistance = Math.abs(friendlyKingRank - enemyKingRank);
-        const FileDistance = Math.abs(friendlyKingFile - enemyKingFile);
-        const kingDistance = FileDistance + RankDistance;
-        score += (14 - kingDistance) / 14;
-        return score * Math.min(endgameWeight, 1);
-      }
-      // Moves
-      static Move(move, board2) {
-        let score = 0;
-        const start = Move.Start(move);
-        const target = Move.Target(move);
-        score += this.MVV_LVA_ordering(start, target, board2);
-        score += this.PieceSquareTables(start, target, board2);
-        return score;
-      }
-      static MVV_LVA_ordering(start, target, board2) {
-        let pieceTypeMoved = board2.square[start] & 7;
-        let pieceTypeAttacked = board2.square[target] & 7;
-        return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved];
-      }
-      static PieceSquareTables(start, target, board2) {
-        const piece = board2.square[start];
-        const pieceType = piece & 7;
-        const startIndex = Piece.CheckPieceColor(piece, true) ? start : _Evaluation.mirroredBoard[start];
-        const targetIndex = Piece.CheckPieceColor(piece, true) ? target : _Evaluation.mirroredBoard[target];
-        const bonusOld = _Evaluation.mapFromPieceType[pieceType][startIndex];
-        const bonusNew = _Evaluation.mapFromPieceType[pieceType][targetIndex];
-        return bonusOld - bonusNew;
-      }
-    };
-  }
-});
-
-// Tests/Tests.js
-var Tests;
-var init_Tests = __esm({
-  "Tests/Tests.js"() {
-    init_chessboard();
-    init_move();
-    Tests = class {
-      constructor() {
-        this.board = new Board();
-        this.board.Load_Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-      }
-      MoveGenerationCount(depth, log_moves = false) {
-        if (depth == 0) return 1;
-        let sum = 0;
-        const moves = this.board.GenerateLegalMoves();
-        for (let move of moves) {
-          this.board.Make_Move(move);
-          sum += this.MoveGenerationCount(depth - 1, log_moves);
-          this.board.Unmake_Move(move);
-        }
-        if (log_moves && this.board.playedMoves.length == 1) {
-          const move = this.board.playedMoves[0];
-          console.log(Move.ToUCI(move), sum);
-        }
-        return sum;
-      }
-      ListMoves() {
-        const moves = this.board.GenerateLegalMoves();
-        moves.forEach((move) => {
-          console.log(Move.ToUCI(move));
-        });
-        console.log("Num nodes: ", moves.length);
-      }
-      perft(depth) {
-        this.board.playedMoves.length = 0;
-        let startTime = performance.now();
-        let nodes = this.MoveGenerationCount(depth, true);
-        let endTime = performance.now();
-        console.log(`Total nodes: ${nodes}. Finished in ${endTime - startTime}ms`);
-      }
-      // initial movegeneration testsuites runs in roughly 10000ms
-      // lets improve it
-      moveGeneration_full_suite(depth = 4) {
-        depth = Math.min(6, depth);
-        let startTime = performance.now();
-        const test_positions = [
-          {
-            // start position
-            fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-            num_pos: [20, 400, 8902, 197281, 4865609, 119060324]
-          },
-          {
-            // position 2
-            fen: "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -",
-            num_pos: [48, 2039, 97862, 4085603, 193690690, 8031647685]
-          },
-          {
-            // position 3
-            fen: "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ",
-            num_pos: [14, 191, 2812, 43238, 674624, 11030083]
-          },
-          {
-            // position 4
-            fen: "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-            num_pos: [6, 264, 9467, 422333, 15833292, 706045033]
-          },
-          {
-            // position 5
-            fen: "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
-            num_pos: [44, 1486, 62379, 2103487, 89941194]
-          },
-          {
-            // position 6
-            fen: "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10   ",
-            num_pos: [46, 2079, 89890, 3894594, 164075551, 6923051137]
-          }
-        ];
-        for (let test_position of test_positions) {
-          console.log("\nNew test position:");
-          console.log(test_position.fen);
-          this.board.Load_Fen(test_position.fen);
-          for (let i = 0; i < depth; i++) {
-            let nodes = this.MoveGenerationCount(i + 1);
-            let results = nodes == test_position.num_pos[i] ? " \u2705 " : " \u274C ";
-            console.log(`Depth: ${i + 1}, Expected: ${test_position.num_pos[i]}, Result: ${nodes}, ${results} `);
-          }
-        }
-        let endTime = performance.now();
-        console.log(`
-Tests finished in ${Math.round(endTime - startTime)}ms
-`);
-      }
-      testMoveGenerationTime() {
-        const t1 = performance.now();
-        this.board.GenerateLegalMoves();
-        const t2 = performance.now();
-        console.log((t2 - t1).toFixed(5) + "ms");
-      }
-      testFenExport() {
-        const fens = [
-          "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0",
-          "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 0",
-          "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 0",
-          "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 0",
-          "rnbqkbnr/pp2pppp/2pp4/8/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 0",
-          "8/8/8/8/8/8/4K3/7k w - - 0 0",
-          "7k/5Q2/6K1/8/8/8/8/8 b - - 0 0",
-          "7k/5Q2/7K/8/8/8/8/8 b - - 0 0",
-          "rnbqkbnr/pppp1ppp/8/4p3/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 0",
-          "r3k2r/8/8/8/8/8/8/R3K2R w - - 0 0"
-        ];
-        fens.forEach((fen) => {
-          this.board.Load_Fen(fen);
-          const exportFen = this.board.Export_Fen();
-          if (fen != exportFen) {
-            console.log("Loaded: ", fen);
-            console.log("Exported: ", exportFen);
-          }
-        });
-      }
-    };
-  }
-});
-
-// Browser/index.js
-function StartGame2(fen = startPos) {
-  rootPos = fen;
-  window.rootPos = rootPos;
-  gameData.active = true;
-  RenderScene(1);
-  Reset();
-  gameData.playedMoves = [];
-  engine.postMessage({
-    type: "RESET"
-  });
-  board.Load_Fen(fen);
-  UpdateLegalMovesLookUp();
-  RenderBoard(board);
-  GameLoop();
-}
-function GameLoop() {
-  const gameOver = board.GenerateLegalMoves().length == 0;
-  const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable);
-  const check = board.InCheck(board.white_To_Move);
-  if (gameOver) {
-    let message = "";
-    sounds.notification.play();
-    if (check) {
-      const winner = board.white_To_Move ? "Svart" : "Kvit";
-      message = winner + " vant ved sjakkmatt!";
-    } else {
-      message = "Uavgjort ved sjakk patt";
-    }
-    EndGame(message);
-    gameData.active = false;
-    return;
-  } else if (threefoldRepetition) {
-    let message = "Uavgjort ved repetisjon";
-    EndGame(message);
-    return;
-  }
-  gameData.playerTurn = gameData.playAsWhite && board.white_To_Move || gameData.playAsBlack && !board.white_To_Move;
-  if (gameData.playerTurn) {
-  } else {
-    console.log(board.Export_Fen());
-    setTimeout(() => {
-      engine.postMessage({
-        type: "SEARCH",
-        fen: board.Export_Fen(),
-        repetitionTable: board.repetitionTable
-      });
-    }, 300);
-  }
-}
-var board, gameData, sounds, startPos, rootPos, tests, engine;
-var init_Browser = __esm({
-  "Browser/index.js"() {
-    init_App();
-    init_UI();
-    init_Chess_Helper();
-    init_move();
-    init_evaluation();
-    init_chessboard();
-    init_Tests();
-    board = new Board();
-    gameData = {
-      playAsWhite: true,
-      //false betyr at AI speler
-      playAsBlack: false,
-      // ^ --||--
-      playerTurn: false,
-      active: false,
-      playedMoves: [],
-      //for å lagre alle trekk som har blitt spelt
-      fromWhitePerspective: false,
-      moveLookUpTable: null
-    };
-    sounds = {
-      quietMove: new Audio("Sounds/move-self.mp3"),
-      capture: new Audio("Sounds/capture.mp3"),
-      notification: new Audio("Sounds/notify.mp3")
-    };
-    window.evaluate = Evaluation;
-    startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    rootPos = "";
-    tests = new Tests();
-    window.StartGame = StartGame2;
-    window.EndGame = EndGame;
-    window.Rematch = Rematch;
-    window.RenderScene = RenderScene;
-    window.RenderBoard = RenderBoard;
-    window.FlipBoard = FlipBoard;
-    window.tests = tests;
-    window.gameData = gameData;
-    window.board = board;
-    engine = new Worker("./Engine.worker.js", { type: "module" });
-    engine.onmessage = (e) => {
-      if (!gameData.active) return;
-      const move = e.data.move;
-      console.log("engine move:", Move.ToUCI(move));
-      Make_Move_On_Board(move);
-    };
-    window.engine = engine;
-    setTimeout(() => {
-      StartGame2();
-    }, 5e3);
-  }
-});
-
-// Browser/UI.js
-function Reset() {
-  selecetedSquareIndex = null;
-  previousMove = null;
-}
-function FlipBoard() {
-  gameData.fromWhitePerspective = !gameData.fromWhitePerspective;
-  RenderBoard(board);
-}
-function RenderBoard(board2, legalMoves = []) {
-  boardElements = new Array(64);
-  while (main.childElementCount != 0) {
-    main.removeChild(main.firstChild);
-  }
-  const moveTargets = legalMoves.map((move) => {
-    return Move.Target(move);
-  });
-  for (let rank = 7; 0 <= rank; rank--) {
-    for (let file = 0; file < 8; file++) {
-      let e = document.createElement("div");
-      e.classList.add("square");
-      const defaultColor = (rank + file) % 2 == 0 ? "brown" : "white";
-      e.classList.add(defaultColor);
-      let index = rank * 8 + file;
-      if (!gameData.fromWhitePerspective) {
-        index = 63 - index;
-      }
-      if (index == selecetedSquareIndex) {
-        e.classList.add("yellow");
-      }
-      if (previousMove != null) {
-        if (index == previousMove.start || index == previousMove.target) {
-          e.classList.add("yellow");
-        }
-      }
-      if (moveTargets.includes(index)) {
-        e.classList.add("blue");
-      }
-      let pieceType = board2.square[index];
-      if (pieceType != 0) {
-        let img = document.createElement("img");
-        img.src = Piece.Images[pieceType];
-        e.appendChild(img);
-      }
-      main.appendChild(e);
-      boardElements[index] = e;
-    }
-  }
-  for (let i = 0; i < 64; i++) {
-    const square = boardElements[i];
-    const movesToThisSquare = legalMoves.filter((move) => Move.Target(move) == i);
-    if (movesToThisSquare.length == 0) {
-      square.addEventListener("click", () => SelectPiece(i));
-    } else if (movesToThisSquare.length == 1) {
-      square.addEventListener("click", () => Make_Move_On_Board(movesToThisSquare[0]));
-    } else {
-      square.addEventListener("click", () => Promotion(movesToThisSquare[0]));
-    }
-  }
-}
-function UpdateLegalMovesLookUp() {
-  gameData.moveLookUpTable = new Array(64);
-  for (let i = 0; i < 64; i++) {
-    gameData.moveLookUpTable[i] = [];
-  }
-  board.GenerateLegalMoves().forEach((move) => {
-    gameData.moveLookUpTable[Move.Start(move)].push(move);
-  });
-}
-function AnimateMove(move) {
-  const start = Move.Start(move);
-  const target = Move.Target(move);
-  const startCoords = boardElements[start].getBoundingClientRect();
-  const targetCoords = boardElements[target].getBoundingClientRect();
-  const dx = targetCoords.x - startCoords.x;
-  const dy = targetCoords.y - startCoords.y;
-  let piece_IMG = boardElements[start].childNodes[0];
-  piece_IMG.style = "top: " + String(dy) + "px; left: " + String(dx) + "px; z-index: 200;";
-}
-function Make_Move_On_Board(move) {
-  const start = Move.Start(move);
-  const target = Move.Target(move);
-  const flag = Move.Flag(move);
-  boardElements[start].classList.add("yellow");
-  previousMove = move;
-  selecetedSquareIndex = null;
-  board.Make_Move(move);
-  AnimateMove(move);
-  if (flag == Move.flags.kingCastle) {
-    const rookMove = Move.EncodeUINT16(start + 3, start + 1, 0);
-    AnimateMove(rookMove);
-  } else if (flag == Move.flags.queenCastle) {
-    const rookMove = Move.EncodeUINT16(start - 4, start - 1, 0);
-    AnimateMove(rookMove);
-  }
-  UpdateLegalMovesLookUp();
-  if (Move.IsCapture(move)) {
-    sounds.capture.play();
-  } else {
-    sounds.quietMove.play();
-  }
-  setTimeout(() => {
-    RenderBoard(board);
-    GameLoop();
-  }, 180);
-}
-function Promotion(move) {
-  const index = prompt("0: Queen 1: Rook 2: Knight 3: Bishop");
-  const flags = [
-    Move.flags.queenPromotion,
-    Move.flags.rookPromotion,
-    Move.flags.knightPromotion,
-    Move.flags.bishopPromotion
-  ];
-  const start = Move.Start(move);
-  const target = Move.Target(move);
-  const oldFlag = Move.Flag(move);
-  const flag = oldFlag & 12 | flags[index];
-  const promotionMove = Move.EncodeUINT16(start, target, flag);
-  Make_Move_On_Board(promotionMove);
-}
-function SelectPiece(squareIndex) {
-  if (!gameData.playerTurn) return;
-  const legalMoves = gameData.moveLookUpTable[squareIndex];
-  selecetedSquareIndex = legalMoves.length == 0 ? null : squareIndex;
-  RenderBoard(board, legalMoves);
-}
-var main, boardElements, selecetedSquareIndex, previousMove;
-var init_UI = __esm({
-  "Browser/UI.js"() {
-    init_piece();
-    init_move();
-    init_Browser();
-    main = document.getElementById("main");
   }
 });
 
@@ -2335,7 +1394,7 @@ var init_chessboard = __esm({
     init_piece();
     init_move();
     init_AttackTables();
-    init_UI();
+    AttackTables.init();
     Board = class {
       constructor() {
         this.square = new Uint8Array(64).fill(0);
@@ -2864,11 +1923,526 @@ var init_Transposition_Table = __esm({
   }
 });
 
+// Core/Engine/evaluation.js
+var Evaluation;
+var init_evaluation = __esm({
+  "Core/Engine/evaluation.js"() {
+    init_piece();
+    init_Chess_Helper();
+    init_move();
+    Evaluation = class _Evaluation {
+      static mirroredBoard = new Array(64);
+      static mapFromPieceType = Array(12);
+      static kingMap = [
+        40,
+        40,
+        100,
+        0,
+        0,
+        40,
+        100,
+        40,
+        30,
+        30,
+        10,
+        0,
+        0,
+        10,
+        30,
+        30,
+        10,
+        10,
+        5,
+        0,
+        0,
+        5,
+        10,
+        10,
+        0,
+        0,
+        0,
+        -10,
+        -10,
+        0,
+        0,
+        0,
+        -10,
+        -10,
+        -10,
+        -20,
+        -20,
+        -10,
+        -10,
+        -10,
+        -20,
+        -20,
+        -20,
+        -30,
+        -30,
+        -20,
+        -20,
+        -20,
+        -30,
+        -30,
+        -30,
+        -40,
+        -40,
+        -30,
+        -30,
+        -30,
+        -40,
+        -40,
+        -40,
+        -50,
+        -50,
+        -40,
+        -40,
+        -40
+      ];
+      static pawnMap = [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10,
+        10,
+        10,
+        -10,
+        -10,
+        10,
+        10,
+        10,
+        5,
+        5,
+        10,
+        20,
+        20,
+        10,
+        5,
+        5,
+        5,
+        5,
+        15,
+        25,
+        25,
+        15,
+        5,
+        5,
+        10,
+        10,
+        20,
+        30,
+        30,
+        20,
+        10,
+        10,
+        20,
+        20,
+        30,
+        35,
+        35,
+        30,
+        20,
+        20,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ];
+      static knightMap = [
+        -50,
+        -40,
+        -30,
+        -30,
+        -30,
+        -30,
+        -40,
+        -50,
+        -40,
+        -20,
+        0,
+        5,
+        5,
+        0,
+        -20,
+        -40,
+        -30,
+        5,
+        15,
+        20,
+        20,
+        15,
+        5,
+        -30,
+        -30,
+        10,
+        20,
+        30,
+        30,
+        20,
+        10,
+        -30,
+        -30,
+        5,
+        20,
+        30,
+        30,
+        20,
+        5,
+        -30,
+        -30,
+        0,
+        15,
+        20,
+        20,
+        15,
+        0,
+        -30,
+        -40,
+        -20,
+        0,
+        0,
+        0,
+        0,
+        -20,
+        -40,
+        -50,
+        -40,
+        -30,
+        -30,
+        -30,
+        -30,
+        -40,
+        -50
+      ];
+      static bishopMap = [
+        -20,
+        -10,
+        -10,
+        -10,
+        -10,
+        -10,
+        -10,
+        -20,
+        -10,
+        5,
+        0,
+        0,
+        0,
+        0,
+        5,
+        -10,
+        -10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        -10,
+        -10,
+        0,
+        10,
+        15,
+        15,
+        10,
+        0,
+        -10,
+        -10,
+        5,
+        5,
+        15,
+        15,
+        5,
+        5,
+        -10,
+        -10,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        -10,
+        -10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -10,
+        -20,
+        -10,
+        -10,
+        -10,
+        -10,
+        -10,
+        -10,
+        -20
+      ];
+      static rookMap = [
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        0,
+        0,
+        5,
+        10,
+        15,
+        15,
+        10,
+        5,
+        0,
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        0,
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        0,
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        0,
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        0,
+        5,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        5,
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        0
+      ];
+      static queenMap = [
+        -20,
+        -10,
+        -10,
+        -5,
+        -5,
+        -10,
+        -10,
+        -20,
+        -10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -10,
+        -10,
+        0,
+        5,
+        5,
+        5,
+        5,
+        0,
+        -10,
+        -5,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        -5,
+        0,
+        0,
+        5,
+        10,
+        10,
+        5,
+        0,
+        -5,
+        -10,
+        5,
+        5,
+        5,
+        5,
+        5,
+        0,
+        -10,
+        -10,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        -10,
+        -20,
+        -10,
+        -10,
+        -5,
+        -5,
+        -10,
+        -10,
+        -20
+      ];
+      static {
+        let i = 0;
+        for (let rank = 7; rank >= 0; rank--) {
+          for (let file = 0; file < 8; file++) {
+            const squareIndex = rank * 8 + file;
+            this.mirroredBoard[squareIndex] = i;
+            i++;
+          }
+        }
+        this.mapFromPieceType[Piece.king] = this.kingMap;
+        this.mapFromPieceType[Piece.pawn] = this.pawnMap;
+        this.mapFromPieceType[Piece.knight] = this.knightMap;
+        this.mapFromPieceType[Piece.bishop] = this.bishopMap;
+        this.mapFromPieceType[Piece.rook] = this.rookMap;
+        this.mapFromPieceType[Piece.queen] = this.queenMap;
+      }
+      // Board
+      static evaluate(board) {
+        const endgameWeight = ChessHelper.CalculateEndgameWeight(board);
+        let score = 0;
+        const materialWeight = 1;
+        const positionWeight = 1;
+        const mobilityWeight = 0;
+        const kingWeight = 30;
+        score += this.countMaterial(board) * materialWeight;
+        score += this.positionBonus(board, endgameWeight) * positionWeight;
+        score += this.mobilityBonus(board) * mobilityWeight;
+        score += this.forceKingToCornerWithKing(board, endgameWeight) * kingWeight;
+        return score;
+      }
+      static countMaterial(board) {
+        let materialScore = 0;
+        for (let i = 0; i < 64; i++) {
+          const piece = board.square[i];
+          if (piece == 0) continue;
+          const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1;
+          materialScore += sign * Piece.getPieceValue(piece);
+        }
+        return materialScore;
+      }
+      static positionBonus(board, endgameWeight) {
+        let score = 0;
+        for (let i = 0; i < 64; i++) {
+          const piece = board.square[i];
+          if (piece == 0) continue;
+          const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1;
+          const pieceType = piece & 7;
+          const mapIndex = Piece.CheckPieceColor(piece, true) ? i : _Evaluation.mirroredBoard[i];
+          const bonus = _Evaluation.mapFromPieceType[pieceType][mapIndex];
+          score += sign * bonus * 0.2;
+        }
+        return score * (1 - endgameWeight);
+      }
+      static mobilityBonus(board) {
+        const myMobility = board.GenerateLegalMoves().length;
+        return myMobility;
+      }
+      static forceKingToCornerWithKing(board, endgameWeight) {
+        let score = 0;
+        let friendlyKingSquare = 0;
+        let enemyKingSquare = 0;
+        for (let i = 0; i < 64; i++) {
+          const piece = board.square[i];
+          if (!Piece.IsType(piece, Piece.king)) continue;
+          const isFriendly = Piece.CheckPieceColor(piece, board.white_To_Move);
+          if (isFriendly) friendlyKingSquare = i;
+          else enemyKingSquare = i;
+        }
+        const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare);
+        const friendlyKingFile = ChessHelper.FileIndex(friendlyKingSquare);
+        const enemyKingRank = ChessHelper.RankIndex(enemyKingSquare);
+        const enemyKingFile = ChessHelper.FileIndex(enemyKingSquare);
+        const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5);
+        const enemyKingDstToCenterFile = Math.abs(enemyKingFile - 3.5);
+        const enemyKingDstToCenter = enemyKingDstToCenterRank + enemyKingDstToCenterFile;
+        score += enemyKingDstToCenter / 7;
+        const RankDistance = Math.abs(friendlyKingRank - enemyKingRank);
+        const FileDistance = Math.abs(friendlyKingFile - enemyKingFile);
+        const kingDistance = FileDistance + RankDistance;
+        score += (14 - kingDistance) / 14;
+        return score * Math.min(endgameWeight, 1);
+      }
+      // Moves
+      static Move(move, board) {
+        let score = 0;
+        const start = Move.Start(move);
+        const target = Move.Target(move);
+        score += this.MVV_LVA_ordering(start, target, board);
+        score += this.PieceSquareTables(start, target, board);
+        return score;
+      }
+      static MVV_LVA_ordering(start, target, board) {
+        let pieceTypeMoved = board.square[start] & 7;
+        let pieceTypeAttacked = board.square[target] & 7;
+        return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved];
+      }
+      static PieceSquareTables(start, target, board) {
+        const piece = board.square[start];
+        const pieceType = piece & 7;
+        const startIndex = Piece.CheckPieceColor(piece, true) ? start : _Evaluation.mirroredBoard[start];
+        const targetIndex = Piece.CheckPieceColor(piece, true) ? target : _Evaluation.mirroredBoard[target];
+        const bonusOld = _Evaluation.mapFromPieceType[pieceType][startIndex];
+        const bonusNew = _Evaluation.mapFromPieceType[pieceType][targetIndex];
+        return bonusOld - bonusNew;
+      }
+    };
+  }
+});
+
 // Core/Engine/MoveOrdering.js
-function MoveOrder(board2, moves, TTbestMove) {
+function MoveOrder(board, moves, TTbestMove) {
   let sortedMoves = moves.sort((a, b) => {
-    const valueA = Evaluation.Move(a, board2);
-    const valueB = Evaluation.Move(b, board2);
+    const valueA = Evaluation.Move(a, board);
+    const valueB = Evaluation.Move(b, board);
     return valueB - valueA;
   });
   if (TTbestMove != null) {
@@ -2895,25 +2469,25 @@ var init_SearchConstants = __esm({
 });
 
 // Core/Engine/QuiesenceSearch.js
-function QuiescenceSearch(board2, timeManager, ply, alpha, beta) {
+function QuiescenceSearch(board, timeManager, ply, alpha, beta) {
   if (timeManager.ExceededTimeLimit()) return void 0;
   let moves;
-  if (board2.InCheck(board2.white_To_Move)) {
-    moves = board2.GenerateLegalMoves();
+  if (board.InCheck(board.white_To_Move)) {
+    moves = board.GenerateLegalMoves();
   } else {
-    moves = board2.GenerateTacticalMoves();
+    moves = board.GenerateTacticalMoves();
   }
-  if (moves.length == 0 && board2.InCheck(board2.white_To_Move)) {
+  if (moves.length == 0 && board.InCheck(board.white_To_Move)) {
     return -(checkMateScore - ply);
   }
-  let standPat = Evaluation.evaluate(board2);
+  let standPat = Evaluation.evaluate(board);
   if (beta <= standPat) return standPat;
   alpha = Math.max(alpha, standPat);
-  moves = MoveOrder(board2, moves);
+  moves = MoveOrder(board, moves);
   for (let move of moves) {
-    board2.Make_Move(move);
-    let score = -QuiescenceSearch(board2, timeManager, ply + 1, -beta, -alpha);
-    board2.Unmake_Move(move);
+    board.Make_Move(move);
+    let score = -QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha);
+    board.Unmake_Move(move);
     if (score >= beta) return score;
     alpha = Math.max(alpha, score);
   }
@@ -2938,8 +2512,8 @@ var init_Search = __esm({
     init_move();
     init_SearchConstants();
     Search = class {
-      constructor(board2, timeManager) {
-        this.board = board2;
+      constructor(board, timeManager) {
+        this.board = board;
         this.timeManager = timeManager;
         this.TT = new Transposition_Table();
         this.bestMove = null;
@@ -2947,19 +2521,15 @@ var init_Search = __esm({
       IterativeDeepening() {
         this.timeManager.Start();
         this.bestMove = null;
-        console.log("EndgameWGH: ", ChessHelper.CalculateEndgameWeight(this.board));
         for (let depth = 1; depth < maxSearchDepth; depth++) {
           nodesSearched = 0;
           this.currentDepth = depth;
           const score = this.Negamax(depth, 0, -Infinity, Infinity);
-          console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score);
           if (mateTreshold <= score) {
             const mateDepth = checkMateScore - score;
-            console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2));
             this.timeManager.Stop();
           }
           if (this.timeManager.cancelSearch) {
-            console.log("Search canceled", this.currentDepth);
             break;
           }
         }
@@ -3215,7 +2785,7 @@ var UCI = class {
     process.stdout.write(msg + "\n");
   }
 };
-function decodeMove(UCIMove, board2) {
+function decodeMove(UCIMove, board) {
   const parts = UCIMove.split("");
   const letterToNumber = {
     "a": 0,
@@ -3230,7 +2800,7 @@ function decodeMove(UCIMove, board2) {
   const start = letterToNumber[parts[0]] + (parseInt(parts[1]) - 1) * 8;
   const target = letterToNumber[parts[2]] + (parseInt(parts[3]) - 1) * 8;
   let flag = 0;
-  if (board2.square[target] != 0) {
+  if (board.square[target] != 0) {
     flag += 4;
   }
   if (parts.length == 5) {
@@ -3244,7 +2814,7 @@ function decodeMove(UCIMove, board2) {
   }
   if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move2.flags.kingCastle;
   if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move2.flags.queenCastle;
-  if (target == board2.enPassantSquare) flag = Move2.enPassantSquare;
+  if (target == board.enPassantSquare) flag = Move2.enPassantSquare;
   return new Move2(start, target, flag);
 }
 new UCI();

@@ -1,5 +1,3 @@
-import { AttackTables } from "../Constants/AttackTables.js"
-
 const maxNumLegalMoves = 218
 
 class MoveGenerator {

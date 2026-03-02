@@ -5,7 +5,6 @@ const engine = new Engine(1000)
 
 self.onmessage = (e) => {
     const {type, fen, repetitionTable} = e.data
-    console.log("lets go")
     
     if (type === "SEARCH"){
         engine.SetPosition(fen)

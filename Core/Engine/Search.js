@@ -23,7 +23,7 @@ export class Search {
         this.timeManager.Start()
         this.bestMove = null
 
-        console.log("EndgameWGH: ",  ChessHelper.CalculateEndgameWeight(this.board))
+        //console.log("EndgameWGH: ",  ChessHelper.CalculateEndgameWeight(this.board))
 
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){
@@ -33,15 +33,15 @@ export class Search {
             // search the position
             this.currentDepth = depth
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
-            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
+            //console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
             if (mateTreshold <= score){
                 const mateDepth = checkMateScore - score
-                console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
+                //console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
                 this.timeManager.Stop()
             }
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
-                console.log("Search canceled", this.currentDepth)
+                //console.log("Search canceled", this.currentDepth)
                 break
             }
         }

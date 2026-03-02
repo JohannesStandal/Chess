@@ -63,7 +63,7 @@ export class ChessHelper {
 
     static checkForRepetitions(repetetionTable){
         // we only need to check the most recent added hash
-        const copiedTable = repetetionTable
+        const copiedTable = [...repetetionTable]
         const hashToCheck = copiedTable.pop()
 
         // count number of appearances
