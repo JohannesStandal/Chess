@@ -623,9 +623,9 @@ export class Board {
         const pawnAttacks = (pawnIsWhite) ? AttackTables.whitePawn[start] : AttackTables.blackPawn[start]
         
         // en passant target
-        let epTarget = null
+        const epTarget = null
         if (this.enPassantSquare != null){
-            epTarget = this.enPassantSquare + 8 * dir
+            const epTarget = this.enPassantSquare + 8 * dir
         }
         
         for (const target of pawnAttacks){
