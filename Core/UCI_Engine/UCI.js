@@ -86,23 +86,31 @@ export class UCI {
   }
 
   handleGo(parts){
+    const moveTimeIndex = parts.indexOf("movetime")
     const whiteTimeIndex = parts.indexOf("wtime")
     const blackTimeIndex = parts.indexOf("btime")
-
-    let wTime = 10000
-    let bTime = 10000
-
-    if (0 <= whiteTimeIndex){
-      wTime = parseInt(parts[whiteTimeIndex + 1])
+    
+    
+    if (0 <= moveTimeIndex){
+      const thinkingTime = parseInt(parts[moveTimeIndex + 1])
+      this.engine.ThinkingTime(thinkingTime)
     }
-    if (0 <= whiteTimeIndex){
-      bTime = parseInt(parts[blackTimeIndex + 1])
+    else {
+      // find white and black time remaining
+      let wTime = 10000
+      let bTime = 10000
+  
+      if (0 <= whiteTimeIndex){
+        wTime = parseInt(parts[whiteTimeIndex + 1])
+      }
+      if (0 <= blackTimeIndex){
+        bTime = parseInt(parts[blackTimeIndex + 1])
+      }
+      
+      const myTimeLeft = (this.engine.board.white_To_Move) ? wTime : bTime
+      const thinkingTime = Math.max(100, myTimeLeft / 30)
+      this.engine.ThinkingTime(thinkingTime)
     }
-
-    const myTimeLeft = (this.engine.board.white_To_Move) ? wTime : bTime
-    const thinkingTime = Math.max(100, myTimeLeft / 30)
-
-    this.engine.ThinkingTime(thinkingTime)
 
     const bestMove = Move.ToUCI(this.engine.Bestmove())
       
