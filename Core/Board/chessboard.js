@@ -8,7 +8,6 @@ import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { AttackTables } from "../Constants/AttackTables.js"
 AttackTables.init()
-
 export class Board {
     constructor(){
         // blir fiksa når du lastar inn ein FEN
@@ -623,11 +622,12 @@ export class Board {
         const pawnAttacks = (pawnIsWhite) ? AttackTables.whitePawn[start] : AttackTables.blackPawn[start]
         
         // en passant target
-        const epTarget = null
+        let epTarget = null
+        //console.log(this.enPassantSquare)
         if (this.enPassantSquare != null){
-            const epTarget = this.enPassantSquare + 8 * dir
+            epTarget = this.enPassantSquare + 8 * dir
         }
-        
+        //console.log(epTarget)
         for (const target of pawnAttacks){
             // limit captures to diagonal pins
             const offset = Math.abs(target - start)
