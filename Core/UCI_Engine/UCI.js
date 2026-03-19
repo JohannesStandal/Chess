@@ -159,7 +159,7 @@ function decodeMove(UCIMove, board){
   if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
   if (target == board.enPassantSquare) flag = Move.enPassantSquare
 
-  return new Move(start, target, flag)
+  return Move.EncodeUINT16(start, target, flag)
 }
 
 new UCI()
