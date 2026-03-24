@@ -7,7 +7,9 @@ import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { AttackTables } from "../Constants/AttackTables.js"
+import { MoveGenerator } from "../Board/MoveGenerator.js"
 AttackTables.init()
+
 export class Board {
     constructor(){
         // blir fiksa når du lastar inn ein FEN
@@ -17,7 +19,7 @@ export class Board {
         this.halfMoveClock = 0
         this.enPassantSquare = null
         
-        
+        this.moveGenerator = new MoveGenerator(this)
         
         // lagrer spillhistorikk
         this.playedMoves = []
