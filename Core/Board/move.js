@@ -61,7 +61,7 @@ export class Move {
 
         if (Move.IsPromotion(move)){
             const type = Move.Flag(move) & 0b11
-            const letters = "kbrq"
+            const letters = "nbrq"
             const promotion = letters[type]
 
             return startCoord + targetCoord + promotion

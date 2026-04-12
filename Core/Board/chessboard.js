@@ -7,6 +7,7 @@ import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { AttackTables } from "../Constants/AttackTables.js"
+import { MoveGenerator } from "../Board/MoveGenerator.js"
 AttackTables.init()
 
 export class Board {
@@ -18,7 +19,7 @@ export class Board {
         this.halfMoveClock = 0
         this.enPassantSquare = null
         
-        
+        this.moveGenerator = new MoveGenerator(this)
         
         // lagrer spillhistorikk
         this.playedMoves = []
@@ -627,7 +628,7 @@ export class Board {
         if (this.enPassantSquare != null){
             const epTarget = this.enPassantSquare + 8 * dir
         }
-        
+        //console.log(epTarget)
         for (const target of pawnAttacks){
             // limit captures to diagonal pins
             const offset = Math.abs(target - start)

@@ -13,7 +13,7 @@ import { Tests } from "../Tests/Tests.js"
 export const board = new Board()
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: false, // ^ --||--
+    playAsBlack: true, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -132,7 +132,7 @@ export function GameLoop(){
     }
 }
 
-StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
+StartGame("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -")
 //StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
 
