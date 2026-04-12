@@ -6,7 +6,6 @@ export class AttackTables {
   static knight;
   static whitePawn;
   static blackPawn;
-
   // Lazy init: kall denne før du trenger tabellene
   static init() {
     if (this.king) return; // allerede initialisert

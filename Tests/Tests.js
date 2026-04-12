@@ -13,7 +13,7 @@ export class Tests {
         
         let sum = 0
     
-        const moves = this.board.GenerateLegalMoves()
+        const moves = this.board.moveGenerator.GenerateMoves()
 
         for (let move of moves){
             this.board.Make_Move(move)
