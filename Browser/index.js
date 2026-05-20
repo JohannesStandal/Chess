@@ -21,6 +21,7 @@ export var gameData = {
     moveLookUpTable: null,
 }
 
+
 export const sounds = {
         quietMove: new Audio("Sounds/move-self.mp3"),
         capture: new Audio("Sounds/capture.mp3"),

@@ -6,9 +6,10 @@ export class AttackTables {
   static knight;
   static whitePawn;
   static blackPawn;
-  // Lazy init: kall denne før du trenger tabellene
+
+  // Function for initializing the tables, allows DOM creation
   static init() {
-    if (this.king) return; // allerede initialisert
+    if (this.king) return; // Tables are already initialized
 
     this.king = new Array(64);
     this.knight = new Array(64);
