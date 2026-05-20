@@ -183,7 +183,7 @@ export class MoveGenerator {
             const pieceOnTargetSquare = board.square[startSquare]
             
             // Skip empty or enemy squares
-            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, this.board.white_To_Move)
+            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, board.white_To_Move)
             const emptySquare = (pieceOnTargetSquare == 0)
 
             if (enemySquare || emptySquare){
@@ -305,14 +305,10 @@ export class MoveGenerator {
     }
 
     GenerateKingMoves(board, start){
-        // remove king from the board
-        const king = board.square[start]
-        board.square[start] = 0
-
         const kingAttacks = AttackTables.king[start]
         for (let target of kingAttacks){
             // King shouldnt wander into danger
-            if (AttackDetector.SquareUnderAttack(board, target, !board.white_To_Move)) continue
+            if (AttackDetector.SquareUnderAttack(board, target, !board.white_To_Move, true)) continue
 
             const pieceOnTargetSquare = board.square[target]
             // quietmove
@@ -320,12 +316,10 @@ export class MoveGenerator {
                 this.Add(start, target, Move.flags.quietMove)
             }
             // capture
-            if (Piece.CheckPieceColor(pieceOnTargetSquare, !this.white_To_Move)){
+            if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
                 this.Add(start, target, Move.flags.captures)
             }
         }
-        // Put the king back on the board
-        board.square[start] = king
         
         // castle rights
         const castleRights = (board.white_To_Move) ? board.castlingRights >> 2 : board.castlingRights

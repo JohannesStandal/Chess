@@ -5,9 +5,10 @@ import { ChessHelper } from "../Utils/Chess_Helper.js"
 // AttackTables.init()
 
 export class AttackDetector {
-    static SquareUnderAttack(board, squareIndex, byWhite){
+    static SquareUnderAttack(board, squareIndex, byWhite, ignoreKing = false){
         // Checks if a squareIndex is under attack by the enemy
         const attackerColor = (byWhite) ? Piece.white : Piece.black 
+        const friendlyColor = (byWhite) ? Piece.black : Piece.white 
         
         // Check for potential attacking knights
         const knightAttacks = AttackTables.knight[squareIndex]
@@ -58,7 +59,7 @@ export class AttackDetector {
                 if (pieceOnTargetSquare == 0){
                     continue
                 }
-
+                
                 // Check for an enemy piece that can move in the given direction
                 else if (
                     pieceOnTargetSquare == (Piece.queen | attackerColor) ||
@@ -66,6 +67,11 @@ export class AttackDetector {
                     ){
                     return true
                 }
+                
+                // Ignore friendly king for king move detection
+                else if (pieceOnTargetSquare == (Piece.king | friendlyColor) && ignoreKing){
+                    continue
+                } 
 
                 // Friendly piece means this direction is safe
                 else {
