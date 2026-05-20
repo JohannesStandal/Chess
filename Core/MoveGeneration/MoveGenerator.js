@@ -4,7 +4,7 @@ import { AttackDetector } from "./Attack.js"
 import { Piece } from "../Board/piece.js"
 import { Move } from "../Board/move.js"
 
-//AttackTables.init()
+AttackTables.init()
 
 const maxNumLegalMoves = 218
 
@@ -27,7 +27,7 @@ export class MoveGenerator {
             // in case of a horisontally pinned king
         }
 
-        move = Move.EncodeUINT16(start, target, flag)
+        const move = Move.EncodeUINT16(start, target, flag)
         this.moves[this.count] = move
         this.count++
     }
@@ -175,7 +175,7 @@ export class MoveGenerator {
         let friendlyKingSquare = board.white_To_Move ? kings[0] : kings[1]
 
         // If there is a double check, we only consider kingmoves
-        this.GenerateKingMoves(friendlyKingSquare)
+        this.GenerateKingMoves(board, friendlyKingSquare)
         if (1 < this.checkers.length) return
 
         // Generate other moves
@@ -183,7 +183,7 @@ export class MoveGenerator {
             const pieceOnTargetSquare = board.square[startSquare]
             
             // Skip empty or enemy squares
-            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, board.white_To_Move)
+            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)
             const emptySquare = (pieceOnTargetSquare == 0)
 
             if (enemySquare || emptySquare){
@@ -202,7 +202,7 @@ export class MoveGenerator {
 
             // sliding moves
             if (Piece.IsSlidingPiece(pieceOnTargetSquare)){
-                this.GenerateSlidingMoves(board, startSquare)
+                this.GenerateSlidingMoves(board, pieceOnTargetSquare, startSquare)
             }
         }
     }
@@ -297,7 +297,7 @@ export class MoveGenerator {
             }
 
             // Opponent piece is a capture
-            else if (! Piece.CheckPieceColor(pieceOnTargetSquare, board.white_To_Move)){
+            else if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
                 this.Add(start, targetSquare, Move.flags.captures)
                 
             }
@@ -316,7 +316,7 @@ export class MoveGenerator {
                 this.Add(start, target, Move.flags.quietMove)
             }
             // capture
-            if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
+            else if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
                 this.Add(start, target, Move.flags.captures)
             }
         }
@@ -352,7 +352,7 @@ export class MoveGenerator {
         //castle queenside
         if ((castleRights & 0b01) == 0b01){
           
-            let legal = ! this.SquareUnderAttack(board, myKingSquare, !board.white_To_Move)
+            let legal = ! AttackDetector.SquareUnderAttack(board, myKingSquare, !board.white_To_Move)
 
             for (let i = 1; i < 4 ; i++){
                 const squareToCheck = myKingSquare - i
@@ -360,7 +360,7 @@ export class MoveGenerator {
                     break
                 }
                 // Check if square is empty
-                if (this.board.square[squareToCheck] != 0){
+                if (board.square[squareToCheck] != 0){
                     legal = false 
                 }
                 // Check if square is under attack

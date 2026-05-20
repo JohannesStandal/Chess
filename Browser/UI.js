@@ -1,6 +1,6 @@
 import { Piece } from "../Core/Board/piece.js"
 import { Move } from "../Core/Board/move.js";
-import {GameLoop, gameData, board, sounds } from "./index.js"
+import {GameLoop, gameData, chess, sounds } from "./index.js"
 
 // main element containing the chessboard
 var main = document.getElementById("main")
@@ -16,7 +16,7 @@ export function Reset(){
 
 export function FlipBoard(){
     gameData.fromWhitePerspective = !gameData.fromWhitePerspective
-    RenderBoard(board)
+    RenderBoard(chess.board)
 }
 
 function RenderBoard(board, legalMoves=[]){
@@ -110,7 +110,7 @@ function UpdateLegalMovesLookUp(){
         gameData.moveLookUpTable[i] = []
     }
 
-    board.GenerateLegalMoves().forEach(move =>{
+    chess.GenerateMoves().forEach(move =>{
         gameData.moveLookUpTable[Move.Start(move)].push(move)
     })
 }
@@ -142,7 +142,7 @@ function Make_Move_On_Board(move){
     selecetedSquareIndex = null
 
     // make move on viritual board 
-    board.Make_Move(move)
+    chess.makeMove(move)
 
     // animate default move
     AnimateMove(move)
@@ -171,7 +171,7 @@ function Make_Move_On_Board(move){
     // wait for animation to finish
     setTimeout(()=>{
         // render new position
-        RenderBoard(board)
+        RenderBoard(chess.board)
         // call back to game loop
         GameLoop()
     },180)
@@ -209,7 +209,7 @@ function SelectPiece(squareIndex){
     
     // if there are no legal moves, the selected square is invalid 
     selecetedSquareIndex = (legalMoves.length == 0) ? null : squareIndex
-    RenderBoard(board, legalMoves)
+    RenderBoard(chess.board, legalMoves)
 }
 
-export { board, gameData, RenderBoard, UpdateLegalMovesLookUp, AnimateMove, Make_Move_On_Board}
+export { chess as board, gameData, RenderBoard, UpdateLegalMovesLookUp, AnimateMove, Make_Move_On_Board}
