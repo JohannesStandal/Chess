@@ -1,10 +1,13 @@
 import { Board } from "../Core/Board/chessboard.js"
+import { MoveGenerator } from "../Core/MoveGeneration/MoveGenerator.js"
 import { Move } from "../Core/Board/move.js"
 
 export class Tests {
     constructor() {
         this.board = new Board()
+        this.moveGenerator = new MoveGenerator()
         this.board.Load_Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+
     }
 
     MoveGenerationCount(depth, log_moves = false){
@@ -13,13 +16,14 @@ export class Tests {
         
         let sum = 0
     
-        const moves = this.board.moveGenerator.GenerateMoves()
+        this.moveGenerator.GenerateMoves(this.board)
+        
 
-        for (let move of moves){
+        for (let i = 0; i < this.moveGenerator.count; i++){
+            move = this.moveGenerator.moves[i]
+
             this.board.Make_Move(move)
             sum += this.MoveGenerationCount(depth-1, log_moves)
-            
-            
             this.board.Unmake_Move(move)
         }
         
