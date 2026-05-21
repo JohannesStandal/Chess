@@ -4,7 +4,7 @@ import { AttackDetector } from "./Attack.js"
 import { Piece } from "../Board/piece.js"
 import { Move } from "../Board/move.js"
 
-//AttackTables.init()
+AttackTables.init()
 
 const maxNumLegalMoves = 218
 
@@ -20,14 +20,15 @@ export class MoveGenerator {
         this.count = 0
     }
 
-    Add(start, target, flag){
-
-        if (flag == Move.epCapture){
-            // Move needs an en passant search
-            // in case of a horisontally pinned king
+    Add(start, target, flag, king=false){   
+        // See if the move resolves the check. Ep moves are already cleared
+        if (0 < this.checkers.length && flag != Move.flags.epCapture){ 
+            //if (king && this.blockingSquares.includes(target)) return // Do not move to a blocking square
+            if (!king && !this.blockingSquares.includes(target)) return // Block the check
         }
 
-        move = Move.EncodeUINT16(start, target, flag)
+        const move = Move.EncodeUINT16(start, target, flag)
+        if (move == 0) console.log("bug")
         this.moves[this.count] = move
         this.count++
     }
@@ -169,13 +170,15 @@ export class MoveGenerator {
         // Reset array pointer
         this.moves.fill(0)
         this.count = 0
+
+        this.ComputeKingSafety(board)
         
         // locate kings
         const kings = ChessHelper.LocateKings(board)
         let friendlyKingSquare = board.white_To_Move ? kings[0] : kings[1]
 
         // If there is a double check, we only consider kingmoves
-        this.GenerateKingMoves(friendlyKingSquare)
+        this.GenerateKingMoves(board, friendlyKingSquare)
         if (1 < this.checkers.length) return
 
         // Generate other moves
@@ -183,7 +186,7 @@ export class MoveGenerator {
             const pieceOnTargetSquare = board.square[startSquare]
             
             // Skip empty or enemy squares
-            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, this.board.white_To_Move)
+            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)
             const emptySquare = (pieceOnTargetSquare == 0)
 
             if (enemySquare || emptySquare){
@@ -202,7 +205,7 @@ export class MoveGenerator {
 
             // sliding moves
             if (Piece.IsSlidingPiece(pieceOnTargetSquare)){
-                this.GenerateSlidingMoves(board, startSquare)
+                this.GenerateSlidingMoves(board, pieceOnTargetSquare, startSquare)
             }
         }
     }
@@ -262,8 +265,13 @@ export class MoveGenerator {
 
             // En passant
             if (target == epTarget){
-                this.Add(start, target, Move.flags.epCapture)
+                // Check if the ep capture is legal due to horizontal pins
+                const move = Move.EncodeUINT16(start, target, Move.flags.epCapture)
+                const illegal = AttackDetector.IsMoveIllegal(board, move)
+                
+                if (!illegal) this.Add(start, target, Move.flags.epCapture)
             }
+            
             
             // Check if there is an enemy piece on the capture square
             const targetPiece = board.square[target]
@@ -297,7 +305,7 @@ export class MoveGenerator {
             }
 
             // Opponent piece is a capture
-            else if (! Piece.CheckPieceColor(pieceOnTargetSquare, board.white_To_Move)){
+            else if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
                 this.Add(start, targetSquare, Move.flags.captures)
                 
             }
@@ -305,27 +313,21 @@ export class MoveGenerator {
     }
 
     GenerateKingMoves(board, start){
-        // remove king from the board
-        const king = board.square[start]
-        board.square[start] = 0
-
         const kingAttacks = AttackTables.king[start]
         for (let target of kingAttacks){
             // King shouldnt wander into danger
-            if (AttackDetector.SquareUnderAttack(board, target, !board.white_To_Move)) continue
+            if (AttackDetector.SquareUnderAttack(board, target, !board.white_To_Move, true)) continue
 
             const pieceOnTargetSquare = board.square[target]
             // quietmove
             if (pieceOnTargetSquare == 0){
-                this.Add(start, target, Move.flags.quietMove)
+                this.Add(start, target, Move.flags.quietMove, true)
             }
             // capture
-            if (Piece.CheckPieceColor(pieceOnTargetSquare, !this.white_To_Move)){
-                this.Add(start, target, Move.flags.captures)
+            else if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
+                this.Add(start, target, Move.flags.captures, true)
             }
         }
-        // Put the king back on the board
-        board.square[start] = king
         
         // castle rights
         const castleRights = (board.white_To_Move) ? board.castlingRights >> 2 : board.castlingRights
@@ -358,7 +360,7 @@ export class MoveGenerator {
         //castle queenside
         if ((castleRights & 0b01) == 0b01){
           
-            let legal = ! this.SquareUnderAttack(board, myKingSquare, !board.white_To_Move)
+            let legal = ! AttackDetector.SquareUnderAttack(board, myKingSquare, !board.white_To_Move)
 
             for (let i = 1; i < 4 ; i++){
                 const squareToCheck = myKingSquare - i
@@ -366,7 +368,7 @@ export class MoveGenerator {
                     break
                 }
                 // Check if square is empty
-                if (this.board.square[squareToCheck] != 0){
+                if (board.square[squareToCheck] != 0){
                     legal = false 
                 }
                 // Check if square is under attack

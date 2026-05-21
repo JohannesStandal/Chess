@@ -6,11 +6,14 @@ import { Move } from "../Core/Board/move.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
+import { Chess } from "../Browser/Chess.js"
 
 // Testsuite availability
 import { Tests } from "../Tests/Tests.js"
+import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
 
-export const board = new Board()
+export const chess = new Chess()
+
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
     playAsBlack: true, // ^ --||--
@@ -27,6 +30,7 @@ export const sounds = {
         capture: new Audio("Sounds/capture.mp3"),
         notification: new Audio("Sounds/notify.mp3"),
 }
+
 window.evaluate = Evaluation
 const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
@@ -44,7 +48,7 @@ function StartGame(fen = startPos){
         type: "RESET"
     })
     //lastar inn posisjon
-    board.Load_Fen(fen)
+    chess.loadFen(fen)
     UpdateLegalMovesLookUp()
     //Genererer eit nytt brett fra eit perspektiv
     /*
@@ -59,7 +63,7 @@ function StartGame(fen = startPos){
     Generer fra ! svart perspektiv
     */
    //gameData.fromWhitePerspective = gameData.playAsWhite 
-   RenderBoard(board)
+   RenderBoard(chess.board)
    GameLoop()
 }
 
@@ -74,7 +78,7 @@ window.FlipBoard = FlipBoard
 window.tests = tests
 window.gameData = gameData
 
-window.board = board
+window.chess = chess
 
 const engine = new Worker("./Engine.worker.js", {type: "module"})
 engine.onmessage = (e) =>{
@@ -84,22 +88,22 @@ engine.onmessage = (e) =>{
         Make_Move_On_Board(move)
     }
 window.engine = engine
-
+tests.board = chess.board
 
 
 
 
 export function GameLoop(){
 
-    const gameOver = (board.GenerateLegalMoves().length == 0)
-    const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
-    const check = board.InCheck(board.white_To_Move)
+    const gameOver = (chess.GenerateMoves().length == 0)
+    const threefoldRepetition = ChessHelper.checkForRepetitions(chess.board.repetitionTable)
+    const check = chess.InCheck()
 
     if (gameOver){
         let message = ""
         sounds.notification.play()
         if (check){
-            const winner = (board.white_To_Move) ? "Svart" : "Kvit"
+            const winner = (chess.white_To_Move) ? "Svart" : "Kvit"
             message = winner + " vant ved sjakkmatt!"
         }
         else {
@@ -117,7 +121,7 @@ export function GameLoop(){
     }
     
     
-    gameData.playerTurn = (gameData.playAsWhite && board.white_To_Move) || (gameData.playAsBlack && ! board.white_To_Move) 
+    gameData.playerTurn = (gameData.playAsWhite && chess.white_To_Move) || (gameData.playAsBlack && ! chess.white_To_Move) 
    
     if (gameData.playerTurn){
         
@@ -126,14 +130,14 @@ export function GameLoop(){
         setTimeout(()=>{
             engine.postMessage({
                 type: "SEARCH",
-                fen: board.Export_Fen(),
-                repetitionTable: board.repetitionTable,
+                fen: chess.Export_Fen(),
+                repetitionTable: chess.repetitionTable,
             })
         },300)
     }
 }
-
-StartGame("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -")
+StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
+//StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 //StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
 

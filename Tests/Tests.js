@@ -10,37 +10,39 @@ export class Tests {
 
     }
 
-    MoveGenerationCount(depth, log_moves = false){
+    MoveGenerationCount(depth, log_moves = false, ply=0, previousMove = null){
         // Counting reachable positions after n moves
         if (depth == 0) return 1
         
         let sum = 0
     
         this.moveGenerator.GenerateMoves(this.board)
+        const moves = this.moveGenerator.moves.slice(0, this.moveGenerator.count)
         
-
-        for (let i = 0; i < this.moveGenerator.count; i++){
-            move = this.moveGenerator.moves[i]
+        for (const move of moves){
 
             this.board.Make_Move(move)
-            sum += this.MoveGenerationCount(depth-1, log_moves)
+            sum += this.MoveGenerationCount(depth-1, log_moves, ply+1, move)
             this.board.Unmake_Move(move)
         }
         
-        if (log_moves && this.board.playedMoves.length == 1){
-            const move = this.board.playedMoves[0]
-            console.log(Move.ToUCI(move), sum)
+        if (log_moves && ply == 1){
+            console.log(Move.ToUCI(previousMove), sum)
         }
 
         return sum
     }
 
     ListMoves(){
-        const moves = this.board.GenerateLegalMoves()
-        moves.forEach(move => {
+        let numNodes = 0
+        this.moveGenerator.GenerateMoves(this.board)
+
+        for (let i = 0; i < this.moveGenerator.count; i++){
+            const move = this.moveGenerator.moves[i]
+            numNodes++
             console.log(Move.ToUCI(move))
-        });
-        console.log("Num nodes: ", moves.length)
+        }
+        console.log("Num nodes: ", numNodes)
     }
 
     perft(depth){
