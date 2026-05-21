@@ -20,14 +20,15 @@ export class MoveGenerator {
         this.count = 0
     }
 
-    Add(start, target, flag){
-
-        if (flag == Move.epCapture){
-            // Move needs an en passant search
-            // in case of a horisontally pinned king
+    Add(start, target, flag, king=false){   
+        // In check
+        if (0 < this.checkers.length){ 
+            //if (king && this.blockingSquares.includes(target)) return // Do not move to a blocking square
+            if (!king && !this.blockingSquares.includes(target)) return // Block the check
         }
 
         const move = Move.EncodeUINT16(start, target, flag)
+        if (move == 0) console.log("bug")
         this.moves[this.count] = move
         this.count++
     }
@@ -169,6 +170,8 @@ export class MoveGenerator {
         // Reset array pointer
         this.moves.fill(0)
         this.count = 0
+
+        this.ComputeKingSafety(board)
         
         // locate kings
         const kings = ChessHelper.LocateKings(board)
@@ -262,8 +265,13 @@ export class MoveGenerator {
 
             // En passant
             if (target == epTarget){
-                this.Add(start, target, Move.flags.epCapture)
+                // Check if the ep capture is legal due to horizontal pins
+                const move = Move.EncodeUINT16(start, target, Move.flags.epCapture)
+                const illegal = AttackDetector.IsMoveIllegal(board, move)
+                
+                if (!illegal) this.Add(start, target, Move.flags.epCapture)
             }
+            
             
             // Check if there is an enemy piece on the capture square
             const targetPiece = board.square[target]
@@ -313,11 +321,11 @@ export class MoveGenerator {
             const pieceOnTargetSquare = board.square[target]
             // quietmove
             if (pieceOnTargetSquare == 0){
-                this.Add(start, target, Move.flags.quietMove)
+                this.Add(start, target, Move.flags.quietMove, true)
             }
             // capture
             else if (Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)){
-                this.Add(start, target, Move.flags.captures)
+                this.Add(start, target, Move.flags.captures, true)
             }
         }
         
