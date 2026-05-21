@@ -21,8 +21,8 @@ export class MoveGenerator {
     }
 
     Add(start, target, flag, king=false){   
-        // In check
-        if (0 < this.checkers.length){ 
+        // See if the move resolves the check. Ep moves are already cleared
+        if (0 < this.checkers.length && flag != Move.flags.epCapture){ 
             //if (king && this.blockingSquares.includes(target)) return // Do not move to a blocking square
             if (!king && !this.blockingSquares.includes(target)) return // Block the check
         }
