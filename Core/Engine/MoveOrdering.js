@@ -10,11 +10,21 @@ export function MoveOrder(board, moves, TTbestMove){
     })
     // Add TT bestmove as the first move to check
     if (TTbestMove != null){
-        sortedMoves = sortedMoves.filter(move => move != TTbestMove)
-        sortedMoves.unshift(TTbestMove)    
+        sortedMoves = InsertFirst(sortedMoves, TTbestMove)  
     }
 
-
     return sortedMoves
+}
+
+export function InsertFirst(moves, move){
+    const index = moves.indexOf(move)
+    if (index == -1) return moves
+    for (let i = index; 0 < i; i--){
+        const a = moves[i-1]
+        moves[i] = a
+    }
+    moves[0] = move
+    return moves
+
 }
 

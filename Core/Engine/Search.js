@@ -1,17 +1,19 @@
 import { Transposition_Table } from "./Transposition_Table.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
-import { MoveOrder } from "./MoveOrdering.js"
+import { MoveOrder, InsertFirst } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
 import { Move } from "../Board/move.js"
 import { checkMateScore, drawScore, mateTreshold, maxSearchDepth} from "../Constants/SearchConstants.js"
+import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
+import { AttackDetector } from "../MoveGeneration/Attack.js"
 
 // constants
 var nodesSearched;
 
-
 export class Search {
     constructor(board, timeManager){
         this.board = board
+        this.MoveGenerator = new MoveGenerator()
         this.timeManager = timeManager
         this.TT = new Transposition_Table()
 
@@ -116,16 +118,15 @@ export class Search {
         } 
 
         // Generate legal moves
-        const UnsortedlegalMoves = this.board.GenerateLegalMoves()
+        const UnsortedlegalMoves = this.MoveGenerator.GenerateMoves(this.board)
         
         // Checkmate or stalemate detection
         if (UnsortedlegalMoves.length == 0){    
             //Checkmate
-            if (this.board.InCheck(this.board.white_To_Move)){
+            if (AttackDetector.InCheck(this.board, this.board.white_To_Move)){
                 const mateScore = -(checkMateScore - ply)
                 this.TT.AddPosition(hash, -checkMateScore, depth, "EXACT", null)
                 return mateScore
-    
             }
             
             //Stalemate
@@ -142,8 +143,7 @@ export class Search {
         // Will be first in the list. In the case where the bestMove == TTbestMove
         // There will be no change
         if (depth == this.currentDepth && this.bestMove != null){
-            moves = moves.filter(move => move != this.bestMove)
-            moves.unshift(this.bestMove)
+            moves = InsertFirst(moves, this.bestMove)
         }
         
             

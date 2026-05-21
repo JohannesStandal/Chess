@@ -21,11 +21,12 @@ export class MoveGenerator {
     }
 
     Add(start, target, flag, king=false){   
-        // See if the move resolves the check. Ep moves are already cleared
-        if (0 < this.checkers.length && flag != Move.flags.epCapture){ 
-            //if (king && this.blockingSquares.includes(target)) return // Do not move to a blocking square
-            if (!king && !this.blockingSquares.includes(target)) return // Block the check
-        }
+        // See if the move resolves the check. 
+        if (flag != Move.flags.epCapture && // En passant moves have a sperate strict check
+            0 < this.checkers.length &&     // Are you in check
+            !this.blockingSquares.includes(target) && // Does the move resolve the check
+            !king // Are you moving your king out of the way
+        ) return
 
         const move = Move.EncodeUINT16(start, target, flag)
         if (move == 0) console.log("bug")
@@ -179,7 +180,7 @@ export class MoveGenerator {
 
         // If there is a double check, we only consider kingmoves
         this.GenerateKingMoves(board, friendlyKingSquare)
-        if (1 < this.checkers.length) return
+        if (1 < this.checkers.length) return this.moves.slice(0, this.count)
 
         // Generate other moves
         for (let startSquare = 0; startSquare < 64; startSquare++){
@@ -208,6 +209,22 @@ export class MoveGenerator {
                 this.GenerateSlidingMoves(board, pieceOnTargetSquare, startSquare)
             }
         }
+        
+        return this.moves.slice(0, this.count)
+    }
+
+    TacticalMoves(board){
+        const moves = this.GenerateMoves(board)
+        const tacticalMoves = []
+
+        for(const move of moves){
+            const capture = Move.IsCapture(move)
+            const promotion = Move.IsPromotion(move)
+
+            if (capture || promotion) tacticalMoves.push(move)
+        }
+        
+        return tacticalMoves
     }
 
     GeneratePawnMoves(board, start){

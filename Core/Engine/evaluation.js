@@ -120,7 +120,6 @@ export class Evaluation {
         
         // position and mobility
         score += this.positionBonus(board, endgameWeight) * positionWeight
-        score += this.mobilityBonus(board) * mobilityWeight
         
         // endgame king aggression
         score += this.forceKingToCornerWithKing(board, endgameWeight) * kingWeight

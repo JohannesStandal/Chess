@@ -16,7 +16,7 @@ export const chess = new Chess()
 
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: true, // ^ --||--
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -121,7 +121,7 @@ export function GameLoop(){
     }
     
     
-    gameData.playerTurn = (gameData.playAsWhite && chess.white_To_Move) || (gameData.playAsBlack && ! chess.white_To_Move) 
+    gameData.playerTurn = (gameData.playAsWhite && chess.board.white_To_Move) || (gameData.playAsBlack && ! chess.board.white_To_Move) 
    
     if (gameData.playerTurn){
         
@@ -130,8 +130,8 @@ export function GameLoop(){
         setTimeout(()=>{
             engine.postMessage({
                 type: "SEARCH",
-                fen: chess.Export_Fen(),
-                repetitionTable: chess.repetitionTable,
+                fen: chess.exportFen(),
+                repetitionTable: chess.board.repetitionTable,
             })
         },300)
     }

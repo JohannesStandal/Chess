@@ -1,7 +1,10 @@
 import { Evaluation } from "./evaluation.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { checkMateScore, drawScore } from "../Constants/SearchConstants.js"
-
+import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
+import { AttackDetector } from "../MoveGeneration/Attack.js"
+import { Move } from "../Board/move.js"
+const moveGenerator = new MoveGenerator()
 
 export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
@@ -12,16 +15,16 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     let moves;
 
     // If in check explore all continuations
-    if (board.InCheck(board.white_To_Move)){
-        moves = board.GenerateLegalMoves()
+    if (AttackDetector.InCheck(board, board.white_To_Move)){
+        moves = moveGenerator.GenerateMoves(board)
     }
     // Generate tactical moves (Promotion, captures, checks)
     else {
-        moves = board.GenerateTacticalMoves()
+        moves = moveGenerator.TacticalMoves(board)
     }
 
     // Checkmate detection
-    if (moves.length == 0 && board.InCheck(board.white_To_Move)){
+    if (moves.length == 0 && AttackDetector.InCheck(board, board.white_To_Move)){
         return - (checkMateScore - ply)
     }
 

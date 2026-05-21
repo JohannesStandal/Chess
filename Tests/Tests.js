@@ -16,8 +16,7 @@ export class Tests {
         
         let sum = 0
     
-        this.moveGenerator.GenerateMoves(this.board)
-        const moves = this.moveGenerator.moves.slice(0, this.moveGenerator.count)
+        const moves = this.moveGenerator.GenerateMoves(this.board)
         
         for (const move of moves){
 
