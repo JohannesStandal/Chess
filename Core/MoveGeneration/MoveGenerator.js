@@ -3,7 +3,7 @@ import { AttackTables } from "./AttackTables.js"
 import { AttackDetector } from "./Attack.js"
 import { Piece } from "../Board/piece.js"
 import { Move } from "../Board/move.js"
-
+import { maxSearchDepth } from "../Constants/SearchConstants.js"
 AttackTables.init()
 
 const maxNumLegalMoves = 218
@@ -16,8 +16,9 @@ export class MoveGenerator {
         this.checkers = []
         
         // Move Array
-        this.moves = new Uint16Array(maxNumLegalMoves)
+        this.moves = new Uint16Array(maxNumLegalMoves * maxSearchDepth)
         this.count = 0
+        this.ply = 0
     }
 
     Add(start, target, flag, king=false){   
@@ -30,7 +31,7 @@ export class MoveGenerator {
 
         const move = Move.EncodeUINT16(start, target, flag)
         if (move == 0) console.log("bug")
-        this.moves[this.count] = move
+        this.moves[this.ply * maxNumLegalMoves + this.count] = move
         this.count++
     }
 
@@ -167,10 +168,10 @@ export class MoveGenerator {
             }
     }
 
-    GenerateMoves(board){
+    GenerateMoves(board, ply=0){
         // Reset array pointer
-        this.moves.fill(0)
         this.count = 0
+        this.ply = ply
 
         this.ComputeKingSafety(board)
         
@@ -180,7 +181,7 @@ export class MoveGenerator {
 
         // If there is a double check, we only consider kingmoves
         this.GenerateKingMoves(board, friendlyKingSquare)
-        if (1 < this.checkers.length) return this.moves.slice(0, this.count)
+        if (1 < this.checkers.length) return //this.moves.slice(0, this.count)
 
         // Generate other moves
         for (let startSquare = 0; startSquare < 64; startSquare++){
@@ -210,7 +211,7 @@ export class MoveGenerator {
             }
         }
         
-        return this.moves.slice(0, this.count)
+        //return this.moves.slice(0, this.count)
     }
 
     TacticalMoves(board){

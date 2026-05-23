@@ -16,9 +16,10 @@ export class Tests {
         
         let sum = 0
     
-        const moves = this.moveGenerator.GenerateMoves(this.board)
-        
-        for (const move of moves){
+        this.moveGenerator.GenerateMoves(this.board, ply)
+        const numMoves = this.moveGenerator.count
+        for (let i = 0; i < numMoves; i++){
+            const move = this.moveGenerator.moves[ply * 218 + i]
 
             this.board.Make_Move(move)
             sum += this.MoveGenerationCount(depth-1, log_moves, ply+1, move)
