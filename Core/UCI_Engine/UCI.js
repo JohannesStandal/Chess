@@ -157,7 +157,7 @@ function decodeMove(UCIMove, board){
 
   if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
   if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
-  if (target == board.enPassantSquare) flag = Move.enPassantSquare
+  if (target == board.enPassantSquare) flag = Move.flags.enPassant
 
   return Move.EncodeUINT16(start, target, flag)
 }
