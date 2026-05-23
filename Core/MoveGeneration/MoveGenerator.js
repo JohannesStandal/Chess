@@ -15,10 +15,21 @@ export class MoveGenerator {
         this.blockingSquares = []
         this.checkers = []
         
+        this.maxNumLegalMoves = 218
+        
         // Move Array
-        this.moves = new Uint16Array(maxNumLegalMoves * maxSearchDepth)
+        this.moves = new Uint16Array(this.maxNumLegalMoves * maxSearchDepth)
+        this.scores = new Array(this.maxNumLegalMoves * maxSearchDepth)
         this.count = 0
         this.ply = 0
+    }
+
+    GetMoveIndex(index, ply){
+        return ply * this.maxNumLegalMoves + index
+    }
+
+    GetMove(index, ply){
+        return this.moves[this.GetMoveIndex(index, ply)]
     }
 
     Add(start, target, flag, king=false){   
@@ -31,7 +42,7 @@ export class MoveGenerator {
 
         const move = Move.EncodeUINT16(start, target, flag)
         if (move == 0) console.log("bug")
-        this.moves[this.ply * maxNumLegalMoves + this.count] = move
+        this.moves[this.ply * this.maxNumLegalMoves + this.count] = move
         this.count++
     }
 
@@ -214,18 +225,27 @@ export class MoveGenerator {
         //return this.moves.slice(0, this.count)
     }
 
-    TacticalMoves(board){
-        const moves = this.GenerateMoves(board)
-        const tacticalMoves = []
+    TacticalMoves(board, ply=0){
+        
+        this.GenerateMoves(board, ply)
 
-        for(const move of moves){
+        const start = this.GetMoveIndex(0, ply)
+        const end = this.GetMoveIndex(this.count, ply)
+        let count = 0
+
+        for (let i = start; i < end; i++){
+            const move = this.moves[i]
+
             const capture = Move.IsCapture(move)
             const promotion = Move.IsPromotion(move)
 
-            if (capture || promotion) tacticalMoves.push(move)
+            if (capture || promotion){
+                this.moves[start + count] = move
+                count++
+            }
         }
-        
-        return tacticalMoves
+
+        this.count = count
     }
 
     GeneratePawnMoves(board, start){

@@ -120,10 +120,11 @@ export class Search {
         } 
 
         // Generate legal moves
-        const UnsortedlegalMoves = this.MoveGenerator.GenerateMoves(this.board)
+        this.MoveGenerator.GenerateMoves(this.board, ply)
+        const numMoves = this.MoveGenerator.count
         
         // Checkmate or stalemate detection
-        if (UnsortedlegalMoves.length == 0){    
+        if (numMoves == 0){    
             //Checkmate
             if (AttackDetector.InCheck(this.board, this.board.white_To_Move)){
                 const mateScore = -(checkMateScore - ply)
@@ -137,17 +138,13 @@ export class Search {
         }
         
 
-        // Sort moves based on how good they are predicted to be
-        // Make sure the TTbestMove always comes first
-        let moves = MoveOrder(this.board, UnsortedlegalMoves, TTbestMove)
-    
-        // Just double check that if we are at root depth, the previous best move
-        // Will be first in the list. In the case where the bestMove == TTbestMove
-        // There will be no change
-        if (depth == this.currentDepth && this.bestMove != null){
-            moves = InsertFirst(moves, this.bestMove)
+        // Moveordering. TT moves comes first, except for in the root node
+        // where the best move from the previous search should be considered first
+        let bestRootMove = null
+        if (ply == 0){
+            bestRootMove = this.bestMove
         }
-        
+        MoveOrder(this.board, this.MoveGenerator, ply, TTbestMove, bestRootMove)
             
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
@@ -155,8 +152,13 @@ export class Search {
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
+        
+        // Get indexes from the move array
+        const moveStart = this.MoveGenerator.GetMoveIndex(0, ply)
+        const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, ply)
 
-        for (let move of moves){
+        for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
+            const move = this.MoveGenerator.moves[moveIndex]
             
             // Evaluate future position
             this.board.Make_Move(move)
@@ -165,9 +167,6 @@ export class Search {
             
             // exit point for iterative deepening
             if (this.timeManager.cancelSearch) return undefined
-            
-            //Om poengsummen er betre enn noko som er funne så langt så kan du lagre
-            //beste trekk og poengsum
 
             // If the best possible outcome exceeds precious search results, overwrite
             // the best move and the best score in this position
