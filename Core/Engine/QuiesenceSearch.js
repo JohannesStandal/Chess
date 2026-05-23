@@ -14,8 +14,9 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     // move generation
     let moves;
 
+    const inCheck = AttackDetector.InCheck(board, board.white_To_Move)
     // If in check explore all continuations
-    if (AttackDetector.InCheck(board, board.white_To_Move)){
+    if (inCheck){
         moveGenerator.GenerateMoves(board, ply)
     }
     // Generate tactical moves (Promotion, captures, checks)
@@ -28,7 +29,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)
 
     // Checkmate detection
-    if (numMoves == 0 && AttackDetector.InCheck(board, board.white_To_Move)){
+    if (numMoves == 0 && inCheck){
         return - (checkMateScore - ply)
     }
 
