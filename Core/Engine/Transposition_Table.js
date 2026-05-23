@@ -8,6 +8,10 @@ export class Transposition_Table {
     }
 
     AddPosition(hash, score, depth, flag, bestMove){
+        // Avoid storing draws as it threefold repetition is history dependent
+        // and TT table is state dependant, so it can cause false positives
+        if (score == 0) return
+
         const entry = this.table.get(hash) 
         if (entry == undefined){
             // add position to the table

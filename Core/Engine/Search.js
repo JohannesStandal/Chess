@@ -38,7 +38,7 @@ export class Search {
             console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
             if (mateTreshold <= score){
                 const mateDepth = checkMateScore - score
-                //console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
+                console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
                 this.timeManager.Stop()
             }
             // stop search if time limit is exceeded
@@ -74,16 +74,18 @@ export class Search {
             const entry = this.TT.table.get(hash)
             TTbestMove = entry.bestMove
             
-            // Scale checkmates to match depth
-            // a M2 found at 3ply -> M3
+            /**
+             Scale checkmates to match depth
+             a M2 found at 3ply -> M3
             
-            // 5 -> 9995 m in 5 ply "10 total ply" -> 9990
-            // same pos
-            // 3 -> 9995 m in 5 ply " 8 total ply" -> 9992
+             5 -> 9995 m in 5 ply "10 total ply" -> 9990
+             same pos
+             3 -> 9995 m in 5 ply " 8 total ply" -> 9992
             
-            // 5 -> -9995 m in 5 ply "10 total ply" -> -9990
-            // same pos
-            // 3 -> -9995 m in 5 ply " 8 total ply" -> -9992
+             5 -> -9995 m in 5 ply "10 total ply" -> -9990
+             same pos
+             3 -> -9995 m in 5 ply " 8 total ply" -> -9992
+            */
             
             // Positive checkmate -> subtract ply
             let mutatedScore = entry.score
