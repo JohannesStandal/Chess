@@ -21,6 +21,10 @@ export class Board {
         this.stack = []
         this.repetitionTable = []
         this.zobrist = new zobrist_hashing()
+
+        // Track kings
+        this.whiteKingSquare = 0
+        this.blackKingSquare = 0
     }
 
     Reset(){
@@ -53,7 +57,11 @@ export class Board {
                 }
                 else {
                     let color = (char == char.toLowerCase()) ? Piece.black : Piece.white
-                    this.square[rank*8+file] = color | Piece.From_Symbol[char.toLowerCase()]
+                    const piece = color | Piece.From_Symbol[char.toLowerCase()]
+                    const index = rank*8+file
+                    this.square[index] = piece
+                    if (piece == (Piece.white | Piece.king)) this.whiteKingSquare = index
+                    if (piece == (Piece.black | Piece.king)) this.blackKingSquare = index
                     file ++
                 }
             }
@@ -138,7 +146,8 @@ export class Board {
 
 
         let capturedPiece = this.square[target]
-        // lagrer spillhistorikk
+
+        // save game state for unmake move
         this.stack.push({
             // Posisjons info
             capturedPiece: capturedPiece,
@@ -146,7 +155,8 @@ export class Board {
             enPassantSquare:    this.enPassantSquare,
             hash: this.zobrist.hash
         })
-        //Oppdaterer variablar
+
+        // Update hash
         this.zobrist.incrementHash(move, this)
         
         // update castling rights
@@ -184,6 +194,10 @@ export class Board {
         // moving the piece
         this.square[target] = movedPiece
         this.square[start] = 0
+
+        // incremental king tracking
+        if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = target
+        if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = target
 
         // if there is a castle, the rook should be moved as well
         if (flag == Move.flags.kingCastle){
@@ -266,6 +280,10 @@ export class Board {
             const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
             this.square[this.enPassantSquare] = Piece.pawn | enemyColor
         }
+
+        // incremental king tracking
+        if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = start
+        if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = start
 
         // Remove move from gamehistory
         this.playedMoves.pop()

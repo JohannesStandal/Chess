@@ -85,8 +85,7 @@ export class AttackDetector {
 
     static InCheck(board, white){
         // Locate the kingsquare for the defending king
-        const kings = ChessHelper.LocateKings(board)
-        const defendingKingSquare = white ? kings[0] : kings[1]
+        const defendingKingSquare = white ? board.whiteKingSquare : board.blackKingSquare
 
         // returns true if the player in the parameter is in check 
         return (this.SquareUnderAttack(board, defendingKingSquare, !white))

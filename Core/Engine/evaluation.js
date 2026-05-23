@@ -122,7 +122,7 @@ export class Evaluation {
         score += this.positionBonus(board, endgameWeight) * positionWeight
         
         // endgame king aggression
-        score += this.forceKingToCornerWithKing(board, endgameWeight) * kingWeight
+        score += this.mopUpScore(board, endgameWeight) * kingWeight
 
         return score
     }
@@ -171,23 +171,13 @@ export class Evaluation {
         return myMobility //- opponentMobility
     }
 
-    static forceKingToCornerWithKing(board, endgameWeight){
+    static mopUpScore(board, endgameWeight){
         
         let score = 0
 
         // find kings
-        let friendlyKingSquare = 0
-        let enemyKingSquare = 0
-
-        for (let i = 0; i<64; i++){
-            const piece = board.square[i]
-            if (!Piece.IsType(piece, Piece.king)) continue
-
-            const isFriendly = Piece.CheckPieceColor(piece, board.white_To_Move)
-
-            if (isFriendly) friendlyKingSquare = i
-            else enemyKingSquare = i
-        }
+        let friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
+        let enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
         // friendly king
         const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare)
@@ -221,18 +211,24 @@ export class Evaluation {
         let score = 0
         const start = Move.Start(move)
         const target = Move.Target(move) 
-        score += this.MVV_LVA_ordering(start, target, board)
-        score += this.PieceSquareTables(start, target, board)
+        
+        if (Move.IsCapture(move)){
+            score += this.MVV_LVA_ordering(start, target, board)
+        }
+        else {
+            score += this.PieceSquareTables(start, target, board)
+        }
+        
         return score
     }
 
     static MVV_LVA_ordering(start, target, board){
-    //Most valuable victim - Least valuable attacker 
-    //Prioritises moves where a low value piece captures a high value piece
-    let pieceTypeMoved = board.square[start] & 0b0111 
-    let pieceTypeAttacked = board.square[target] & 0b0111
+        //Most valuable victim - Least valuable attacker 
+        //Prioritises moves where a low value piece captures a high value piece
+        let pieceTypeMoved = board.square[start] & 0b0111 
+        let pieceTypeAttacked = board.square[target] & 0b0111
 
-    return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
+        return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
     }
 
     static PieceSquareTables(start, target, board){

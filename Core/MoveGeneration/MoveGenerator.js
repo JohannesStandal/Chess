@@ -71,10 +71,8 @@ export class MoveGenerator {
             // the squares you can move to in order to resolve a check (either by blocking path or capturing the attacker)
             // This will be countered by a double check in wich we only generate king moves
     
-            // update king locations
-            let kings = ChessHelper.LocateKings(board)
-            const friendlyKingSquare = (board.white_To_Move) ? kings[0] : kings[1]
-            
+
+            const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
             const enemyColor = (board.white_To_Move) ? Piece.black : Piece.white
     
              
@@ -186,15 +184,14 @@ export class MoveGenerator {
 
         this.ComputeKingSafety(board)
         
-        // locate kings
-        const kings = ChessHelper.LocateKings(board)
-        let friendlyKingSquare = board.white_To_Move ? kings[0] : kings[1]
+        // Generate king moves
+        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
+        this.GenerateKingMoves(board, friendlyKingSquare)
 
         // If there is a double check, we only consider kingmoves
-        this.GenerateKingMoves(board, friendlyKingSquare)
-        if (1 < this.checkers.length) return //this.moves.slice(0, this.count)
+        if (1 < this.checkers.length) return 
 
-        // Generate other moves
+        // Generate all other moves
         for (let startSquare = 0; startSquare < 64; startSquare++){
             const pieceOnTargetSquare = board.square[startSquare]
             
