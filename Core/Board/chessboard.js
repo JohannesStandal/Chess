@@ -31,6 +31,7 @@ export class Board {
         this.square = new Array(64).fill(0)
         this.stack = []
         this.playedMoves = []
+        this.repetitionTable = []
     }
 
     Load_Fen(fen){
