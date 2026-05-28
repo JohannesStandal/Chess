@@ -1,6 +1,7 @@
 const readline = require('readline');
 const { Engine } = require('../../Core/Engine/Engine.js');
 const { Move } = require('../../Core/Board/move.js');
+const { Piece } = require('../../Core/Board/piece.js');
 
 export class UCI {
   constructor() {
@@ -138,10 +139,19 @@ function decodeMove(UCIMove, board){
 
   const start = letterToNumber[parts[0]] + (parseInt(parts[1]) - 1)* 8
   const target = letterToNumber[parts[2]] + (parseInt(parts[3]) - 1) * 8 
+  
+  const movedPiece = board.square[start]
+  const capturedPiece = board.square[target]
 
   let flag = 0b0000
-  if (board.square[target] != 0){
-    flag += 0b0100
+  if (capturedPiece != 0){
+    flag |= Move.flags.captures
+  }
+
+  const isPawn = Piece.IsType(movedPiece, Piece.pawn)
+  const doublePush = (Math.abs(start - target) == 16)
+  if (isPawn && doublePush){
+    flag = Move.doublePush
   }
   
   if (parts.length == 5){
