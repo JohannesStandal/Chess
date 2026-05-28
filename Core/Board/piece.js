@@ -13,17 +13,6 @@ export class Piece {
     static white   = 8 //01_000
     static black  = 16 //10_000
 
-    //Brikkeverdi for evaluering
-    static pieceValues = [
-        0,
-        20000,
-        100,
-        320,
-        330,
-        500,
-        900,
-    ]
-
     //Ordliste for Forsyth Edwards Notasjon (FEN)
     static From_Symbol = {
             "k": this.king,    //001
