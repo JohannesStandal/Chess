@@ -2,6 +2,7 @@ import { Piece } from "../Board/piece.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { Move } from "../Board/move.js"
 import { PieceSquareTables } from "./PieceSquareTables.js"
+import { AttackDetector } from "../MoveGeneration/Attack.js"
 
 export class Evaluation {
     static pieceValues = new Array(12)
@@ -47,21 +48,40 @@ export class Evaluation {
 
     static midGameScore(board){
         // Evaluation terms important for the midgame
-        let score = 0
+        let midGameScore = 0
+
+        // Weights
+        const mobilityWeight = 1
+        const kingExposureWeight = 1
+
+        // find kings
+        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
+        const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
         
-        return 0
+        // Sliding piece mobility bonus
+        midGameScore += this.mobilityBonus(board) * mobilityWeight
+
+        // King Exposure
+        midGameScore += this.kingExposure(board, friendlyKingSquare, enemyKingSquare) * kingExposureWeight
+
+        return midGameScore
     }
 
     static endGameScore(board){
         // Evaluation terms important for the endgame
-        let score = 0
+        let endGameScore = 0
 
+        // Weights for endgame score
         const mopUpWeigth = 1
 
-        score += this.mopUpScore(board) * mopUpWeigth
+        // find kings
+        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
+        const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
-        return score
+        endGameScore += this.mopUpScore(board, friendlyKingSquare, enemyKingSquare) * mopUpWeigth
+
+        return endGameScore
     }
 
     static calculateGamePhase(board){
@@ -76,7 +96,7 @@ export class Evaluation {
                     total += 1
                     break
 
-                case(Piece.knight):
+                case(Piece.bishop):
                     total += 1
                     break
 
@@ -128,19 +148,37 @@ export class Evaluation {
     }
 
     static mobilityBonus(board){
-        const myMobility = board.GenerateLegalMoves().length
-        // board.white_To_Move = !board.white_To_Move
-        // const opponentMobility = board.GenerateLegalMoves().length
-        // board.white_To_Move = !board.white_To_Move
-        return myMobility //- opponentMobility
+        // Count up non pawn material
+        let mobilityScore = 0
+
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
+            const pieceType = Piece.Type(piece)
+
+            let mobility;
+            switch (pieceType){
+                case(Piece.bishop):
+                    mobility = AttackDetector.Mobility(board, i, false, true)
+                    mobilityScore += sign * mobility * 4
+                    break
+
+                case(Piece.rook):
+                    mobility = AttackDetector.Mobility(board, i, true, false)
+                    mobilityScore += sign * mobility * 2 
+                    break
+
+                case(Piece.queen):
+                    mobility = AttackDetector.Mobility(board, i, true, true)
+                    mobilityScore += sign * mobility * 1
+                    break
+            }
+        }
+        return mobilityScore
     }
 
-    static mopUpScore(board, phase){
+    static mopUpScore(board, friendlyKingSquare, enemyKingSquare){
         let score = 0
-
-        // find kings
-        let friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
-        let enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
         // friendly king
         const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare)
@@ -167,5 +205,57 @@ export class Evaluation {
         score += (14 - kingDistance) / 14
 
         return score
+    }
+
+    static kingExposure(board, friendlyKingSquare, enemyKingSquare){
+        let score = 0
+        // Punish having an exposed king, but incentivise an exposed enemy king
+        score -= AttackDetector.Mobility(board, friendlyKingSquare, true, false) * 4
+        score -= AttackDetector.Mobility(board, friendlyKingSquare, false, true) * 2
+
+        score += AttackDetector.Mobility(board, enemyKingSquare, true, false) * 4
+        score += AttackDetector.Mobility(board, enemyKingSquare, false, true) * 2
+
+        return score
+    }
+
+    static pawnShields(board, kingSquare, white) {
+        let pawnShieldScore = 0
+
+        const isKingside = kingSquare == (white ? 6 : 62)
+        const isQueenside = kingSquare == (white ? 2 : 58)
+
+        if (!isKingside && !isQueenside) return 0
+
+        let shieldSquares;
+
+        if (isKingside){
+            shieldSquares = (white)
+                ? [13, 14, 15, 21, 22, 23] // White shield squares
+                : [53, 54, 55, 45, 46, 47] // Black shield squares
+        }
+        else if (isQueenside){
+            shieldSquares = (white)
+                ? [ 8,  9, 10, 16, 17, 18] // White shield squares
+                : [48, 49, 50, 40, 41, 42] // Black shield squares
+        }
+
+        // Bonuses for a pawn on the different squares
+        const weights = [10, 15, 10, 5, 8, 5]
+        const color = (white) ? Piece.white : Piece.black
+
+        for (let i = 0; i < 6; i++) {
+            const targetSquare = shieldSquares[i]
+            const piece = board.square[targetSquare]
+
+            if (piece == (Piece.pawn | color)) {
+                pawnShieldScore += weights[i]
+            } 
+            else {
+                pawnShieldScore -= weights[i] // missing pawn is dangerous
+            }
+        }
+
+        return pawnShieldScore;
     }
 }
