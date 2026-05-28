@@ -65,6 +65,10 @@ export class Evaluation {
         // King Exposure
         midGameScore += this.kingExposure(board, friendlyKingSquare, enemyKingSquare) * kingExposureWeight
 
+        // Pawn shields. 
+        midGameScore += this.pawnShields(board, friendlyKingSquare, board.white_To_Move)
+        midGameScore -= this.pawnShields(board, enemyKingSquare, !board.white_To_Move)
+
         return midGameScore
     }
 
