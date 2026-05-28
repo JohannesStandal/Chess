@@ -1,4 +1,6 @@
 import { Evaluation } from "./evaluation.js"
+import { PieceSquareTables } from "./PieceSquareTables.js"
+import { Move } from "../Board/move.js"
 
 export function MoveOrder(board, moveGenerator, ply, TTbestMove, bestRootMove){
     // Define the area of the move array we are working with
@@ -7,17 +9,18 @@ export function MoveOrder(board, moveGenerator, ply, TTbestMove, bestRootMove){
     
     // Score every relevant move in the move array
     for (let i = moveStart; i < moveEnd; i++){
+        const move = moveGenerator.moves[i]
         // Best move from previous iterations of iterative deepening is first
-        if (moveGenerator.moves[i] == bestRootMove){
+        if (move == bestRootMove){
             moveGenerator.scores[i] = 1200000
         }
         // Transposition table best move is second, if it is not the same as the previous best move
-        else if (moveGenerator.moves[i] == TTbestMove){
+        else if (move == TTbestMove){
             moveGenerator.scores[i] = 1000000
         }
         // Score the move from heuristic evaluation
         else {
-            moveGenerator.scores[i] = Evaluation.Move(moveGenerator.moves[i], board)
+            moveGenerator.scores[i] = EstimateMoveScore(move, board)
         }
     }
 
@@ -33,22 +36,46 @@ export function MoveOrder(board, moveGenerator, ply, TTbestMove, bestRootMove){
     
 }
 
+function EstimateMoveScore(move, board){
+        let score = 0
+        const start = Move.Start(move)
+        const target = Move.Target(move) 
+        
+        
+        if (Move.IsCapture(move)){
+            score += MVV_LVA(start, target, board)
+        }
+        else {
+            const movedPiece = board.square[start]
+
+            // PST ordering
+            const startBonus = PieceSquareTables.Value(movedPiece, start)
+            const targetBonus = PieceSquareTables.Value(movedPiece, target)
+
+            // Incentivise moving to a better square for the given piece
+            score += (targetBonus - startBonus)
+        }
+        
+        return score
+    }
+
+function MVV_LVA(start, target, board){
+        //Most valuable victim - Least valuable attacker 
+        //Prioritises moves where a low value piece captures a high value piece
+        const pieceTypeMoved = board.square[start] & 0b0111 
+        const pieceTypeAttacked = board.square[target] & 0b0111
+
+        const attackerValue = Evaluation.pieceValues[pieceTypeMoved]
+        const victimValue = Evaluation.pieceValues[pieceTypeAttacked]
+        
+
+        return victimValue - attackerValue
+    }
+
 function swap(arr, i, j){
     if (i == j) return
 
     const temp = arr[i]
     arr[i] = arr[j]
     arr[j] = temp   
-}
-
-export function InsertFirst(moves, move){
-    const index = moves.indexOf(move)
-    if (index == -1) return moves
-    for (let i = index; 0 < i; i--){
-        const a = moves[i-1]
-        moves[i] = a
-    }
-    moves[0] = move
-    return moves
-
 }

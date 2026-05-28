@@ -92,6 +92,10 @@ export class Piece {
         }
     }
 
+    static Type(piece){
+        return piece & 0b111
+    }
+
     static IsType(piece, type){
         return ((piece & 0b0111) == type)
     }
@@ -101,10 +105,5 @@ export class Piece {
         let pieceType = piece & 0b111 
         return 3 < pieceType && pieceType < 7
     }
-
-    static getPieceValue(piece){
-        return this.pieceValues[piece & 0b111]
-    }
-
 }
 

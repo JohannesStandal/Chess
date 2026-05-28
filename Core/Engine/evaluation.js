@@ -1,166 +1,130 @@
 import { Piece } from "../Board/piece.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { Move } from "../Board/move.js"
+import { PieceSquareTables } from "./PieceSquareTables.js"
+
 export class Evaluation {
-    
-    static mirroredBoard = new Array(64)
-    static mapFromPieceType = Array(12)
-
-    static kingMap = [
-        40,  40,  100,   0,   0,  40,  100,  40,
-        30,  30,  10,   0,   0,  10,  30,  30,
-        10,  10,   5,   0,   0,   5,  10,  10,
-        0,   0,   0, -10, -10,   0,   0,   0,
-        -10, -10, -10, -20, -20, -10, -10, -10,
-        -20, -20, -20, -30, -30, -20, -20, -20,
-        -30, -30, -30, -40, -40, -30, -30, -30,
-        -40, -40, -40, -50, -50, -40, -40, -40,
-    ]
-
-    static pawnMap = [
-        0,  0,  0,  0,  0,  0,  0,  0,
-        10, 10, 10,-10,-10, 10, 10, 10,
-        5,  5, 10, 20, 20, 10,  5,  5,
-        5,  5, 15, 25, 25, 15,  5,  5,
-        10, 10, 20, 30, 30, 20, 10, 10,
-        20, 20, 30, 35, 35, 30, 20, 20,
-        30, 30, 30, 30, 30, 30, 30, 30,
-        0,  0,  0,  0,  0,  0,  0,  0
-    ]
-
-    static knightMap = [
-        -50,-40,-30,-30,-30,-30,-40,-50,
-        -40,-20,  0,  5,  5,  0,-20,-40,
-        -30,  5, 15, 20, 20, 15,  5,-30,
-        -30, 10, 20, 30, 30, 20, 10,-30,
-        -30,  5, 20, 30, 30, 20,  5,-30,
-        -30,  0, 15, 20, 20, 15,  0,-30,
-        -40,-20,  0,  0,  0,  0,-20,-40,
-        -50,-40,-30,-30,-30,-30,-40,-50
-    ]
-
-    static bishopMap = [
-        -20,-10,-10,-10,-10,-10,-10,-20,
-        -10,  5,  0,  0,  0,  0,  5,-10,
-        -10, 10, 10, 10, 10, 10, 10,-10,
-        -10,  0, 10, 15, 15, 10,  0,-10,
-        -10,  5,  5, 15, 15,  5,  5,-10,
-        -10,  0,  5, 10, 10,  5,  0,-10,
-        -10,  0,  0,  0,  0,  0,  0,-10,
-        -20,-10,-10,-10,-10,-10,-10,-20
-    ]
-
-    static rookMap = [
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  5, 10, 15, 15, 10,  5,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        5, 10, 10, 10, 10, 10, 10,  5,
-        0,  0,  5, 10, 10,  5,  0,  0
-    ]
-
-    static queenMap = [
-    -20,-10,-10, -5, -5,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5,  5,  5,  5,  0,-10,
-        -5,  0,  5, 10, 10,  5,  0, -5,
-        0,  0,  5, 10, 10,  5,  0, -5,
-    -10,  5,  5,  5,  5,  5,  0,-10,
-    -10,  0,  5,  0,  0,  0,  0,-10,
-    -20,-10,-10, -5, -5,-10,-10,-20
-    ]
-
-
+    static pieceValues = new Array(12)
     static {
-        //Generer spegla brett
-        let i = 0
-        for (let rank = 7; rank >= 0; rank--){
-            for (let file = 0; file < 8; file++){
-                const squareIndex =  rank * 8 + file
-                this.mirroredBoard[squareIndex] = i
-                i++
-            }
-        }
-        
-        //Setter opp kart for brikketyper
-        this.mapFromPieceType[Piece.king] = this.kingMap
-        this.mapFromPieceType[Piece.pawn] = this.pawnMap
-        this.mapFromPieceType[Piece.knight] = this.knightMap
-        this.mapFromPieceType[Piece.bishop] = this.bishopMap
-        this.mapFromPieceType[Piece.rook] = this.rookMap
-        this.mapFromPieceType[Piece.queen] = this.queenMap
+        this.pieceValues[Piece.none] = 0
+        this.pieceValues[Piece.king] = 0
+        this.pieceValues[Piece.pawn] = 100
+        this.pieceValues[Piece.knight] = 320
+        this.pieceValues[Piece.bishop] = 330
+        this.pieceValues[Piece.rook] = 500
+        this.pieceValues[Piece.queen] = 900 
     }
-
-    // Board
 
     static evaluate(board){
         /**
-         * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
-         * spelaren sin tur det er. Dette er viktig for å få riktig resultat frå negamax funksjonen
+         * Estimate how good the position is for the given player. Positiv -> Winning
+         * while negative -> losing.
          */
-        //if (ChessHelper.isInsufficientMaterial(board)) return 0
 
+        // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
+        const phase = this.calculateGamePhase(board)
         
+        // Accumulate the scores
+        const generalScore = this.generalScore(board)
+        const midGameScore = this.midGameScore(board) * phase
+        const endGameScore = this.endGameScore(board) * (1 - phase)
+    
+        return generalScore + midGameScore + endGameScore
+    }
 
-        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
-       
-        // Weights
+    static generalScore(board){
+        // Evaluation terms that apply for the entire game
         let score = 0
 
         const materialWeight = 1
         const positionWeight = 1
-        const mobilityWeight = 0
-        const kingWeight = 30
 
-        // material
         score += this.countMaterial(board) * materialWeight
-        
-        
-        // position and mobility
-        score += this.positionBonus(board, endgameWeight) * positionWeight
-        
-        // endgame king aggression
-        score += this.mopUpScore(board, endgameWeight) * kingWeight
+        score += this.positionBonus(board) * positionWeight
 
         return score
     }
 
+    static midGameScore(board){
+        // Evaluation terms important for the midgame
+        let score = 0
+
+        
+        return 0
+    }
+
+    static endGameScore(board){
+        // Evaluation terms important for the endgame
+        let score = 0
+
+        const mopUpWeigth = 1
+
+        score += this.mopUpScore(board) * mopUpWeigth
+
+        return score
+    }
+
+    static calculateGamePhase(board){
+        // Count up non pawn material
+        let total = 0
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            const pieceType = Piece.Type(piece)
+
+            switch (pieceType){
+                case(Piece.knight):
+                    total += 1
+                    break
+
+                case(Piece.knight):
+                    total += 1
+                    break
+
+                case(Piece.rook):
+                    total += 2
+                    break
+
+                case(Piece.queen):
+                    total += 4
+                    break
+            }
+        }
+        return total / 24
+    }
+
     static countMaterial(board){
-        // tell materiale
+        // Count the total material on the board
         let materialScore = 0
+
         for (let i = 0; i < 64; i++){
-            // Finner brikke type (inga brikke får vidare)
             const piece = board.square[i]
             if (piece == 0) continue
             
-            // forteikn 
+            const pieceType = Piece.Type(piece)
+            const value = this.pieceValues[pieceType]
             const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            materialScore += sign * Piece.getPieceValue(piece)
+            
+            materialScore += sign * value
         }
 
         return materialScore
     }
 
-    static positionBonus(board, endgameWeight){
+    static positionBonus(board, phase){
         let score = 0
 
         for (let i = 0; i < 64; i++){
             const piece = board.square[i]
             if (piece == 0) continue
 
+            
+            const bonus = PieceSquareTables.Value(piece, i)
             const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-
-            const pieceType = piece & 0b00111
-            const mapIndex = (Piece.CheckPieceColor(piece, true)) ? i : Evaluation.mirroredBoard[i]
-
-            const bonus = Evaluation.mapFromPieceType[pieceType][mapIndex]
             
-            score += sign * bonus * 0.2
-            
+            score += sign * bonus
         }
-        return score * (1 - endgameWeight)
+
+        return score
     }
 
     static mobilityBonus(board){
@@ -171,8 +135,7 @@ export class Evaluation {
         return myMobility //- opponentMobility
     }
 
-    static mopUpScore(board, endgameWeight){
-        
+    static mopUpScore(board, phase){
         let score = 0
 
         // find kings
@@ -203,44 +166,6 @@ export class Evaluation {
         
         score += (14 - kingDistance) / 14
 
-        return score * Math.min(endgameWeight, 1)
-    }
-
-    // Moves
-    static Move(move, board){
-        let score = 0
-        const start = Move.Start(move)
-        const target = Move.Target(move) 
-        
-        if (Move.IsCapture(move)){
-            score += this.MVV_LVA_ordering(start, target, board)
-        }
-        else {
-            score += this.PieceSquareTables(start, target, board)
-        }
-        
         return score
-    }
-
-    static MVV_LVA_ordering(start, target, board){
-        //Most valuable victim - Least valuable attacker 
-        //Prioritises moves where a low value piece captures a high value piece
-        let pieceTypeMoved = board.square[start] & 0b0111 
-        let pieceTypeAttacked = board.square[target] & 0b0111
-
-        return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
-    }
-
-    static PieceSquareTables(start, target, board){
-        const piece = board.square[start]
-        const pieceType =  piece & 0b00111
-        
-        const startIndex = (Piece.CheckPieceColor(piece, true)) ? start : Evaluation.mirroredBoard[start]
-        const targetIndex = (Piece.CheckPieceColor(piece, true)) ? target : Evaluation.mirroredBoard[target]
-
-        const bonusOld = Evaluation.mapFromPieceType[pieceType][startIndex]
-        const bonusNew = Evaluation.mapFromPieceType[pieceType][targetIndex]
-
-        return bonusOld - bonusNew
     }
 }

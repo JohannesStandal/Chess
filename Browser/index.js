@@ -151,9 +151,10 @@ export function GameLoop(){
  *  - knight underpromotion: "8/8/8/7k/6p1/5pQ1/3R1p1K/6N1 b - - 0 1"
  *  - sacrifice bishop for promotion: "8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1"
  *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
+ *  - Pawn lock: "8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1"
  *
  */
-StartGame("8/6q2/6k1/8/2K5/8/8/8 b - - 0 1")
+StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1")
 
 
 

@@ -112,7 +112,7 @@ export class PieceSquareTables {
     static Value(piece, square){
         // Flexible for adding a new map for endgames
         const mapMid = this.midMapForPiece[piece]
-        const bonusMid = map[square]
+        const bonusMid = mapMid[square]
         return bonusMid
     }
 }
