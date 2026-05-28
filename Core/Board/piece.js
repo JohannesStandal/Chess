@@ -16,10 +16,10 @@ export class Piece {
     //Brikkeverdi for evaluering
     static pieceValues = [
         0,
-        1,
+        20000,
         100,
-        300,
-        300,
+        320,
+        330,
         500,
         900,
     ]
@@ -35,21 +35,7 @@ export class Piece {
         }
 
     static From_Number = new Array(22)
-    
-    
-    static updateCastleRights = [
-        //Dronning side <- | -> Kongeside
-        11, 15, 15, 15,  3, 15, 15,  7,   // Oppdater castle rights med å bruka and operasjon på talet
-        15, 15, 15, 15, 15, 15, 15, 15,   // 0b0111 = 7  => fjern kvit kongeside rokade
-        15, 15, 15, 15, 15, 15, 15, 15,   // 0b1011 = 11 => fjern kvit dronningside rokade
-        15, 15, 15, 15, 15, 15, 15, 15,   // 0b0011 = 3  => fjern kvit rokade
-        15, 15, 15, 15, 15, 15, 15, 15,   // 
-        15, 15, 15, 15, 15, 15, 15, 15,   // 0b1101 = 13 => fjern svart kongeside rokade
-        15, 15, 15, 15, 15, 15, 15, 15,   // 0b1110 = 14 => fjern svart dronningside rokade
-        14, 15, 15, 15, 12, 15, 15, 13,   // 0b1100 = 12 => fjern svart rokade
-    ]
-    static numSquaresToEdge = new Array(64)
-    
+   
     //Retningar for rette og diagonale linjer
     static directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
 
@@ -69,12 +55,7 @@ export class Piece {
         this.pin_NW_SE
     ]
     
-
-    //Liste for å rekne ut lovlege trekk for hest og konge
-    static knightAttacks = new Array(64)
-    static kingAttacks = new Array(64)
-    
-    //Bileter til HTML brett
+    // Images
     static Images = new Array(16)
     
     static {
@@ -106,110 +87,6 @@ export class Piece {
         this.From_Number[Piece.black | Piece.rook]   = "r"
         this.From_Number[Piece.black | Piece.queen]  = "q"
         this.From_Number[Piece.black | Piece.king]   = "k"
-        
-
-        //Forhåndsrekner ut avstand i alle retninger på brettet
-        //Nyttig å ha til å regne ut lovlege trekk
-        for (let file = 0; file < 8; file++){
-            for (let rank = 0; rank < 8; rank++){
-                
-                const squareIndex = rank * 8 + file
-
-                const numNorth = 7 - rank
-                const numEast = 7 - file
-                const numSouth = rank
-                const numWest = file 
-
-                this.numSquaresToEdge[squareIndex] = [
-                    numWest,
-                    numEast,
-                    numNorth,
-                    numSouth,
-                    Math.min(numNorth, numEast),
-                    Math.min(numSouth, numWest),
-                    Math.min(numWest, numNorth),
-                    Math.min(numEast, numSouth),
-                ]
-            }
-        }
-
-        //Forhåndsreknar alle lovlege Hest trekk for alle rutene på brettet
-        //Dette vil spare tid når ein genererer trekk
-        for (let file = 0; file < 8; file++){
-            for (let rank = 0; rank < 8; rank++){
-                const squareIndex = rank * 8 + file
-                const data = this.numSquaresToEdge[squareIndex] 
-                let moves = []
-                
-                //offsets = 15, 17, 6, 10, -10, -6, -17, -15
-                
-                //Offset: + 15
-                if (data[2] >= 2 && data[0] >= 1){
-                    moves.push(squareIndex + 15)
-                }
-                //Offset: + 17
-                if (data[2] >= 2 && data[1] >= 1){
-                    moves.push(squareIndex + 17)
-                }
-                //Offset: + 6
-                if (data[0] >= 2 && data[2] >= 1){
-                    moves.push(squareIndex + 6)
-                }
-                //Offset: + 10
-                if (data[1] >= 2 && data[2] >= 1){
-                    moves.push(squareIndex + 10)
-                }
-                //Offset: - 10
-                if (data[0] >= 2 && data[3] >= 1){
-                    moves.push(squareIndex - 10)
-                }
-                //Offset: - 6
-                if (data[1] >= 2 && data[3] >= 1){
-                    moves.push(squareIndex - 6)
-                }
-                //Offset: -17
-                if (data[3] >= 2 && data[0] >= 1){
-                    moves.push(squareIndex - 17)
-                }
-                //Offset: -15
-                if (data[3] >= 2 && data[1] >= 1){
-                    moves.push(squareIndex - 15)
-                }
-                
-
-                this.knightAttacks[squareIndex] = moves
-
-
-            }
-        }
-
-        // king attacks
-        for (let start = 0; start < 64; start++){
-            let moves = []
-
-            const west  = (0 < this.numSquaresToEdge[start][0]) 
-            const east  = (0 < this.numSquaresToEdge[start][1]) 
-            const north = (0 < this.numSquaresToEdge[start][2])
-            const south = (0 < this.numSquaresToEdge[start][3]) 
-
-            let dir = [west, north, east, south, west]
-            let offset = [-1, 8, 1, -8, 7, 9, -7, -9]
-            
-            for (let i = 0; i < 4; i++){
-                if (dir[i]){
-                    const targetSquare = start + offset[i]
-                    moves.push(targetSquare)
-                }
-                if (dir[i] && dir[i+1]){
-                    const targetSquare = start + offset[i+4]
-                    moves.push(targetSquare)
-                }
-               
-            }
-            
-            this.kingAttacks[start] = moves
-
-        }
     }
 
     static CheckPieceColor(piece, isWhite){

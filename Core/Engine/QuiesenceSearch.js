@@ -1,27 +1,35 @@
 import { Evaluation } from "./evaluation.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { checkMateScore, drawScore } from "../Constants/SearchConstants.js"
-
+import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
+import { AttackDetector } from "../MoveGeneration/Attack.js"
+import { Move } from "../Board/move.js"
+const moveGenerator = new MoveGenerator()
 
 export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
     // https://www.chessprogramming.org/Quiescence_Search
-    if (timeManager.ExceededTimeLimit()) return undefined
+    if (timeManager.ExceededTimeLimit()) return alpha
 
     // move generation
     let moves;
 
+    const inCheck = AttackDetector.InCheck(board, board.white_To_Move)
     // If in check explore all continuations
-    if (board.InCheck(board.white_To_Move)){
-        moves = board.GenerateLegalMoves()
+    if (inCheck){
+        moveGenerator.GenerateMoves(board, ply)
     }
     // Generate tactical moves (Promotion, captures, checks)
     else {
-        moves = board.GenerateTacticalMoves()
+        moveGenerator.TacticalMoves(board, ply)
     }
+    
+    const numMoves = moveGenerator.count
+    const moveStart = moveGenerator.GetMoveIndex(0, ply)
+    const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)
 
     // Checkmate detection
-    if (moves.length == 0 && board.InCheck(board.white_To_Move)){
+    if (numMoves == 0 && inCheck){
         return - (checkMateScore - ply)
     }
 
@@ -30,10 +38,13 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     if (beta <= standPat) return standPat
     alpha = Math.max(alpha, standPat)
     
-    // Recursive search with alpha beta pruning
-    moves = MoveOrder(board, moves)
+    // Order moves from assumed best to worst based on heuristics
+    MoveOrder(board, moveGenerator, ply, null, null)
     
-    for (let move of moves){
+    // Recursive search with alpha beta pruning
+    for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
+        const move = moveGenerator.moves[moveIndex]
+
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha)
         board.Unmake_Move(move)

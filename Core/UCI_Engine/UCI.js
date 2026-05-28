@@ -1,6 +1,6 @@
 const readline = require('readline');
 const { Engine } = require('../../Core/Engine/Engine.js');
-const { Move } = require('../Board/move.js');
+const { Move } = require('../../Core/Board/move.js');
 
 export class UCI {
   constructor() {
@@ -97,8 +97,8 @@ export class UCI {
     }
     else {
       // find white and black time remaining
-      let wTime = 0
-      let bTime = 0
+      let wTime = 10000
+      let bTime = 10000
   
       if (0 <= whiteTimeIndex){
         wTime = parseInt(parts[whiteTimeIndex + 1])
@@ -112,11 +112,9 @@ export class UCI {
       this.engine.ThinkingTime(thinkingTime)
     }
 
-    let bestMove = this.engine.Bestmove()
-    bestMove = Move.ToUCI(bestMove);
+    const bestMove = Move.ToUCI(this.engine.Bestmove())
       
     this.send(`bestmove ${bestMove}`);
-
   }
 
   send(msg) {
@@ -159,7 +157,7 @@ function decodeMove(UCIMove, board){
 
   if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
   if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
-  if (target == board.enPassantSquare) flag = Move.enPassantSquare
+  if (target == board.enPassantSquare) flag = Move.flags.enPassant
 
   return Move.EncodeUINT16(start, target, flag)
 }

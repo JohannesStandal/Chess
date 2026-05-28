@@ -6,11 +6,14 @@ import { Move } from "../Core/Board/move.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
+import { Chess } from "../Browser/Chess.js"
 
 // Testsuite availability
 import { Tests } from "../Tests/Tests.js"
+import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
 
-export const board = new Board()
+export const chess = new Chess()
+
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
@@ -21,11 +24,13 @@ export var gameData = {
     moveLookUpTable: null,
 }
 
+
 export const sounds = {
         quietMove: new Audio("Sounds/move-self.mp3"),
         capture: new Audio("Sounds/capture.mp3"),
         notification: new Audio("Sounds/notify.mp3"),
 }
+
 window.evaluate = Evaluation
 const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
@@ -42,24 +47,14 @@ function StartGame(fen = startPos){
     engine.postMessage({
         type: "RESET"
     })
+
     //lastar inn posisjon
-    board.Load_Fen(fen)
+    chess.loadFen(fen)
     UpdateLegalMovesLookUp()
-    //Genererer eit nytt brett fra eit perspektiv
-    /*
-    | w | b | p |
-    |---|---|---|
-    | 0 | 0 | 1 |
-    | 0 | 1 | 0 |
-    | 1 | 0 | 1 |
-    | 1 | 1 | ? |
-    |---|---|---|
-    
-    Generer fra ! svart perspektiv
-    */
-   //gameData.fromWhitePerspective = gameData.playAsWhite 
-   RenderBoard(board)
-   GameLoop()
+
+    gameData.fromWhitePerspective = gameData.playAsWhite 
+    RenderBoard(chess.board)
+    GameLoop()
 }
 
 const tests = new Tests()
@@ -73,27 +68,32 @@ window.FlipBoard = FlipBoard
 window.tests = tests
 window.gameData = gameData
 
-window.board = board
+window.chess = chess
 
 const engine = new Worker("./Engine.worker.js", {type: "module"})
 engine.onmessage = (e) =>{
-    if (! gameData.active) return
-    const move = e.data.move
-    console.log("engine move:", Move.ToUCI(move))
-    Make_Move_On_Board(move)
-}
+        if (! gameData.active) return
+        const move = e.data.move
+        console.log("Engine wants to play the move:", Move.ToUCI(move))
+        Make_Move_On_Board(move)
+    }
+window.engine = engine
+tests.board = chess.board
+
+
+
 
 export function GameLoop(){
 
-    const gameOver = (board.GenerateLegalMoves().length == 0)
-    const threefoldRepetition = ChessHelper.checkForRepetitions(board.repetitionTable)
-    const check = board.InCheck(board.white_To_Move)
+    const gameOver = (chess.GenerateMoves().length == 0)
+    const threefoldRepetition = ChessHelper.checkForRepetitions(chess.board.repetitionTable)
+    const check = chess.InCheck()
 
     if (gameOver){
         let message = ""
         sounds.notification.play()
         if (check){
-            const winner = (board.white_To_Move) ? "Svart" : "Kvit"
+            const winner = (chess.white_To_Move) ? "Svart" : "Kvit"
             message = winner + " vant ved sjakkmatt!"
         }
         else {
@@ -111,25 +111,27 @@ export function GameLoop(){
     }
     
     
-    gameData.playerTurn = (gameData.playAsWhite && board.white_To_Move) || (gameData.playAsBlack && ! board.white_To_Move) 
+    gameData.playerTurn = (gameData.playAsWhite && chess.board.white_To_Move) || (gameData.playAsBlack && ! chess.board.white_To_Move) 
    
     if (gameData.playerTurn){
         
     }
     else {
-        console.log(board.Export_Fen())
         setTimeout(()=>{
             engine.postMessage({
                 type: "SEARCH",
-                fen: board.Export_Fen(),
-                repetitionTable: board.repetitionTable,
+                fen: chess.exportFen(),
+                repetitionTable: chess.board.repetitionTable,
             })
         },300)
     }
 }
+//StartGame()
+//StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
+//StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
-//StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
-StartGame("5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1")
+
+
 /**
  * Positions:
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -137,7 +139,7 @@ StartGame("5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1")
  * Sliding moves test: "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
  *
  * Basic Endgames:
- *  - queen vs king: "8/5q2/6k1/8/2K5/8/8/8 b - - 0 1"
+ *  - queen vs king: "8/6q2/6k1/8/2K5/8/8/8 b - - 0 1"
  *  - 2 rook vs king: "8/3K4/8/8/8/3k4/3r4/3r4 b - - 0 1"
  *  - 1 rook vs king: "8/3K4/8/8/8/3k4/8/3r4 b - - 0 1"
  *  - two knights vs king: "8/3K4/8/8/8/3k4/3n4/3n4 b - - 0 1"
@@ -151,7 +153,7 @@ StartGame("5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1")
  *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
  *
  */
-//StartGame("8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1")
+StartGame("8/6q2/6k1/8/2K5/8/8/8 b - - 0 1")
 
 
 

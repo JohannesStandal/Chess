@@ -1,6 +1,4 @@
-const maxSearchDepth = 24
-const checkMateScore = 100000
-const mateTreshold = checkMateScore - maxSearchDepth
-const drawScore = -1
-
-export {maxSearchDepth, checkMateScore, mateTreshold, drawScore}
+export const maxSearchDepth = 24
+export const checkMateScore = 100000
+export const mateTreshold = checkMateScore - maxSearchDepth
+export const drawScore = 0

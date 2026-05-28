@@ -1,6 +1,49 @@
 import { Piece } from "../Board/piece.js"
 export class ChessHelper {
+    static numSquaresToEdge = new Array(64)
+    
     static indexToLetter = new Array(64)
+    static letterToIndex = {}
+
+    static updateCastleRights = [
+        //Queen side <- | -> King side
+        11, 15, 15, 15,  3, 15, 15,  7,   // Utilizing & operator to remove castle rights
+        15, 15, 15, 15, 15, 15, 15, 15,   // 0b0111 = 7  => remove white kingside castle
+        15, 15, 15, 15, 15, 15, 15, 15,   // 0b1011 = 11 => remove white queenside castle
+        15, 15, 15, 15, 15, 15, 15, 15,   // 0b0011 = 3  => remove all white castling
+        15, 15, 15, 15, 15, 15, 15, 15,   // 
+        15, 15, 15, 15, 15, 15, 15, 15,   // 0b1101 = 13 => remove black kingside castle
+        15, 15, 15, 15, 15, 15, 15, 15,   // 0b1110 = 14 => remove black queenside castle
+        14, 15, 15, 15, 12, 15, 15, 13,   // 0b1100 = 12 => remove all black castling
+    ]
+
+    // Precompute numbers of squares to the edge for different 
+    // Direction offsets
+    static {
+        for (let file = 0; file < 8; file++){
+            for (let rank = 0; rank < 8; rank++){
+                
+                const squareIndex = rank * 8 + file
+
+                const numNorth = 7 - rank
+                const numEast = 7 - file
+                const numSouth = rank
+                const numWest = file 
+
+                this.numSquaresToEdge[squareIndex] = [
+                    numWest,
+                    numEast,
+                    numNorth,
+                    numSouth,
+                    Math.min(numNorth, numEast),
+                    Math.min(numSouth, numWest),
+                    Math.min(numWest, numNorth),
+                    Math.min(numEast, numSouth),
+                ]
+            }
+        }
+    }
+    // Precompute Index to letter
     static {
         const letters = "abcdefgh"
         for (let rank = 0; rank < 8; rank++){
@@ -10,7 +53,7 @@ export class ChessHelper {
             }
         }
     }
-    static letterToIndex = {}
+    // Precompute letter to Index
     static {
         for (let i = 0; i < 64; i++){
             const letter = this.indexToLetter[i]
@@ -19,18 +62,18 @@ export class ChessHelper {
     }
 
     static checkForRepetitions(repetetionTable){
-        var dict = {}
-        for (let value of repetetionTable){
-            if (value in dict){
-                dict[value] += 1
-                if (dict[value] == 3) return true
-            }
-            else {
-                dict[value] = 1
-            }
+        // we only need to check the most recent added hash
+        const copiedTable = [...repetetionTable]
+        const hashToCheck = copiedTable.pop()
+
+        // count number of appearances
+        let counter = 1
+        for (const hash of copiedTable){
+            if (hash == hashToCheck) counter++
+            if (2 < counter) return true
         }
-        return false
         
+        return false
     }
 
     static isInsufficientMaterial(board) {
@@ -99,3 +142,4 @@ export class ChessHelper {
     }
     
 }
+
