@@ -9,7 +9,7 @@ const moveGenerator = new MoveGenerator()
 export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
     // https://www.chessprogramming.org/Quiescence_Search
-    if (timeManager.ExceededTimeLimit()) return undefined
+    if (timeManager.ExceededTimeLimit()) return alpha
 
     // move generation
     let moves;

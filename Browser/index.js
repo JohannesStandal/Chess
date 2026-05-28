@@ -47,24 +47,14 @@ function StartGame(fen = startPos){
     engine.postMessage({
         type: "RESET"
     })
+
     //lastar inn posisjon
     chess.loadFen(fen)
     UpdateLegalMovesLookUp()
-    //Genererer eit nytt brett fra eit perspektiv
-    /*
-    | w | b | p |
-    |---|---|---|
-    | 0 | 0 | 1 |
-    | 0 | 1 | 0 |
-    | 1 | 0 | 1 |
-    | 1 | 1 | ? |
-    |---|---|---|
-    
-    Generer fra ! svart perspektiv
-    */
-   //gameData.fromWhitePerspective = gameData.playAsWhite 
-   RenderBoard(chess.board)
-   GameLoop()
+
+    gameData.fromWhitePerspective = gameData.playAsWhite 
+    RenderBoard(chess.board)
+    GameLoop()
 }
 
 const tests = new Tests()
@@ -149,7 +139,7 @@ export function GameLoop(){
  * Sliding moves test: "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
  *
  * Basic Endgames:
- *  - queen vs king: "8/5q2/6k1/8/2K5/8/8/8 b - - 0 1"
+ *  - queen vs king: "8/6q2/6k1/8/2K5/8/8/8 b - - 0 1"
  *  - 2 rook vs king: "8/3K4/8/8/8/3k4/3r4/3r4 b - - 0 1"
  *  - 1 rook vs king: "8/3K4/8/8/8/3k4/8/3r4 b - - 0 1"
  *  - two knights vs king: "8/3K4/8/8/8/3k4/3n4/3n4 b - - 0 1"
@@ -163,7 +153,7 @@ export function GameLoop(){
  *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
  *
  */
-StartGame("8/3K4/8/8/8/3k4/3b4/3b4 b - - 0 1")
+StartGame("8/6q2/6k1/8/2K5/8/8/8 b - - 0 1")
 
 
 

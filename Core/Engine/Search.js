@@ -52,7 +52,7 @@ export class Search {
 
     Negamax(depth, ply, alpha, beta){
         if (this.timeManager.ExceededTimeLimit()){
-            return undefined
+            return alpha
         }
         nodesSearched ++
 
@@ -168,7 +168,7 @@ export class Search {
             this.board.Unmake_Move(move)
             
             // exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return undefined
+            if (this.timeManager.cancelSearch) return alpha
 
             // If the best possible outcome exceeds precious search results, overwrite
             // the best move and the best score in this position
