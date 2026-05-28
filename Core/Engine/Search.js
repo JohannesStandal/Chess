@@ -21,6 +21,7 @@ export class Search {
     }
 
     IterativeDeepening(){
+        console.log("\n New Search ")
         // start searchtime
         this.timeManager.Start()
         this.bestMove = null
@@ -33,7 +34,6 @@ export class Search {
             nodesSearched = 0
             
             // search the position
-            this.currentDepth = depth
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
             console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
             if (mateTreshold <= score){
@@ -47,7 +47,7 @@ export class Search {
                 break
             }
         }
-        return this.bestMove ?? this.board.GenerateLegalMoves()[0]
+        return this.bestMove
     }
 
     Negamax(depth, ply, alpha, beta){
@@ -68,11 +68,13 @@ export class Search {
         //transposition table
         let TTbestMove = null
         
-        if (this.TT.IsValidTransposition(hash, depth) && 
-            depth != this.currentDepth){
+        if (this.TT.IsValidTransposition(hash, depth)){
             
             const entry = this.TT.table.get(hash)
             TTbestMove = entry.bestMove
+            if (ply == 0 && this.bestMove == null){
+                this.bestMove = entry.bestMove
+            }
             
             /**
              Scale checkmates to match depth
@@ -174,7 +176,7 @@ export class Search {
                 alpha = score
                 bestMoveThisIteration = move
                 // Keep track of the best move from the root position as well
-                if (depth == this.currentDepth){
+                if (ply == 0){
                     this.bestMove = move
                 }
             }

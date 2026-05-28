@@ -136,6 +136,9 @@ function Make_Move_On_Board(move){
     const target = Move.Target(move)
     const flag = Move.Flag(move)
 
+    const message = chess.board.white_To_Move ? "Move played by white: " : "Move played by black: "
+    console.log("\n", message, Move.ToUCI(move), "\n")
+
     boardElements[start].classList.add("yellow")
     // update global scope variables
     previousMove = move
