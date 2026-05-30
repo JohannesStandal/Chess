@@ -38,10 +38,8 @@ export class Evaluation {
         let score = 0
 
         const materialWeight = 1
-        const positionWeight = 1
-
+        
         score += this.countMaterial(board) * materialWeight
-        score += this.positionBonus(board) * positionWeight
 
         return score
     }
@@ -51,6 +49,7 @@ export class Evaluation {
         let midGameScore = 0
 
         // Weights
+        const PSTweight = 1 
         const mobilityWeight = 1
         const kingExposureWeight = 1
         const pawnShieldWeight = 1
@@ -59,6 +58,8 @@ export class Evaluation {
         const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
         const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
+        // Piece Square tables
+        midGameScore += this.PSTmidgame(board) * PSTweight
         
         // Sliding piece mobility bonus
         midGameScore += this.mobilityBonus(board) * mobilityWeight
@@ -78,12 +79,15 @@ export class Evaluation {
         let endGameScore = 0
 
         // Weights for endgame score
+        const PSTweight = 1
         const mopUpWeigth = 1
 
         // find kings
         const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
         const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
+        // PST and mopup eval
+        endGameScore += this.PSTendgame(board) * PSTweight
         endGameScore += this.mopUpScore(board, friendlyKingSquare, enemyKingSquare) * mopUpWeigth
 
         return endGameScore
@@ -135,22 +139,40 @@ export class Evaluation {
         return materialScore
     }
 
-    static positionBonus(board, phase){
+    static PSTmidgame(board){
         let score = 0
-
         for (let i = 0; i < 64; i++){
             const piece = board.square[i]
             if (piece == 0) continue
 
-            
-            const bonus = PieceSquareTables.Value(piece, i)
+
+            const bonus = PieceSquareTables.MidgameValue(piece, i)
             const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
+            
             
             score += sign * bonus
         }
 
         return score
     }
+
+    static PSTendgame(board){
+        let score = 0
+        for (let i = 0; i < 64; i++){
+            const piece = board.square[i]
+            if (piece == 0) continue
+
+
+            const bonus = PieceSquareTables.EndgameValue(piece, i)
+            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
+            
+            
+            score += sign * bonus
+        }
+
+        return score
+    }
+
 
     static mobilityBonus(board){
         // Count up non pawn material

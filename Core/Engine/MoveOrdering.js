@@ -49,8 +49,8 @@ function EstimateMoveScore(move, board){
             const movedPiece = board.square[start]
 
             // PST ordering
-            const startBonus = PieceSquareTables.Value(movedPiece, start)
-            const targetBonus = PieceSquareTables.Value(movedPiece, target)
+            const startBonus = PieceSquareTables.MidgameValue(movedPiece, start)
+            const targetBonus = PieceSquareTables.MidgameValue(movedPiece, target)
 
             // Incentivise moving to a better square for the given piece
             score += (targetBonus - startBonus)
