@@ -25,12 +25,16 @@ export class Evaluation {
         // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
         const phase = this.calculateGamePhase(board)
         
+        // Count material
+        const materialScore = this.countMaterial(board)
+        const materialAdvantage = (200 < materialScore)
+
         // Accumulate the scores
         const generalScore = this.generalScore(board)
-        const midGameScore = this.midGameScore(board) * phase
-        const endGameScore = this.endGameScore(board) * (1 - phase)
+        const midGameScore = this.midGameScore(board, materialAdvantage) * phase
+        const endGameScore = this.endGameScore(board, materialAdvantage) * (1 - phase)
     
-        return generalScore + midGameScore + endGameScore
+        return materialScore + generalScore + midGameScore + endGameScore
     }
 
     static generalScore(board){
@@ -44,7 +48,7 @@ export class Evaluation {
         return score
     }
 
-    static midGameScore(board){
+    static midGameScore(board, materialAdvantage){
         // Evaluation terms important for the midgame
         let midGameScore = 0
 
@@ -74,13 +78,13 @@ export class Evaluation {
         return midGameScore
     }
 
-    static endGameScore(board){
+    static endGameScore(board, materialAdvantage){
         // Evaluation terms important for the endgame
         let endGameScore = 0
 
         // Weights for endgame score
         const PSTweight = 1
-        const mopUpWeigth = 1
+        const mopUpWeigth = 30
 
         // find kings
         const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
@@ -88,7 +92,10 @@ export class Evaluation {
 
         // PST and mopup eval
         endGameScore += this.PSTendgame(board) * PSTweight
-        endGameScore += this.mopUpScore(board, friendlyKingSquare, enemyKingSquare) * mopUpWeigth
+
+        if (materialAdvantage){
+            endGameScore += this.mopUpScore(board, friendlyKingSquare, enemyKingSquare) * mopUpWeigth
+        }
 
         return endGameScore
     }
@@ -137,6 +144,12 @@ export class Evaluation {
         }
 
         return materialScore
+    }
+
+    static generalScore(board){
+        let score = 0
+
+        return score
     }
 
     static PSTmidgame(board){
