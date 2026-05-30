@@ -53,6 +53,7 @@ export class Evaluation {
         // Weights
         const mobilityWeight = 1
         const kingExposureWeight = 1
+        const pawnShieldWeight = 1
 
         // find kings
         const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
@@ -66,8 +67,8 @@ export class Evaluation {
         midGameScore += this.kingExposure(board, friendlyKingSquare, enemyKingSquare) * kingExposureWeight
 
         // Pawn shields. 
-        midGameScore += this.pawnShields(board, friendlyKingSquare, board.white_To_Move)
-        midGameScore -= this.pawnShields(board, enemyKingSquare, !board.white_To_Move)
+        midGameScore += this.pawnShields(board, friendlyKingSquare, board.white_To_Move) * pawnShieldWeight
+        midGameScore -= this.pawnShields(board, enemyKingSquare, !board.white_To_Move)   * pawnShieldWeight
 
         return midGameScore
     }
