@@ -147,12 +147,6 @@ export class Evaluation {
         return materialScore
     }
 
-    static generalScore(board){
-        let score = 0
-
-        return score
-    }
-
     static PSTmidgame(board){
         let score = 0
         for (let i = 0; i < 64; i++){
