@@ -372,7 +372,7 @@ export class Evaluation {
             // Check if there is a pawn on this file
             if (numFriendlyPawnsOnFile[file] == 0) continue
 
-            
+
             let totalPawns = 0
 
             const fileLeft = Math.max(0, file - 1)
@@ -381,7 +381,11 @@ export class Evaluation {
             if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
             if (fileRight != file) totalPawns += numFriendlyPawnsOnFile[fileRight]
 
-            if (totalPawns == 0) totalPenalty += penalty
+            if (totalPawns == 0){
+                // console.log("Isolated pawn on file: ", file)
+                totalPenalty += penalty
+            }
+                
         }
 
         return totalPenalty
@@ -396,6 +400,7 @@ export class Evaluation {
         for (let file = 0; file < 8; file++){
             // sum up the penalty for number of pawns on this file
             const numPawns = numFriendlyPawnsOnFile[file]
+            // if (1 < numPawns) console.log(numPawns, " stacked pawn on file: ", file)
             totalPenalty += penalties[numPawns]
         }
 
@@ -428,7 +433,7 @@ export class Evaluation {
 
                 
                 if (passedPawn){
-                    //console.log("White passed pawn on square: ", ChessHelper.SquareIndex(highestWhitePawnRank, file))
+                    // console.log("White passed pawn on square: ", ChessHelper.SquareIndex(highestWhitePawnRank, file))
                     score += passedPawnBonus[highestWhitePawnRank]
                 }
             }
@@ -447,7 +452,7 @@ export class Evaluation {
                 )
 
                 if (passedPawn){
-                    //console.log("White passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
+                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
                     score += passedPawnBonus[8 - lowestBlackPawnRank]
                 }
             }
