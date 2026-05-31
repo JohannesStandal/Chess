@@ -320,16 +320,16 @@ export class Evaluation {
         }
 
         // Provide penalty for poor structure regarding isolated and doubled pawns
-        pawnStructureScore += this.doubleStackedPawn(numFriendlyPawnsOnFile)
-        pawnStructureScore += this.isolatedPawn(numFriendlyPawnsOnFile)
-        pawnStructureScore += this.passedPawn(WhitePawnRankOnFile, BlackPawnRankOnFile, white)
+        pawnStructureScore += this.doubleStackedPawns(numFriendlyPawnsOnFile)
+        pawnStructureScore += this.isolatedPawns(numFriendlyPawnsOnFile)
+        pawnStructureScore += this.passedPawns(WhitePawnRankOnFile, BlackPawnRankOnFile, white)
         
         return pawnStructureScore
     }
 
     static isolatedPawns(numFriendlyPawnsOnFile){
         // penalty for an isolated pawn
-        const penalty = -10
+        const penalty = -20
         let totalPenalty = 0
 
 
@@ -351,7 +351,7 @@ export class Evaluation {
         return totalPenalty
     }
 
-    static doubleStackedPawn(numFriendlyPawnsOnFile){
+    static doubleStackedPawns(numFriendlyPawnsOnFile){
         // penalties for number of pawns on the same file
         const penalties = [0, 0, -10, -20, -30, -50, 0, 0, 0]
         let totalPenalty = 0
@@ -366,7 +366,7 @@ export class Evaluation {
         return totalPenalty
     }
 
-    static passedPawn(whitePawnRankOnFile, blackPawnRankOnFile, white){
+    static passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white){
         const passedPawnBonus = [0, 0, 10, 35, 45, 65, 90, 0]
         let score = 0
 
