@@ -372,7 +372,9 @@ export class Evaluation {
             const fileLeft = Math.max(0, file - 1)
             const fileRight = Math.min(7, file + 1)
             
+            if (numFriendlyPawnsOnFile[file] == 0) continue
             let totalPawns = 0
+
             if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
             if (fileRight != file) totalPawns += numFriendlyPawnsOnFile[fileRight]
 
