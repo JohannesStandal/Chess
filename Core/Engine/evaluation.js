@@ -331,15 +331,10 @@ export class Evaluation {
         // penalty for an isolated pawn
         const penalty = -20
         let totalPenalty = 0
-
-
-        const rank = ChessHelper.RankIndex(squareIndex)
-        const file = ChessHelper.FileIndex(squareIndex)
-
         
         for (let file = 0; file < 8; file++){
-            const fileLeft = max(0, file - 1)
-            const fileRight = max(0, file + 1)
+            const fileLeft = Math.max(0, file - 1)
+            const fileRight = Math.min(7, file + 1)
             
             let totalPawns = 0
             if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
@@ -373,9 +368,9 @@ export class Evaluation {
         // Loop over every file and check for passed pawns 
         for (let file = 0; file < 8; file++){
             // Files to the left and right
-            const fileLeft = max(0, file - 1)
-            const fileRight = max(0, file + 1)
-
+            const fileLeft = Math.max(0, file - 1)
+            const fileRight = Math.min(7, file + 1)
+            
             if (white){
                 const highestWhitePawnRank =  whitePawnRankOnFile[file]
 
