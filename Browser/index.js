@@ -126,7 +126,8 @@ export function GameLoop(){
         },300)
     }
 }
-//StartGame()
+
+StartGame()
 //StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 //StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
@@ -137,6 +138,7 @@ export function GameLoop(){
  * startpos: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
  * test: "5b2/1k1n4/2pp4/1p3R2/3n4/8/5Q2/2K5 w - - 0 1"
  * Sliding moves test: "kqr5/4b3/2b5/8/6B1/2B5/8/5RQK b - - 0 1"
+ * Pawn structure test: "2k5/p7/2pPpp2/4p3/PP6/1P3PpP/8/5K2 w - - 0 1"
  *
  * Basic Endgames:
  *  - queen vs king: "8/6q2/6k1/8/2K5/8/8/8 b - - 0 1"
@@ -151,9 +153,10 @@ export function GameLoop(){
  *  - knight underpromotion: "8/8/8/7k/6p1/5pQ1/3R1p1K/6N1 b - - 0 1"
  *  - sacrifice bishop for promotion: "8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1"
  *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
+ *  - Pawn lock: "8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1"
  *
  */
-StartGame("8/6q2/6k1/8/2K5/8/8/8 b - - 0 1")
+//StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1")
 
 
 

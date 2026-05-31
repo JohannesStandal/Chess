@@ -1,183 +1,224 @@
 import { Piece } from "../Board/piece.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { Move } from "../Board/move.js"
+import { PieceSquareTables } from "./PieceSquareTables.js"
+import { AttackDetector } from "../MoveGeneration/Attack.js"
+
 export class Evaluation {
-    
-    static mirroredBoard = new Array(64)
-    static mapFromPieceType = Array(12)
-
-    static kingMap = [
-        40,  40,  100,   0,   0,  40,  100,  40,
-        30,  30,  10,   0,   0,  10,  30,  30,
-        10,  10,   5,   0,   0,   5,  10,  10,
-        0,   0,   0, -10, -10,   0,   0,   0,
-        -10, -10, -10, -20, -20, -10, -10, -10,
-        -20, -20, -20, -30, -30, -20, -20, -20,
-        -30, -30, -30, -40, -40, -30, -30, -30,
-        -40, -40, -40, -50, -50, -40, -40, -40,
-    ]
-
-    static pawnMap = [
-        0,  0,  0,  0,  0,  0,  0,  0,
-        10, 10, 10,-10,-10, 10, 10, 10,
-        5,  5, 10, 20, 20, 10,  5,  5,
-        5,  5, 15, 25, 25, 15,  5,  5,
-        10, 10, 20, 30, 30, 20, 10, 10,
-        20, 20, 30, 35, 35, 30, 20, 20,
-        30, 30, 30, 30, 30, 30, 30, 30,
-        0,  0,  0,  0,  0,  0,  0,  0
-    ]
-
-    static knightMap = [
-        -50,-40,-30,-30,-30,-30,-40,-50,
-        -40,-20,  0,  5,  5,  0,-20,-40,
-        -30,  5, 15, 20, 20, 15,  5,-30,
-        -30, 10, 20, 30, 30, 20, 10,-30,
-        -30,  5, 20, 30, 30, 20,  5,-30,
-        -30,  0, 15, 20, 20, 15,  0,-30,
-        -40,-20,  0,  0,  0,  0,-20,-40,
-        -50,-40,-30,-30,-30,-30,-40,-50
-    ]
-
-    static bishopMap = [
-        -20,-10,-10,-10,-10,-10,-10,-20,
-        -10,  5,  0,  0,  0,  0,  5,-10,
-        -10, 10, 10, 10, 10, 10, 10,-10,
-        -10,  0, 10, 15, 15, 10,  0,-10,
-        -10,  5,  5, 15, 15,  5,  5,-10,
-        -10,  0,  5, 10, 10,  5,  0,-10,
-        -10,  0,  0,  0,  0,  0,  0,-10,
-        -20,-10,-10,-10,-10,-10,-10,-20
-    ]
-
-    static rookMap = [
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  5, 10, 15, 15, 10,  5,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        0,  0,  5, 10, 10,  5,  0,  0,
-        5, 10, 10, 10, 10, 10, 10,  5,
-        0,  0,  5, 10, 10,  5,  0,  0
-    ]
-
-    static queenMap = [
-    -20,-10,-10, -5, -5,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5,  5,  5,  5,  0,-10,
-        -5,  0,  5, 10, 10,  5,  0, -5,
-        0,  0,  5, 10, 10,  5,  0, -5,
-    -10,  5,  5,  5,  5,  5,  0,-10,
-    -10,  0,  5,  0,  0,  0,  0,-10,
-    -20,-10,-10, -5, -5,-10,-10,-20
-    ]
-
-
+    static pieceValues = new Array(12)
     static {
-        //Generer spegla brett
-        let i = 0
-        for (let rank = 7; rank >= 0; rank--){
-            for (let file = 0; file < 8; file++){
-                const squareIndex =  rank * 8 + file
-                this.mirroredBoard[squareIndex] = i
-                i++
-            }
-        }
-        
-        //Setter opp kart for brikketyper
-        this.mapFromPieceType[Piece.king] = this.kingMap
-        this.mapFromPieceType[Piece.pawn] = this.pawnMap
-        this.mapFromPieceType[Piece.knight] = this.knightMap
-        this.mapFromPieceType[Piece.bishop] = this.bishopMap
-        this.mapFromPieceType[Piece.rook] = this.rookMap
-        this.mapFromPieceType[Piece.queen] = this.queenMap
+        this.pieceValues[Piece.none] = 0
+        this.pieceValues[Piece.king] = 0
+        this.pieceValues[Piece.pawn] = 100
+        this.pieceValues[Piece.knight] = 320
+        this.pieceValues[Piece.bishop] = 330
+        this.pieceValues[Piece.rook] = 500
+        this.pieceValues[Piece.queen] = 900 
     }
-
-    // Board
 
     static evaluate(board){
         /**
-         * Rekner ein skalar verdi som representerer kor gunstig posisjonen er for
-         * spelaren sin tur det er. Dette er viktig for å få riktig resultat frå negamax funksjonen
+         * Estimate how good the position is for the given player. Positiv -> Winning
+         * while negative -> losing.
          */
-        //if (ChessHelper.isInsufficientMaterial(board)) return 0
 
+        // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
+        const phase = this.calculateGamePhase(board)
         
+        // Count material
+        const materialScore = this.countMaterial(board)
+        const materialAdvantage = (200 < materialScore)
 
-        const endgameWeight = ChessHelper.CalculateEndgameWeight(board)
-       
-        // Weights
+        // Accumulate the scores
+        const generalScore = this.generalScore(board)
+        const midGameScore = this.midGameScore(board, materialAdvantage) * phase
+        const endGameScore = this.endGameScore(board, materialAdvantage) * (1 - phase)
+    
+        return materialScore + generalScore + midGameScore + endGameScore
+    }
+
+    static generalScore(board){
+        // Evaluation terms that apply for the entire game
         let score = 0
 
-        const materialWeight = 1
-        const positionWeight = 1
-        const mobilityWeight = 0
-        const kingWeight = 30
-
-        // material
-        score += this.countMaterial(board) * materialWeight
+        const pawnStructureWeight = 1
         
+        score += this.pawnStructure(board,  board.white_To_Move) * pawnStructureWeight
+        score -= this.pawnStructure(board, !board.white_To_Move) * pawnStructureWeight
         
-        // position and mobility
-        score += this.positionBonus(board, endgameWeight) * positionWeight
-        
-        // endgame king aggression
-        score += this.mopUpScore(board, endgameWeight) * kingWeight
-
         return score
     }
 
+    static midGameScore(board, materialAdvantage){
+        // Evaluation terms important for the midgame
+        let midGameScore = 0
+
+        // Weights
+        const PSTweight = 1 
+        const mobilityWeight = 1
+        const kingExposureWeight = 1
+        const pawnShieldWeight = 1
+        const castleRightWeight = 1
+
+        // find kings
+        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
+        const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
+
+        // Piece Square tables
+        midGameScore += this.PSTmidgame(board) * PSTweight
+        
+        // Sliding piece mobility bonus
+        midGameScore += this.mobilityBonus(board) * mobilityWeight
+
+        // King Exposure
+        midGameScore += this.kingExposure(board, friendlyKingSquare, enemyKingSquare) * kingExposureWeight
+
+        // Pawn shields. 
+        midGameScore += this.pawnShields(board, friendlyKingSquare, board.white_To_Move) * pawnShieldWeight
+        midGameScore -= this.pawnShields(board, enemyKingSquare, !board.white_To_Move)   * pawnShieldWeight
+
+        // castle penalty
+        midGameScore += this.lostCastleRightsPenalty(board,  board.white_To_Move) * castleRightWeight
+        midGameScore -= this.lostCastleRightsPenalty(board, !board.white_To_Move) * castleRightWeight
+
+        return midGameScore
+    }
+
+    static endGameScore(board, materialAdvantage){
+        // Evaluation terms important for the endgame
+        let endGameScore = 0
+
+        // Weights for endgame score
+        const PSTweight = 1
+        const mopUpWeigth = 30
+
+        // find kings
+        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
+        const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
+
+        // PST and mopup eval
+        endGameScore += this.PSTendgame(board) * PSTweight
+
+        if (materialAdvantage){
+            endGameScore += this.mopUpScore(board, friendlyKingSquare, enemyKingSquare) * mopUpWeigth
+        }
+
+        return endGameScore
+    }
+
+    static calculateGamePhase(board){
+        // Count up non pawn material
+        let total = 0
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            const pieceType = Piece.Type(piece)
+
+            switch (pieceType){
+                case(Piece.knight):
+                    total += 1
+                    break
+
+                case(Piece.bishop):
+                    total += 1
+                    break
+
+                case(Piece.rook):
+                    total += 2
+                    break
+
+                case(Piece.queen):
+                    total += 4
+                    break
+            }
+        }
+        return total / 24
+    }
+
     static countMaterial(board){
-        // tell materiale
+        // Count the total material on the board
         let materialScore = 0
+
         for (let i = 0; i < 64; i++){
-            // Finner brikke type (inga brikke får vidare)
             const piece = board.square[i]
             if (piece == 0) continue
             
-            // forteikn 
+            const pieceType = Piece.Type(piece)
+            const value = this.pieceValues[pieceType]
             const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            materialScore += sign * Piece.getPieceValue(piece)
+            
+            materialScore += sign * value
         }
 
         return materialScore
     }
 
-    static positionBonus(board, endgameWeight){
+    // Positioning of individual pieces
+    static PSTmidgame(board){
         let score = 0
-
         for (let i = 0; i < 64; i++){
             const piece = board.square[i]
             if (piece == 0) continue
 
+
+            const bonus = PieceSquareTables.MidgameValue(piece, i)
             const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-
-            const pieceType = piece & 0b00111
-            const mapIndex = (Piece.CheckPieceColor(piece, true)) ? i : Evaluation.mirroredBoard[i]
-
-            const bonus = Evaluation.mapFromPieceType[pieceType][mapIndex]
             
-            score += sign * bonus * 0.2
             
+            score += sign * bonus
         }
-        return score * (1 - endgameWeight)
+
+        return score
+    }
+
+    static PSTendgame(board){
+        let score = 0
+        for (let i = 0; i < 64; i++){
+            const piece = board.square[i]
+            if (piece == 0) continue
+
+
+            const bonus = PieceSquareTables.EndgameValue(piece, i)
+            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
+            
+            
+            score += sign * bonus
+        }
+
+        return score
     }
 
     static mobilityBonus(board){
-        const myMobility = board.GenerateLegalMoves().length
-        // board.white_To_Move = !board.white_To_Move
-        // const opponentMobility = board.GenerateLegalMoves().length
-        // board.white_To_Move = !board.white_To_Move
-        return myMobility //- opponentMobility
+        // Count up non pawn material
+        let mobilityScore = 0
+
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
+            const pieceType = Piece.Type(piece)
+
+            let mobility;
+            switch (pieceType){
+                case(Piece.bishop):
+                    mobility = AttackDetector.Mobility(board, i, false, true)
+                    mobilityScore += sign * mobility * 4
+                    break
+
+                case(Piece.rook):
+                    mobility = AttackDetector.Mobility(board, i, true, false)
+                    mobilityScore += sign * mobility * 2 
+                    break
+
+                case(Piece.queen):
+                    mobility = AttackDetector.Mobility(board, i, true, true)
+                    mobilityScore += sign * mobility * 1
+                    break
+            }
+        }
+        return mobilityScore
     }
 
-    static mopUpScore(board, endgameWeight){
-        
+    static mopUpScore(board, friendlyKingSquare, enemyKingSquare){
         let score = 0
-
-        // find kings
-        let friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
-        let enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
 
         // friendly king
         const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare)
@@ -203,44 +244,258 @@ export class Evaluation {
         
         score += (14 - kingDistance) / 14
 
-        return score * Math.min(endgameWeight, 1)
-    }
-
-    // Moves
-    static Move(move, board){
-        let score = 0
-        const start = Move.Start(move)
-        const target = Move.Target(move) 
-        
-        if (Move.IsCapture(move)){
-            score += this.MVV_LVA_ordering(start, target, board)
-        }
-        else {
-            score += this.PieceSquareTables(start, target, board)
-        }
-        
         return score
     }
 
-    static MVV_LVA_ordering(start, target, board){
-        //Most valuable victim - Least valuable attacker 
-        //Prioritises moves where a low value piece captures a high value piece
-        let pieceTypeMoved = board.square[start] & 0b0111 
-        let pieceTypeAttacked = board.square[target] & 0b0111
+    // King safety
+    static kingExposure(board, friendlyKingSquare, enemyKingSquare){
+        let score = 0
+        // Punish having an exposed king, but incentivise an exposed enemy king
+        score -= AttackDetector.Mobility(board, friendlyKingSquare, true, false) * 4
+        score -= AttackDetector.Mobility(board, friendlyKingSquare, false, true) * 2
 
-        return Piece.pieceValues[pieceTypeAttacked] - Piece.pieceValues[pieceTypeMoved]
+        score += AttackDetector.Mobility(board, enemyKingSquare, true, false) * 4
+        score += AttackDetector.Mobility(board, enemyKingSquare, false, true) * 2
+
+        return score
     }
 
-    static PieceSquareTables(start, target, board){
-        const piece = board.square[start]
-        const pieceType =  piece & 0b00111
+    static pawnShields(board, kingSquare, white) {
+        let pawnShieldScore = 0
+
+        const isKingside = kingSquare == (white ? 6 : 62)
+        const isQueenside = kingSquare == (white ? 2 : 58)
+
+        if (!isKingside && !isQueenside) return 0
+
+        let shieldSquares;
+
+        if (isKingside){
+            shieldSquares = (white)
+                ? [13, 14, 15, 21, 22, 23] // White shield squares
+                : [53, 54, 55, 45, 46, 47] // Black shield squares
+        }
+        else if (isQueenside){
+            shieldSquares = (white)
+                ? [ 8,  9, 10, 16, 17, 18] // White shield squares
+                : [48, 49, 50, 40, 41, 42] // Black shield squares
+        }
+
+        // Bonuses for a pawn on the different squares
+        const weights = [10, 15, 10, 5, 8, 5]
+        const color = (white) ? Piece.white : Piece.black
+
+        for (let i = 0; i < 6; i++) {
+            const targetSquare = shieldSquares[i]
+            const piece = board.square[targetSquare]
+
+            if (piece == (Piece.pawn | color)) {
+                pawnShieldScore += weights[i]
+            } 
+            else {
+                pawnShieldScore -= weights[i] // missing pawn is dangerous
+            }
+        }
+
+        return pawnShieldScore;
+    }
+
+    static lostCastleRightsPenalty(board, white){
+        // Gives a penalty if you have lost your ability to castle
+        // if you havent already done so
+        const penalty = -10
+
+        if (white){
+            const kingSquare = board.whiteKingSquare
+            // You have castled, no need for a penalty
+            if (kingSquare == 2 || kingSquare == 6) return 0
+
+            const castleRigths = (board.castlingRights >> 2) & 0b11
+            if (castleRigths == 0) return penalty
+        }
+
+        else {
+            const kingSquare = board.blackKingSquare
+            // You have castled, no need for a penalty
+            if (kingSquare == 58 || kingSquare == 62) return 0
+
+            const castleRigths = (board.castlingRights) & 0b11
+            if (castleRigths == 0) return penalty
+
+        }
         
-        const startIndex = (Piece.CheckPieceColor(piece, true)) ? start : Evaluation.mirroredBoard[start]
-        const targetIndex = (Piece.CheckPieceColor(piece, true)) ? target : Evaluation.mirroredBoard[target]
+        return 0
+    }
 
-        const bonusOld = Evaluation.mapFromPieceType[pieceType][startIndex]
-        const bonusNew = Evaluation.mapFromPieceType[pieceType][targetIndex]
+    // Pawn structure
+    static pawnStructure(board, white){
+        let pawnStructureScore = 0
 
-        return bonusOld - bonusNew
+        // Weights
+        const passedPawnWeight = 1
+        const isolatedPawnWeight = 1
+        const doubleStackedPawnWeight = 1
+
+        
+        const friendlyPawn = Piece.pawn | ( (white) ? Piece.white : Piece.black )
+        const opponentPawn = Piece.pawn | ( (white) ? Piece.black : Piece.white )
+        
+        // Count up number of friendly pawns for every file
+        const numFriendlyPawnsOnFile = new Array(8)
+
+        // Find the highes pawn rank (closest to promotion) on every file
+        const whitePawnRankOnFile = new Array(8)
+        const blackPawnRankOnFile = new Array(8)
+
+        for (let file = 0; file < 8; file++){
+            numFriendlyPawnsOnFile[file] = this.numPawnsOnFile(board, file, friendlyPawn)
+
+            whitePawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.white), white)
+            blackPawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.black), white)
+        }
+        // console.log(whitePawnRankOnFile, blackPawnRankOnFile)
+
+        // Provide penalty for poor structure regarding isolated and doubled pawns
+        pawnStructureScore += this.doubleStackedPawns(numFriendlyPawnsOnFile)
+        pawnStructureScore += this.isolatedPawns(numFriendlyPawnsOnFile)
+        pawnStructureScore += this.passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white)
+        
+        return pawnStructureScore
+    }
+
+    static isolatedPawns(numFriendlyPawnsOnFile){
+        // penalty for an isolated pawn
+        const penalty = -20
+        let totalPenalty = 0
+        
+        for (let file = 0; file < 8; file++){
+            // Check if there is a pawn on this file
+            if (numFriendlyPawnsOnFile[file] == 0) continue
+
+
+            let totalPawns = 0
+
+            const fileLeft = Math.max(0, file - 1)
+            const fileRight = Math.min(7, file + 1)            
+
+            if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
+            if (fileRight != file) totalPawns += numFriendlyPawnsOnFile[fileRight]
+
+            if (totalPawns == 0){
+                // console.log("Isolated pawn on file: ", file)
+                totalPenalty += penalty
+            }
+                
+        }
+
+        return totalPenalty
+    }
+
+    static doubleStackedPawns(numFriendlyPawnsOnFile){
+        // penalties for number of pawns on the same file
+        const penalties = [0, 0, -8, -15, -25, -40, 0, 0]
+        let totalPenalty = 0
+        
+
+        for (let file = 0; file < 8; file++){
+            // sum up the penalty for number of pawns on this file
+            const numPawns = numFriendlyPawnsOnFile[file]
+            // if (1 < numPawns) console.log(numPawns, " stacked pawn on file: ", file)
+            totalPenalty += penalties[numPawns]
+        }
+
+        return totalPenalty
+    }
+
+    static passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white){
+        const passedPawnBonus = [0, 10, 10, 45, 70, 100, 220, 0]
+        let score = 0
+
+        // Loop over every file and check for passed pawns 
+        for (let file = 0; file < 8; file++){
+            // Files to the left and right
+            const fileLeft = Math.max(0, file - 1)
+            const fileRight = Math.min(7, file + 1)
+            
+            if (white){
+                const highestWhitePawnRank =  whitePawnRankOnFile[file]
+                if (highestWhitePawnRank < 0) continue
+                
+                const highestBlackPawnRankLeft = blackPawnRankOnFile[fileLeft]
+                const highestBlackPawnRankForward = blackPawnRankOnFile[file]
+                const highestBlackPawnRankRight =  blackPawnRankOnFile[fileRight]
+
+                const passedPawn = (
+                    highestBlackPawnRankLeft    <= highestWhitePawnRank &&
+                    highestBlackPawnRankForward <= highestWhitePawnRank &&
+                    highestBlackPawnRankRight   <= highestWhitePawnRank
+                )
+
+                
+                if (passedPawn){
+                    // console.log("White passed pawn on square: ", ChessHelper.SquareIndex(highestWhitePawnRank, file))
+                    score += passedPawnBonus[highestWhitePawnRank]
+                }
+            }
+            else {
+                const lowestBlackPawnRank =  blackPawnRankOnFile[file]
+                if (7 < lowestBlackPawnRank) continue
+
+                const lowestWhitePawnRankLeft = whitePawnRankOnFile[fileLeft]
+                const lowestWhitePawnRankForward = whitePawnRankOnFile[file]
+                const lowestWhitePawnRankRight =  whitePawnRankOnFile[fileRight]
+
+                const passedPawn = (
+                    lowestWhitePawnRankLeft    >= lowestBlackPawnRank &&
+                    lowestWhitePawnRankForward >= lowestBlackPawnRank &&
+                    lowestWhitePawnRankRight   >= lowestBlackPawnRank
+                )
+
+                if (passedPawn){
+                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
+                    score += passedPawnBonus[8 - lowestBlackPawnRank]
+                }
+            }
+        }
+
+        return score
+    }
+
+    static numPawnsOnFile(board, file, pawn){
+        let numPawnsOnFile = 0
+
+        for (let i = file; i < 64; i += 8){
+            const pieceOnSquare = board.square[i]
+            if (pieceOnSquare == pawn) numPawnsOnFile ++
+        }
+
+        return numPawnsOnFile
+    }
+
+    static RankOnFile(board, file, pawn, highest){
+        // Find the pawn with the highest rankIndex on this file
+        if (highest){
+            // Start on the top of the board and loop down
+            const startSquare = 56 + file
+            for (let i = startSquare; 0 < i; i -= 8){
+                const pieceOnSquare = board.square[i]
+
+                // If the piece is a pawn we have found the highest rank
+                if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
+            }
+            return -1
+        }
+        // Find the pawn with the lowest rankIndex on this file
+        else {
+            const startSquare = file
+            for (let i = startSquare; i < 64; i += 8){
+                const pieceOnSquare = board.square[i]
+
+                // If the piece is a pawn we have found the lowest rank
+                if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
+            }
+            return 8
+        }
+        
     }
 }

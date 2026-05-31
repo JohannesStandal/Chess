@@ -104,4 +104,30 @@ export class AttackDetector {
         
         return check
     }
+
+    static Mobility(board, start, orthogonal, diagonal){
+        let numReachableSquares = 0
+
+        // Get map data
+        let data = ChessHelper.numSquaresToEdge[start]
+
+        let startIndex = (orthogonal) ? 0 : 4 // diagonal movement
+        let endIndex = (diagonal) ? 8 : 4 // horizontal movement
+
+        // Iterate in every direction for all directions
+        for (let i = startIndex; i < endIndex; i++){
+            const offset = Piece.directionOffsets[i]
+            const numSquaresThisDirection = data[i]
+
+            for (let n = 0; n < numSquaresThisDirection; n++){
+                const target = start + offset * (n+1)
+
+                // If the square is occupied we start searching the next direction
+                if(board.square[target] != 0) break
+                numReachableSquares ++
+            }
+        }
+
+        return numReachableSquares
+    }
 }

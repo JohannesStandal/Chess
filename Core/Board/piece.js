@@ -13,17 +13,6 @@ export class Piece {
     static white   = 8 //01_000
     static black  = 16 //10_000
 
-    //Brikkeverdi for evaluering
-    static pieceValues = [
-        0,
-        20000,
-        100,
-        320,
-        330,
-        500,
-        900,
-    ]
-
     //Ordliste for Forsyth Edwards Notasjon (FEN)
     static From_Symbol = {
             "k": this.king,    //001
@@ -103,6 +92,10 @@ export class Piece {
         }
     }
 
+    static Type(piece){
+        return piece & 0b111
+    }
+
     static IsType(piece, type){
         return ((piece & 0b0111) == type)
     }
@@ -112,10 +105,5 @@ export class Piece {
         let pieceType = piece & 0b111 
         return 3 < pieceType && pieceType < 7
     }
-
-    static getPieceValue(piece){
-        return this.pieceValues[piece & 0b111]
-    }
-
 }
 

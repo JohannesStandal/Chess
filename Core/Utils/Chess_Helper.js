@@ -115,6 +115,10 @@ export class ChessHelper {
         return (squareIndex % 8) - 1
     }
 
+    static SquareIndex(rank, file){
+        return rank * 8 + file
+    }
+
     static CalculateEndgameWeight(board){
         let numOpponentPieces = 0
 

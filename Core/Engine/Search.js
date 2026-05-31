@@ -1,6 +1,6 @@
 import { Transposition_Table } from "./Transposition_Table.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
-import { MoveOrder, InsertFirst } from "./MoveOrdering.js"
+import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
 import { Move } from "../Board/move.js"
 import { checkMateScore, drawScore, mateTreshold, maxSearchDepth} from "../Constants/SearchConstants.js"
@@ -35,7 +35,7 @@ export class Search {
             
             // search the position
             const score = this.Negamax(depth, 0, -Infinity, Infinity)
-            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", score)
+            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", Math.round(score))
             if (mateTreshold <= score){
                 const mateDepth = checkMateScore - score
                 console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
