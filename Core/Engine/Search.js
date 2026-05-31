@@ -3,7 +3,7 @@ import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
 import { Move } from "../Board/move.js"
-import { checkMateScore, drawScore, mateTreshold, maxSearchDepth} from "../Constants/SearchConstants.js"
+import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions} from "../Constants/SearchConstants.js"
 import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
 import { AttackDetector } from "../MoveGeneration/Attack.js"
 
@@ -50,7 +50,7 @@ export class Search {
         return this.bestMove
     }
 
-    Negamax(depth, ply, alpha, beta){
+    Negamax(depth, ply, alpha, beta, totalExtensions){
         if (this.timeManager.ExceededTimeLimit()){
             return alpha
         }
@@ -125,10 +125,11 @@ export class Search {
         this.MoveGenerator.GenerateMoves(this.board, ply)
         const numMoves = this.MoveGenerator.count
         
+        const inCheck = AttackDetector.InCheck(this.board, this.board.white_To_Move)
         // Checkmate or stalemate detection
         if (numMoves == 0){    
             //Checkmate
-            if (AttackDetector.InCheck(this.board, this.board.white_To_Move)){
+            if (inCheck){
                 const mateScore = -(checkMateScore - ply)
                 this.TT.AddPosition(hash, -checkMateScore, depth, "EXACT", null)
                 return mateScore
@@ -146,7 +147,12 @@ export class Search {
         if (ply == 0){
             bestRootMove = this.bestMove
         }
+
         MoveOrder(this.board, this.MoveGenerator, ply, TTbestMove, bestRootMove)
+
+        // Check extensions
+        const canExtend = (totalExtensions < maxExtensions)
+        let extension = (canExtend && inCheck) ? 1 : 0
             
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
@@ -161,10 +167,10 @@ export class Search {
 
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
             const move = this.MoveGenerator.moves[moveIndex]
-            
+
             // Evaluate future position
             this.board.Make_Move(move)
-            const score = - this.Negamax(depth - 1, ply + 1, -beta, -alpha)
+            const score = - this.Negamax(depth - 1 + extensions, ply + 1, -beta, -alpha, totalExtensions + extensions)
             this.board.Unmake_Move(move)
             
             // exit point for iterative deepening
@@ -193,6 +199,7 @@ export class Search {
 
                 let scoreToStore = score
                 
+                // Mate scaling
                 if (mateTreshold < scoreToStore)
                     scoreToStore += ply
                 else if (scoreToStore < -mateTreshold)
