@@ -369,11 +369,14 @@ export class Evaluation {
         let totalPenalty = 0
         
         for (let file = 0; file < 8; file++){
-            const fileLeft = Math.max(0, file - 1)
-            const fileRight = Math.min(7, file + 1)
-            
+            // Check if there is a pawn on this file
             if (numFriendlyPawnsOnFile[file] == 0) continue
+
+            
             let totalPawns = 0
+
+            const fileLeft = Math.max(0, file - 1)
+            const fileRight = Math.min(7, file + 1)            
 
             if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
             if (fileRight != file) totalPawns += numFriendlyPawnsOnFile[fileRight]
