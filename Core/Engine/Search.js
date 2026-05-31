@@ -125,8 +125,9 @@ export class Search {
         this.MoveGenerator.GenerateMoves(this.board, ply)
         const numMoves = this.MoveGenerator.count
         
-        const inCheck = AttackDetector.InCheck(this.board, this.board.white_To_Move)
         // Checkmate or stalemate detection
+        const inCheck = AttackDetector.InCheck(this.board, this.board.white_To_Move) 
+
         if (numMoves == 0){    
             //Checkmate
             if (inCheck){
@@ -139,7 +140,6 @@ export class Search {
             this.TT.AddPosition(hash, drawScore, depth, "EXACT")
             return drawScore
         }
-        
 
         // Moveordering. TT moves comes first, except for in the root node
         // where the best move from the previous search should be considered first
@@ -149,14 +149,14 @@ export class Search {
         }
 
         MoveOrder(this.board, this.MoveGenerator, ply, TTbestMove, bestRootMove)
-
-        // Check extensions
-        const canExtend = (totalExtensions < maxExtensions)
-        let extension = (canExtend && inCheck) ? 1 : 0
-            
+        
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
         const originalAlpha = alpha
+
+        // Can the search be extended?
+        const canExtend = totalExtensions < maxExtensions 
+        
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
@@ -169,8 +169,61 @@ export class Search {
             const move = this.MoveGenerator.moves[moveIndex]
 
             // Evaluate future position
+            let score;
             this.board.Make_Move(move)
-            const score = - this.Negamax(depth - 1 + extensions, ply + 1, -beta, -alpha, totalExtensions + extensions)
+
+            // Move knowledge
+            const givesCheck = AttackDetector.InCheck(this.board, this.board.white_To_Move)
+            const isPromotion = Move.IsPromotion(move)
+
+            // Check and promotion extension
+            const extensions = (canExtend && (inCheck || isPromotion) ) ? 1 : 0
+
+            // Late move reductions
+            const isLateMove = (moveStart + 4 < moveIndex)
+            const canReduce = (
+                3 <= depth &&
+                0 < ply &&
+                isLateMove &&
+                !inCheck &&
+                !givesCheck &&
+                !Move.IsCapture(move) &&
+                !isPromotion 
+            )
+
+            // reduced search
+            if (canReduce){
+                // Attempt shallow search
+                score = -this.Negamax(
+                    depth - 2,
+                    ply + 1,
+                    -alpha - 1,
+                    -alpha,
+                    totalExtensions
+                )
+
+                // Needs full search
+                if (alpha < score){
+                    score = -this.Negamax(
+                        depth - 1,
+                        ply + 1,
+                        -beta,
+                        -alpha,
+                        totalExtensions
+                    )
+                }
+            }
+            // Full search
+            else {
+                score = - this.Negamax(
+                    depth - 1 + extensions, 
+                    ply + 1, 
+                    -beta, 
+                    -alpha, 
+                    totalExtensions + extensions
+                )
+            }
+
             this.board.Unmake_Move(move)
             
             // exit point for iterative deepening
@@ -227,7 +280,7 @@ export class Search {
             scoreToStore -= ply
 
     
-        this.TT.AddPosition(hash, scoreToStore, depth, flag, bestMoveThisIteration)
+        this.TT.AddPosition(hash, scoreToStore, depth + extensions, flag, bestMoveThisIteration)
     
         return alpha
     }
