@@ -58,6 +58,7 @@ export class Evaluation {
         const mobilityWeight = 1
         const kingExposureWeight = 1
         const pawnShieldWeight = 1
+        const castleRightWeight = 1
 
         // find kings
         const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
@@ -75,6 +76,10 @@ export class Evaluation {
         // Pawn shields. 
         midGameScore += this.pawnShields(board, friendlyKingSquare, board.white_To_Move) * pawnShieldWeight
         midGameScore -= this.pawnShields(board, enemyKingSquare, !board.white_To_Move)   * pawnShieldWeight
+
+        // castle penalty
+        midGameScore += this.lostCastleRightsPenalty(board,  board.white_To_Move) * castleRightWeight
+        midGameScore -= this.lostCastleRightsPenalty(board, !board.white_To_Move) * castleRightWeight
 
         return midGameScore
     }
@@ -147,6 +152,7 @@ export class Evaluation {
         return materialScore
     }
 
+    // Positioning of individual pieces
     static PSTmidgame(board){
         let score = 0
         for (let i = 0; i < 64; i++){
@@ -241,6 +247,7 @@ export class Evaluation {
         return score
     }
 
+    // King safety
     static kingExposure(board, friendlyKingSquare, enemyKingSquare){
         let score = 0
         // Punish having an exposed king, but incentivise an exposed enemy king
@@ -293,6 +300,34 @@ export class Evaluation {
         return pawnShieldScore;
     }
 
+    static lostCastleRightsPenalty(board, white){
+        // Gives a penalty if you have lost your ability to castle
+        // if you havent already done so
+        const penalty = -10
+
+        if (white){
+            const kingSquare = board.whiteKingSquare
+            // You have castled, no need for a penalty
+            if (kingSquare == 2 || kingSquare == 6) return 0
+
+            const castleRigths = (board.castleRigths >> 2) & 0b11
+            if (castleRigths == 0) return penalty
+        }
+
+        else {
+            const kingSquare = board.blackKingSquare
+            // You have castled, no need for a penalty
+            if (kingSquare == 58 || kingSquare == 62) return 0
+
+            const castleRigths = (board.castleRigths) & 0b11
+            if (castleRigths == 0) return penalty
+
+        }
+        
+        return 0
+    }
+
+    // Pawn structure
     static pawnStructure(board, white){
         let pawnStructureScore = 0
 
@@ -318,7 +353,7 @@ export class Evaluation {
             whitePawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.white), white)
             blackPawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.black), white)
         }
-        console.log(whitePawnRankOnFile, blackPawnRankOnFile)
+        // console.log(whitePawnRankOnFile, blackPawnRankOnFile)
 
         // Provide penalty for poor structure regarding isolated and doubled pawns
         pawnStructureScore += this.doubleStackedPawns(numFriendlyPawnsOnFile)
@@ -349,7 +384,7 @@ export class Evaluation {
 
     static doubleStackedPawns(numFriendlyPawnsOnFile){
         // penalties for number of pawns on the same file
-        const penalties = [0, 0, -10, -20, -30, -50, 0, 0, 0]
+        const penalties = [0, 0, -8, -15, -25, -40, 0, 0]
         let totalPenalty = 0
         
 
@@ -363,7 +398,7 @@ export class Evaluation {
     }
 
     static passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white){
-        const passedPawnBonus = [0, 0, 10, 35, 45, 65, 90, 0]
+        const passedPawnBonus = [0, 10, 10, 45, 70, 100, 220, 0]
         let score = 0
 
         // Loop over every file and check for passed pawns 
