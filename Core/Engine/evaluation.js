@@ -309,20 +309,21 @@ export class Evaluation {
         const numFriendlyPawnsOnFile = new Array(8)
 
         // Find the highes pawn rank (closest to promotion) on every file
-        const WhitePawnRankOnFile = new Array(8)
-        const BlackPawnRankOnFile = new Array(8)
+        const whitePawnRankOnFile = new Array(8)
+        const blackPawnRankOnFile = new Array(8)
 
         for (let file = 0; file < 8; file++){
             numFriendlyPawnsOnFile[file] = this.numPawnsOnFile(board, file, friendlyPawn)
 
-            WhitePawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.white), white)
-            BlackPawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.black), white)
+            whitePawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.white), white)
+            blackPawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.black), white)
         }
+        console.log(whitePawnRankOnFile, blackPawnRankOnFile)
 
         // Provide penalty for poor structure regarding isolated and doubled pawns
         pawnStructureScore += this.doubleStackedPawns(numFriendlyPawnsOnFile)
         pawnStructureScore += this.isolatedPawns(numFriendlyPawnsOnFile)
-        pawnStructureScore += this.passedPawns(WhitePawnRankOnFile, BlackPawnRankOnFile, white)
+        pawnStructureScore += this.passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white)
         
         return pawnStructureScore
     }
@@ -373,7 +374,8 @@ export class Evaluation {
             
             if (white){
                 const highestWhitePawnRank =  whitePawnRankOnFile[file]
-
+                if (highestWhitePawnRank < 0) continue
+                
                 const highestBlackPawnRankLeft = blackPawnRankOnFile[fileLeft]
                 const highestBlackPawnRankForward = blackPawnRankOnFile[file]
                 const highestBlackPawnRankRight =  blackPawnRankOnFile[fileRight]
@@ -384,24 +386,28 @@ export class Evaluation {
                     highestBlackPawnRankRight   <= highestWhitePawnRank
                 )
 
+                
                 if (passedPawn){
+                    //console.log("White passed pawn on square: ", ChessHelper.SquareIndex(highestWhitePawnRank, file))
                     score += passedPawnBonus[highestWhitePawnRank]
                 }
             }
             else {
                 const lowestBlackPawnRank =  blackPawnRankOnFile[file]
+                if (7 < lowestBlackPawnRank) continue
 
                 const lowestWhitePawnRankLeft = whitePawnRankOnFile[fileLeft]
                 const lowestWhitePawnRankForward = whitePawnRankOnFile[file]
                 const lowestWhitePawnRankRight =  whitePawnRankOnFile[fileRight]
 
                 const passedPawn = (
-                    lowestWhitePawnRankLeft    > lowestBlackPawnRank &&
-                    lowestWhitePawnRankForward > lowestBlackPawnRank &&
-                    lowestWhitePawnRankRight   > lowestBlackPawnRank
+                    lowestWhitePawnRankLeft    >= lowestBlackPawnRank &&
+                    lowestWhitePawnRankForward >= lowestBlackPawnRank &&
+                    lowestWhitePawnRankRight   >= lowestBlackPawnRank
                 )
 
                 if (passedPawn){
+                    //console.log("White passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
                     score += passedPawnBonus[8 - lowestBlackPawnRank]
                 }
             }
@@ -431,8 +437,8 @@ export class Evaluation {
 
                 // If the piece is a pawn we have found the highest rank
                 if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
-                
-            }            
+            }
+            return -1
         }
         // Find the pawn with the lowest rankIndex on this file
         else {
@@ -442,7 +448,9 @@ export class Evaluation {
 
                 // If the piece is a pawn we have found the lowest rank
                 if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
-            }  
+            }
+            return 8
         }
+        
     }
 }
