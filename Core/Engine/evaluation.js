@@ -41,10 +41,11 @@ export class Evaluation {
         // Evaluation terms that apply for the entire game
         let score = 0
 
-        const materialWeight = 1
+        const pawnStructureWeight = 1
         
-        score += this.countMaterial(board) * materialWeight
-
+        score += this.pawnStructure(board,  board.white_To_Move) * pawnStructureWeight
+        score -= this.pawnStructure(board, !board.white_To_Move) * pawnStructureWeight
+        
         return score
     }
 
@@ -186,7 +187,6 @@ export class Evaluation {
         return score
     }
 
-
     static mobilityBonus(board){
         // Count up non pawn material
         let mobilityScore = 0
@@ -297,5 +297,163 @@ export class Evaluation {
         }
 
         return pawnShieldScore;
+    }
+
+    static pawnStructure(board, white){
+        let pawnStructureScore = 0
+
+        // Weights
+        const passedPawnWeight = 1
+        const isolatedPawnWeight = 1
+        const doubleStackedPawnWeight = 1
+
+        
+        const friendlyPawn = Piece.pawn | ( (white) ? Piece.white : Piece.black )
+        const opponentPawn = Piece.pawn | ( (white) ? Piece.black : Piece.white )
+        
+        // Count up number of friendly pawns for every file
+        const numFriendlyPawnsOnFile = new Array(8)
+
+        // Find the highes pawn rank (closest to promotion) on every file
+        const WhitePawnRankOnFile = new Array(8)
+        const BlackPawnRankOnFile = new Array(8)
+
+        for (let file = 0; file < 8; file++){
+            numFriendlyPawnsOnFile[file] = this.numPawnsOnFile(board, file, friendlyPawn)
+
+            WhitePawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.white), white)
+            BlackPawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.black), white)
+        }
+
+        // Provide penalty for poor structure regarding isolated and doubled pawns
+        pawnStructureScore += this.doubleStackedPawn(numFriendlyPawnsOnFile)
+        pawnStructureScore += this.isolatedPawn(numFriendlyPawnsOnFile)
+        pawnStructureScore += this.passedPawn(WhitePawnRankOnFile, BlackPawnRankOnFile, white)
+        
+        return pawnStructureScore
+    }
+
+    static isolatedPawns(numFriendlyPawnsOnFile){
+        // penalty for an isolated pawn
+        const penalty = -10
+        let totalPenalty = 0
+
+
+        const rank = ChessHelper.RankIndex(squareIndex)
+        const file = ChessHelper.FileIndex(squareIndex)
+
+        
+        for (let file = 0; file < 8; file++){
+            const fileLeft = max(0, file - 1)
+            const fileRight = max(0, file + 1)
+            
+            let totalPawns = 0
+            if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
+            if (fileRight != file) totalPawns += numFriendlyPawnsOnFile[fileRight]
+
+            if (totalPawns == 0) totalPenalty += penalty
+        }
+
+        return totalPenalty
+    }
+
+    static doubleStackedPawn(numFriendlyPawnsOnFile){
+        // penalties for number of pawns on the same file
+        const penalties = [0, 0, -10, -20, -30, -50, 0, 0, 0]
+        let totalPenalty = 0
+        
+
+        for (let file = 0; file < 8; file++){
+            // sum up the penalty for number of pawns on this file
+            const numPawns = numFriendlyPawnsOnFile[file]
+            totalPenalty += penalties[numPawns]
+        }
+
+        return totalPenalty
+    }
+
+    static passedPawn(whitePawnRankOnFile, blackPawnRankOnFile, white){
+        const passedPawnBonus = [0, 0, 10, 35, 45, 65, 90, 0]
+        let score = 0
+
+        // Loop over every file and check for passed pawns 
+        for (let file = 0; file < 8; file++){
+            // Files to the left and right
+            const fileLeft = max(0, file - 1)
+            const fileRight = max(0, file + 1)
+
+            if (white){
+                const highestWhitePawnRank =  whitePawnRankOnFile[file]
+
+                const highestBlackPawnRankLeft = blackPawnRankOnFile[fileLeft]
+                const highestBlackPawnRankForward = blackPawnRankOnFile[file]
+                const highestBlackPawnRankRight =  blackPawnRankOnFile[fileRight]
+
+                const passedPawn = (
+                    highestBlackPawnRankLeft    <= highestWhitePawnRank &&
+                    highestBlackPawnRankForward <= highestWhitePawnRank &&
+                    highestBlackPawnRankRight   <= highestWhitePawnRank
+                )
+
+                if (passedPawn){
+                    score += passedPawnBonus[highestWhitePawnRank]
+                }
+            }
+            else {
+                const lowestBlackPawnRank =  blackPawnRankOnFile[file]
+
+                const lowestWhitePawnRankLeft = whitePawnRankOnFile[fileLeft]
+                const lowestWhitePawnRankForward = whitePawnRankOnFile[file]
+                const lowestWhitePawnRankRight =  whitePawnRankOnFile[fileRight]
+
+                const passedPawn = (
+                    lowestWhitePawnRankLeft    > lowestBlackPawnRank &&
+                    lowestWhitePawnRankForward > lowestBlackPawnRank &&
+                    lowestWhitePawnRankRight   > lowestBlackPawnRank
+                )
+
+                if (passedPawn){
+                    score += passedPawnBonus[8 - lowestBlackPawnRank]
+                }
+            }
+        }
+
+        return score
+    }
+
+    static numPawnsOnFile(board, file, pawn){
+        let numPawnsOnFile = 0
+
+        for (let i = file; i < 64; i += 8){
+            const pieceOnSquare = board.square[i]
+            if (pieceOnSquare == pawn) numPawnsOnFile ++
+        }
+
+        return numPawnsOnFile
+    }
+
+    static RankOnFile(board, file, pawn, highest){
+        // Find the pawn with the highest rankIndex on this file
+        if (highest){
+            // Start on the top of the board and loop down
+            const startSquare = 56 + file
+            for (let i = startSquare; 0 < i; i -= 8){
+                const pieceOnSquare = board.square[i]
+
+                // If the piece is a pawn we have found the highest rank
+                if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
+                
+            }            
+        }
+        // Find the pawn with the lowest rankIndex on this file
+        else {
+            const startSquare = file
+            for (let i = startSquare; i < 64; i += 8){
+                const pieceOnSquare = board.square[i]
+
+                // If the piece is a pawn we have found the lowest rank
+                if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
+            }  
+        }
     }
 }
