@@ -310,7 +310,7 @@ export class Evaluation {
             // You have castled, no need for a penalty
             if (kingSquare == 2 || kingSquare == 6) return 0
 
-            const castleRigths = (board.castleRigths >> 2) & 0b11
+            const castleRigths = (board.castlingRights >> 2) & 0b11
             if (castleRigths == 0) return penalty
         }
 
@@ -319,7 +319,7 @@ export class Evaluation {
             // You have castled, no need for a penalty
             if (kingSquare == 58 || kingSquare == 62) return 0
 
-            const castleRigths = (board.castleRigths) & 0b11
+            const castleRigths = (board.castlingRights) & 0b11
             if (castleRigths == 0) return penalty
 
         }
