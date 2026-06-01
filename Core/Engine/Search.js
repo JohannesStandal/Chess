@@ -34,7 +34,7 @@ export class Search {
             nodesSearched = 0
             
             // search the position
-            const score = this.Negamax(depth, 0, -Infinity, Infinity)
+            const score = this.Negamax(depth, 0, -Infinity, Infinity, 0)
             console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", Math.round(score))
             if (mateTreshold <= score){
                 const mateDepth = checkMateScore - score
@@ -156,7 +156,6 @@ export class Search {
 
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
-        
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
@@ -169,61 +168,21 @@ export class Search {
             const move = this.MoveGenerator.moves[moveIndex]
 
             // Evaluate future position
-            let score;
             this.board.Make_Move(move)
 
-            // Move knowledge
-            const givesCheck = AttackDetector.InCheck(this.board, this.board.white_To_Move)
-            const isPromotion = Move.IsPromotion(move)
-
             // Check and promotion extension
-            const extensions = (canExtend && (inCheck || isPromotion) ) ? 1 : 0
+            const moveIsPromotion = Move.IsPromotion(move)
+            const extensions = (canExtend && (inCheck || moveIsPromotion) ) ? 1 : 0
 
-            // Late move reductions
-            const isLateMove = (moveStart + 4 < moveIndex)
-            const canReduce = (
-                3 <= depth &&
-                0 < ply &&
-                isLateMove &&
-                !inCheck &&
-                !givesCheck &&
-                !Move.IsCapture(move) &&
-                !isPromotion 
+        
+            const score = - this.Negamax(
+                depth - 1 + extensions, 
+                ply + 1, 
+                -beta, 
+                -alpha, 
+                totalExtensions + extensions
             )
-
-            // reduced search
-            if (canReduce){
-                // Attempt shallow search
-                score = -this.Negamax(
-                    depth - 2,
-                    ply + 1,
-                    -alpha - 1,
-                    -alpha,
-                    totalExtensions
-                )
-
-                // Needs full search
-                if (alpha < score){
-                    score = -this.Negamax(
-                        depth - 1,
-                        ply + 1,
-                        -beta,
-                        -alpha,
-                        totalExtensions
-                    )
-                }
-            }
-            // Full search
-            else {
-                score = - this.Negamax(
-                    depth - 1 + extensions, 
-                    ply + 1, 
-                    -beta, 
-                    -alpha, 
-                    totalExtensions + extensions
-                )
-            }
-
+            
             this.board.Unmake_Move(move)
             
             // exit point for iterative deepening
@@ -260,9 +219,10 @@ export class Search {
 
                 this.TT.AddPosition(hash, scoreToStore, depth, "LOWER", move)
 
-                return score    
-            }
+                return score
+            }       
         }
+        
         
         // Store final result in Transposition Table
         let flag = ""
@@ -280,7 +240,7 @@ export class Search {
             scoreToStore -= ply
 
     
-        this.TT.AddPosition(hash, scoreToStore, depth + extensions, flag, bestMoveThisIteration)
+        this.TT.AddPosition(hash, scoreToStore, depth, flag, bestMoveThisIteration)
     
         return alpha
     }
