@@ -408,7 +408,7 @@ export class Evaluation {
     }
 
     static passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white){
-        const passedPawnBonus = [0, 10, 10, 45, 70, 100, 220, 0]
+        const passedPawnBonus = [0, 10, 10, 20, 40, 80, 120, 0]
         let score = 0
 
         // Loop over every file and check for passed pawns 
