@@ -1,6 +1,7 @@
 import { Board } from "../Core/Board/chessboard.js"
 import { MoveGenerator } from "../Core/MoveGeneration/MoveGenerator.js"
 import { Move } from "../Core/Board/move.js"
+import { Engine } from "../Core/Engine/Engine.js"
 
 export class Tests {
     constructor() {
@@ -59,7 +60,7 @@ export class Tests {
     // lets improve it
     moveGeneration_full_suite(depth = 4){
         // A test for catching bugs in the movegeneration 
-
+        
         depth = Math.min(6, depth)
         let startTime = performance.now()
         // positions and results fetched from: https://www.chessprogramming.org/Perft_Results
@@ -139,5 +140,13 @@ export class Tests {
                 console.log("Exported: ", exportFen)
             }
         })
+    }
+
+    enginePerformance(){
+        const engine = new Engine()
+        engine.SetPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        console.profile("Engine performance")
+        engine.Bestmove()
+        console.profileEnd()
     }
 }
