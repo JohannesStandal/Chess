@@ -33,7 +33,7 @@ TODO:
 import { Board } from "../Board/chessboard.js"
 import { Search } from "./Search.js"
 import { TimeManager } from "./TimeManager.js"
-
+import { openingBook } from "../Openings/openingBook.js"
 
 export class Engine {
     constructor(thinkingTime=1000){
@@ -60,6 +60,12 @@ export class Engine {
     }
 
     Bestmove(){
+        const hash = this.board.zobrist.hash
+        const openingBookMove = openingBook.bookMove(hash)
+        if (openingBookMove != 0){
+            console.log("Found move in opening book")
+            return openingBookMove
+        }
         return this.search.IterativeDeepening()
     }
 
