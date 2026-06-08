@@ -1,11 +1,11 @@
 import { Board } from "../Board/chessboard.js";
-import openigns from "../Openings/openingBook.json" with { type: "json" };
+import openings from "../Openings/openingBook.json" with { type: "json" };
 
 export class openingBook {
     static bookMove(hash){
         const key = String(hash)
-        const entry = openigns[key]
-
+        const entry = openings[key]
+        
         if (entry == null) return 0 // a1a1 = null move
 
         const move = this.chooseMove(entry)
@@ -15,17 +15,23 @@ export class openingBook {
     static chooseMove(entry){
         // Input an entry in 2d array form in the format ( [move, frequency] -> [move, frequency])
         // The function shall return a move weighed by the distribution of the frequencies
+        
+        /** 
+            |------------------|-------------------------|--------|----------------|
+            |  Frequency       |         110             |   20   |      100       |
+            |                  |                         |        |                |  
+            |  lookUp          |         110             |  130   |      230       |  
+            |                  |                  /\     |        |                |  
+            |  Threshold (90) ====================/      |        |                |  
+            |                  |                         |        |                |  
+            |  move            |       move1             | move2  |      move3     |
+            |------------------|-------------------------|--------|----------------|
+
+         */
+
+        
         let sum = 0
         let lookUp = []
-
-        // Frequency   |         110             |   20   |      100       |
-        //             |                         |        |                |  
-        // lookUp      |         110             |  130   |      230       |  
-        //             |                   ^     |        |                |  
-        // Threshold---|-------------------/     |        |                |  
-        // gives       |                         |        |                |  
-        // move 1      |       move1             | move2  |      move3     |  
-        
         
         // Accumulate all frequencies in a table
         for (const variation of entry){
@@ -33,8 +39,6 @@ export class openingBook {
             const accumulatedFrequency = sum
             lookUp.push(accumulatedFrequency)
         }
-
-
         
         // Select a move along the line
         const threshold = Math.round( Math.random() * sum )

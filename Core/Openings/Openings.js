@@ -2,7 +2,7 @@
 import { Board } from "../Board/chessboard.js";
 import { Move } from "../Board/move.js";
 
-import rawOpeningLines from "../Openings/rawOpeningLines.json" with { type: "json" };
+import rawOpeningLines from "../Openings/rawLines.json" with { type: "json" };
 import fs from "fs";
 
 
