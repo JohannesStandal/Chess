@@ -50,6 +50,21 @@ export class Search {
         return this.bestMove
     }
 
+    fixedDepthSearch(depth){
+        this.bestMove = null
+
+        // search the position
+        const score = this.Negamax(depth, 0, -Infinity, Infinity, 0)
+        console.log(
+            "depth: ", depth, 
+            "Bestmove: ", Move.ToUCI(this.bestMove), 
+            "Nodes: ", nodesSearched, 
+            "Score: ", Math.round(score)
+        )
+
+        const move = Move.ToUCI(this.bestMove)
+    }
+
     Negamax(depth, ply, alpha, beta, totalExtensions){
         if (this.timeManager.ExceededTimeLimit()){
             return alpha

@@ -146,7 +146,7 @@ export class Tests {
         const engine = new Engine()
         engine.SetPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         console.profile("Engine performance")
-        engine.Bestmove()
+        engine.Bestmove(5)
         console.profileEnd()
     }
 }
