@@ -33,7 +33,7 @@ TODO:
 import { Board } from "../Board/chessboard.js"
 import { Search } from "./Search.js"
 import { TimeManager } from "./TimeManager.js"
-import { openingBook } from "../Openings/openingBook.js"
+//import { openingBook } from "../Openings/openingBook.js"
 
 export class Engine {
     constructor(thinkingTime=1000){

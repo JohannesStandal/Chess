@@ -221,15 +221,6 @@ export class Board {
         this.white_To_Move = !this.white_To_Move
         this.playedMoves.push(move)
         this.repetitionTable.push(this.zobrist.hash)
-
-        // just to check for hash errors
-        // const compare = new zobrist_hashing()
-        // compare.createHash(this.square, this.white_To_Move)
-
-        // if (this.zobrist.hash != compare.hash){
-        //     console.error("Error with incremental HASH", [...this.playedMoves])
-        //     this.zobrist.hash = compare.hash
-        // }
     }
 
     Unmake_Move(move){
