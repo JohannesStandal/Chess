@@ -72,7 +72,7 @@ export class Search {
         nodesSearched ++
 
         // check for threefold repetition
-        if (ChessHelper.checkForRepetitions(this.board.repetitionTable)) {
+        if (this.board.CheckThreeFold()) {
             //console.log("found threefold repetition in search at ply: ", ply)
             return drawScore
         }

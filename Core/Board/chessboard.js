@@ -287,4 +287,22 @@ export class Board {
         if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = start
 
     }
+
+    CheckThreeFold(){
+        const currentPosHash = this.zobrist.hash
+        let frequency = 1
+        let end = this.ply
+
+        for (let i = 0; i < end; i++){
+            const hash = this.hashHistory[i]
+            if (hash == currentPosHash){
+                frequency ++
+            }
+            if (2 < frequency){
+                return true
+            }
+        }
+        
+        return false
+    }
 }
