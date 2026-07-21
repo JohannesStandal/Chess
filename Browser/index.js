@@ -16,7 +16,7 @@ export const chess = new Chess()
 
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: !false, // ^ --||--
+    playAsBlack: false, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -87,7 +87,7 @@ tests.board = chess.board
 export function GameLoop(){
 
     const gameOver = (chess.GenerateMoves().length == 0)
-    const threefoldRepetition = ChessHelper.checkForRepetitions(chess.board.repetitionTable)
+    const threefoldRepetition = chess.board.CheckThreeFold(chess.board.repetitionTable)
     const check = chess.InCheck()
 
     if (gameOver){

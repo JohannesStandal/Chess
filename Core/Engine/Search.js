@@ -7,9 +7,6 @@ import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions}
 import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
 import { AttackDetector } from "../MoveGeneration/Attack.js"
 
-// constants
-var nodesSearched;
-
 export class Search {
     constructor(board, timeManager){
         this.board = board
@@ -18,6 +15,9 @@ export class Search {
         this.TT = new Transposition_Table()
 
         this.bestMove = null
+
+        this.nodeCount = 0
+        this.totalNodeCount = 0
     }
 
     IterativeDeepening(){
@@ -27,15 +27,23 @@ export class Search {
         this.bestMove = null
 
         //console.log("EndgameWGH: ",  ChessHelper.CalculateEndgameWeight(this.board))
-
+        this.totalNodeCount = 0
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){
             // tracking nodes too see improvement
-            nodesSearched = 0
-            
+            this.nodeCount = 0
+                        
             // search the position
             const score = this.Negamax(depth, 0, -Infinity, Infinity, 0)
-            console.log("depth: ", depth, "Bestmove: ", Move.ToUCI(this.bestMove), " Nodes: ", nodesSearched, "Score: ", Math.round(score))
+            this.totalNodeCount += this.nodeCount
+
+            console.log(
+                "depth: ", depth, 
+                "Bestmove: ", Move.ToUCI(this.bestMove), 
+                " Nodes: ", this.nodeCount, 
+                "Score: ", Math.round(score)
+            )
+
             if (mateTreshold <= score){
                 const mateDepth = checkMateScore - score
                 console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
@@ -47,6 +55,7 @@ export class Search {
                 break
             }
         }
+        console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
         return this.bestMove
     }
 
@@ -69,7 +78,7 @@ export class Search {
         if (this.timeManager.ExceededTimeLimit()){
             return alpha
         }
-        nodesSearched ++
+        this.nodeCount ++
 
         // check for threefold repetition
         if (this.board.CheckThreeFold()) {
@@ -133,7 +142,7 @@ export class Search {
 
         // Start quiesence search at leaf nodes
         if (depth == 0){
-            return QuiescenceSearch(this.board, this.timeManager, ply + 1, alpha, beta)
+            return QuiescenceSearch(this.board, this.timeManager, ply + 1, alpha, beta, this.nodeCount)
         } 
 
         // Generate legal moves
