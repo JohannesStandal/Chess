@@ -1,6 +1,6 @@
 // UI and Website interactions
 import { RenderScene, EndGame, Rematch} from "./App.js"
-import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset} from "./UI.js"
+import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset, UndoLastMove} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 import { Move } from "../Core/Board/move.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
@@ -16,7 +16,7 @@ export const chess = new Chess()
 
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: false, // ^ --||--
+    playAsBlack: !false, // ^ --||--
     playerTurn: false,
     active: false, 
     playedMoves: [],    //for å lagre alle trekk som har blitt spelt
@@ -65,6 +65,7 @@ window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
 window.FlipBoard = FlipBoard
+window.UndoLastMove = UndoLastMove
 window.tests = tests
 window.gameData = gameData
 
@@ -127,7 +128,7 @@ export function GameLoop(){
     }
 }
 
-StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1")
+StartGame()
 //StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 //StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
