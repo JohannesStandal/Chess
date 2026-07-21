@@ -186,8 +186,8 @@ function UndoLastMove(){
     console.log(Move.ToUCI(previousMove))
     chess.unmakeMove(previousMove)
 
-    const legalMoves = chess.GenerateMoves()
-    RenderBoard(chess.board, legalMoves)
+    UpdateLegalMovesLookUp()
+    RenderBoard(chess.board)
 }
 
 function Promotion(move){
