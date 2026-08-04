@@ -1,6 +1,7 @@
 import { Board } from "../Core/Board/chessboard.js"
 import { MoveGenerator } from "../Core/MoveGeneration/MoveGenerator.js"
 import { Move } from "../Core/Board/move.js"
+import { Engine } from "../Core/Engine/Engine.js"
 
 export class Tests {
     constructor() {
@@ -59,7 +60,7 @@ export class Tests {
     // lets improve it
     moveGeneration_full_suite(depth = 4){
         // A test for catching bugs in the movegeneration 
-
+        
         depth = Math.min(6, depth)
         let startTime = performance.now()
         // positions and results fetched from: https://www.chessprogramming.org/Perft_Results
@@ -97,12 +98,15 @@ export class Tests {
             console.log(test_position.fen)
             this.board.Load_Fen(test_position.fen)
             
+            
             for (let i = 0; i < depth; i++){
                 // compare nodecount with expected results
+                const tick = performance.now()
                 let nodes = this.MoveGenerationCount(i+1)
+                const tock = performance.now()
                 let results = (nodes == test_position.num_pos[i]) ? " ✅ " : " ❌ "
 
-                console.log(`Depth: ${i+1}, Expected: ${test_position.num_pos[i]}, Result: ${nodes}, ${results} `)
+                console.log(`Depth: ${i+1}, Expected: ${test_position.num_pos[i]}, Result: ${nodes}, ${results}, Time: ${(tock-tick).toFixed(2)}ms `)
             }
         }
         let endTime = performance.now()
@@ -139,5 +143,13 @@ export class Tests {
                 console.log("Exported: ", exportFen)
             }
         })
+    }
+
+    enginePerformance(){
+        const engine = new Engine()
+        engine.SetPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        console.profile("Engine performance")
+        engine.Bestmove(5)
+        console.profileEnd()
     }
 }

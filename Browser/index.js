@@ -1,6 +1,6 @@
 // UI and Website interactions
 import { RenderScene, EndGame, Rematch} from "./App.js"
-import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset} from "./UI.js"
+import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset, UndoLastMove} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 import { Move } from "../Core/Board/move.js"
 import { Evaluation } from "../Core/Engine/evaluation.js"
@@ -65,6 +65,7 @@ window.Rematch = Rematch
 window.RenderScene = RenderScene
 window.RenderBoard = RenderBoard
 window.FlipBoard = FlipBoard
+window.UndoLastMove = UndoLastMove
 window.tests = tests
 window.gameData = gameData
 
@@ -86,7 +87,7 @@ tests.board = chess.board
 export function GameLoop(){
 
     const gameOver = (chess.GenerateMoves().length == 0)
-    const threefoldRepetition = ChessHelper.checkForRepetitions(chess.board.repetitionTable)
+    const threefoldRepetition = chess.board.CheckThreeFold(chess.board.repetitionTable)
     const check = chess.InCheck()
 
     if (gameOver){

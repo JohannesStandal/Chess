@@ -2,6 +2,8 @@
 //Denne klassen simulerer reglar for sjakkbrettet og er 
 //Hjernen bak programmet
 
+const maxNumMoves = 512
+
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
@@ -15,11 +17,16 @@ export class Board {
         this.castlingRights = 0b1111
         this.halfMoveClock = 0
         this.enPassantSquare = null
+        this.ply = 0
         
         // lagrer spillhistorikk
         this.playedMoves = []
-        this.stack = []
-        this.repetitionTable = []
+        this.capturedPieceHistory = new Array(maxNumMoves)
+        this.castlingRightsHistory = new Array(maxNumMoves)
+        this.epSquareHistory = new Array (maxNumMoves)
+        this.hashHistory = new Array (maxNumMoves)
+        
+        // this.stack = []
         this.zobrist = new zobrist_hashing()
 
         // Track kings
@@ -149,14 +156,14 @@ export class Board {
         let capturedPiece = this.square[target]
 
         // save game state for unmake move
-        this.stack.push({
-            // Posisjons info
-            capturedPiece: capturedPiece,
-            castlingRights:     this.castlingRights,
-            enPassantSquare:    this.enPassantSquare,
-            hash: this.zobrist.hash
-        })
-
+        this.capturedPieceHistory[this.ply] = capturedPiece
+        this.castlingRightsHistory[this.ply] = this.castlingRights
+        this.epSquareHistory[this.ply] = this.enPassantSquare
+        this.hashHistory[this.ply] = this.zobrist.hash
+        this.playedMoves[this.ply] = move
+        
+        this.ply ++
+        
         // Update hash
         this.zobrist.incrementHash(move, this)
         
@@ -219,35 +226,28 @@ export class Board {
         
         // flip turn and store game history
         this.white_To_Move = !this.white_To_Move
-        this.playedMoves.push(move)
-        this.repetitionTable.push(this.zobrist.hash)
-
-        // just to check for hash errors
-        // const compare = new zobrist_hashing()
-        // compare.createHash(this.square, this.white_To_Move)
-
-        // if (this.zobrist.hash != compare.hash){
-        //     console.error("Error with incremental HASH", [...this.playedMoves])
-        //     this.zobrist.hash = compare.hash
-        // }
+        
     }
 
     Unmake_Move(move){
         //sjekkar om det eksisterer ein spelhistorikk
         //Dersom det ikkje er det avbryter den operasjonen
-        if (this.stack.length == 0) return
+        if (this.ply == 0) return
         
         // Flips the turn
         this.white_To_Move = !this.white_To_Move
+        
 
-        //overfører data frå forrige posisjon
-        const previousPosition = this.stack.pop()
-        
-        // stored position info
-        this.castlingRights = previousPosition.castlingRights
-        this.enPassantSquare = previousPosition.enPassantSquare
-        this.zobrist.hash = previousPosition.hash
-        
+        // Restore lost data from history tables
+        this.ply--
+
+        const capturedPiece = this.capturedPieceHistory[this.ply]
+        this.castlingRights = this.castlingRightsHistory[this.ply]
+        this.enPassantSquare = this.epSquareHistory[this.ply]
+        this.zobrist.hash = this.hashHistory[this.ply]
+
+        this.playedMoves[this.ply] = 0
+
         // decode move
         const start = Move.Start(move)
         const target = Move.Target(move)
@@ -255,7 +255,7 @@ export class Board {
 
         // Reconstructing position
         let movedPiece = this.square[target]
-        const capturedPiece = previousPosition.capturedPiece
+        //const capturedPiece = previousPosition.capturedPiece
         
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
         // checking if the moved piece was a promoted pawn
@@ -286,8 +286,25 @@ export class Board {
         if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = start
         if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = start
 
-        // Remove move from gamehistory
-        this.playedMoves.pop()
-        this.repetitionTable.pop()
+    }
+
+    CheckThreeFold(){
+        return false
+
+        const currentPosHash = this.zobrist.hash
+        let frequency = 1
+        let end = this.ply
+
+        for (let i = 0; i < end; i++){
+            const hash = this.hashHistory[i]
+            if (hash == currentPosHash){
+                frequency ++
+            }
+            if (2 < frequency){
+                return true
+            }
+        }
+
+        return false
     }
 }

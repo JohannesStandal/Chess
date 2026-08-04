@@ -61,21 +61,6 @@ export class ChessHelper {
         }
     }
 
-    static checkForRepetitions(repetetionTable){
-        // we only need to check the most recent added hash
-        const copiedTable = [...repetetionTable]
-        const hashToCheck = copiedTable.pop()
-
-        // count number of appearances
-        let counter = 1
-        for (const hash of copiedTable){
-            if (hash == hashToCheck) counter++
-            if (2 < counter) return true
-        }
-        
-        return false
-    }
-
     static isInsufficientMaterial(board) {
     let whitePieces = []
     let blackPieces = []

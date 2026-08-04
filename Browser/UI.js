@@ -181,6 +181,15 @@ function Make_Move_On_Board(move){
     
 }
 
+function UndoLastMove(){
+    const previousMove = chess.board.playedMoves[chess.board.ply - 1]
+    console.log(Move.ToUCI(previousMove))
+    chess.unmakeMove(previousMove)
+
+    UpdateLegalMovesLookUp()
+    RenderBoard(chess.board)
+}
+
 function Promotion(move){
     // get promotion index
     const index = prompt("0: Queen 1: Rook 2: Knight 3: Bishop")
@@ -215,4 +224,4 @@ function SelectPiece(squareIndex){
     RenderBoard(chess.board, legalMoves)
 }
 
-export { chess as board, gameData, RenderBoard, UpdateLegalMovesLookUp, AnimateMove, Make_Move_On_Board}
+export { chess as board, gameData, RenderBoard, UpdateLegalMovesLookUp, AnimateMove, Make_Move_On_Board, UndoLastMove}

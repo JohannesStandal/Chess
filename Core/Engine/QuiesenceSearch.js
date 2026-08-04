@@ -4,13 +4,16 @@ import { checkMateScore, drawScore } from "../Constants/SearchConstants.js"
 import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
 import { AttackDetector } from "../MoveGeneration/Attack.js"
 import { Move } from "../Board/move.js"
+
+
 const moveGenerator = new MoveGenerator()
 
-export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
+export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
     // https://www.chessprogramming.org/Quiescence_Search
     if (timeManager.ExceededTimeLimit()) return alpha
-
+    nodeCount ++
+    
     // move generation
     let moves;
 
@@ -46,7 +49,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta){
         const move = moveGenerator.moves[moveIndex]
 
         board.Make_Move(move)
-        let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha)
+        let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
         board.Unmake_Move(move)
 
         if (score >= beta) return score
