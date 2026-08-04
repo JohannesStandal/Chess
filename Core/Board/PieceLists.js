@@ -29,9 +29,6 @@ export class PieceLists {
         this.blackRookList = new Array(10)   // Max 10 rooks
         this.blackQueenList = new Array(10)  // Max 10 queens
         
-        // Keep track of a pieces index in their corresponding piece list
-        this.pieceListIndexes = new Uint16Array(64)
-
         // Easy acces to the different lists
         this.listFromPiece = new Array(22)
 
@@ -46,6 +43,9 @@ export class PieceLists {
         this.listFromPiece[Piece.bishop | Piece.black] = this.blackBishopList
         this.listFromPiece[Piece.rook   | Piece.black] = this.blackRookList
         this.listFromPiece[Piece.queen  | Piece.black] = this.blackQueenList
+
+        // Keep track of a pieces index in their corresponding piece list
+        this.pieceListIndexes = new Uint16Array(64)
     }
 
     Add(){
