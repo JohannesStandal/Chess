@@ -4,30 +4,46 @@ import { Move } from "../Board/move.js"
 import { PieceSquareTables } from "./PieceSquareTables.js"
 import { AttackDetector } from "../MoveGeneration/Attack.js"
 
+const kingValue = 0
+const pawnValue = 100
+const knightValue = 320
+const bishopValue = 330
+const rookValue = 500
+const queenValue = 900
+
+
 export class Evaluation {
     static pieceValues = new Array(12)
     static {
-        this.pieceValues[Piece.none] = 0
-        this.pieceValues[Piece.king] = 0
-        this.pieceValues[Piece.pawn] = 100
-        this.pieceValues[Piece.knight] = 320
-        this.pieceValues[Piece.bishop] = 330
-        this.pieceValues[Piece.rook] = 500
-        this.pieceValues[Piece.queen] = 900 
+        this.pieceValues[Piece.none  ] = 0
+        this.pieceValues[Piece.king  ] = kingValue
+        this.pieceValues[Piece.pawn  ] = pawnValue
+        this.pieceValues[Piece.knight] = knightValue 
+        this.pieceValues[Piece.bishop] = bishopValue
+        this.pieceValues[Piece.rook  ] = rookValue
+        this.pieceValues[Piece.queen ] = queenValue
     }
 
     static evaluate(board){
         /**
-         * Estimate how good the position is for the given player. Positiv -> Winning
+         * Estimate how good the position is for the current player to move. Positive -> Winning
          * while negative -> losing.
-         */
+        */
+       
+        // we generally assume we are evaluating for white. We multiply by the sign to correct for black
+        const sign = board.white_To_Move ? 1 : -1
 
         // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
         const phase = this.calculateGamePhase(board)
         
         // Count material
-        const materialScore = this.countMaterial(board)
-        const materialAdvantage = (200 < materialScore)
+        const whiteMaterial = this.countMaterial(board, true)
+        const blackMaterial = this.countMaterial(board, false)
+
+        const materialScore = sign * (whiteMaterial - blackMaterial)
+
+        // advantage?
+        const materialAdvantage = (350 < materialScore)
 
         // Accumulate the scores
         const generalScore = this.generalScore(board)
@@ -134,20 +150,16 @@ export class Evaluation {
         return total / 24
     }
 
-    static countMaterial(board){
+    static countMaterial(board, white){
+        const color = white ? Piece.white : Piece.black
         // Count the total material on the board
         let materialScore = 0
 
-        for (let i = 0; i < 64; i++){
-            const piece = board.square[i]
-            if (piece == 0) continue
-            
-            const pieceType = Piece.Type(piece)
-            const value = this.pieceValues[pieceType]
-            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            
-            materialScore += sign * value
-        }
+        materialScore += board.pl.Count(Piece.pawn | color) * pawnValue
+        materialScore += board.pl.Count(Piece.knight | color) * knightValue
+        materialScore += board.pl.Count(Piece.bishop | color) * bishopValue
+        materialScore += board.pl.Count(Piece.rook | color) * rookValue
+        materialScore += board.pl.Count(Piece.queen | color) * queenValue
 
         return materialScore
     }
