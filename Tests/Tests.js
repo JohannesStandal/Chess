@@ -98,12 +98,15 @@ export class Tests {
             console.log(test_position.fen)
             this.board.Load_Fen(test_position.fen)
             
+            
             for (let i = 0; i < depth; i++){
                 // compare nodecount with expected results
+                const tick = performance.now()
                 let nodes = this.MoveGenerationCount(i+1)
+                const tock = performance.now()
                 let results = (nodes == test_position.num_pos[i]) ? " ✅ " : " ❌ "
 
-                console.log(`Depth: ${i+1}, Expected: ${test_position.num_pos[i]}, Result: ${nodes}, ${results} `)
+                console.log(`Depth: ${i+1}, Expected: ${test_position.num_pos[i]}, Result: ${nodes}, ${results}, Time: ${(tock-tick).toFixed(2)}ms `)
             }
         }
         let endTime = performance.now()

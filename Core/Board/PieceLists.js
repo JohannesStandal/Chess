@@ -32,9 +32,20 @@ export class PieceLists {
         // Keep track of a pieces index in their corresponding piece list
         this.pieceListIndexes = new Uint16Array(64)
 
+        // Easy acces to the different lists
         this.listFromPiece = new Array(22)
 
+        this.listFromPiece[Piece.pawn   | Piece.white] = this.whitePawnsList
+        this.listFromPiece[Piece.knight | Piece.white] = this.whiteKnightList
+        this.listFromPiece[Piece.bishop | Piece.white] = this.whiteBishopList
+        this.listFromPiece[Piece.rook   | Piece.white] = this.whiteRookList
+        this.listFromPiece[Piece.queen  | Piece.white] = this.whiteQueenList
 
+        this.listFromPiece[Piece.pawn   | Piece.black] = this.blackPawnsList
+        this.listFromPiece[Piece.knight | Piece.black] = this.blackKnightList
+        this.listFromPiece[Piece.bishop | Piece.black] = this.blackBishopList
+        this.listFromPiece[Piece.rook   | Piece.black] = this.blackRookList
+        this.listFromPiece[Piece.queen  | Piece.black] = this.blackQueenList
     }
 
     Add(){
