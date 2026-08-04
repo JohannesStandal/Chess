@@ -40,6 +40,7 @@ export class Board {
 
     Reset(){
         this.square = new Array(64).fill(0)
+        this.pl.Clear()
         this.stack = []
         this.playedMoves = []
         this.repetitionTable = []
@@ -168,8 +169,8 @@ export class Board {
         const target = Move.Target(move)
         const flag = Move.Flag(move)
 
-
-        let capturedPiece = this.square[target]
+        const movedPiece = this.square[start]
+        const capturedPiece = this.square[target]
 
         // save game state for unmake move
         this.capturedPieceHistory[this.ply] = capturedPiece
@@ -189,7 +190,11 @@ export class Board {
 
         // en-passant capture
         if (flag == Move.flags.epCapture){
-            capturedPiece = this.square[this.enPassantSquare]
+            // remove pawn from piece list
+            const pawn = this.square[this.enPassantSquare]
+            this.pl.Remove(pawn, this.enPassantSquare) 
+            
+            // Remove pawn from board
             this.square[this.enPassantSquare] = 0
         }
 
@@ -201,24 +206,32 @@ export class Board {
             this.enPassantSquare = null
         }
 
-        // Find original piece
-        let movedPiece = this.square[start]
-
-        // promotion logic
-        if (Move.IsPromotion(move)){
-            // create new piece
-            const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
-            const color = movedPiece & 0b11000
-
-            const pieceType = pieceTypes[flag & 0b0011]
-            
-            movedPiece = color | pieceType
-        } 
-
         // moving the piece
         this.square[target] = movedPiece
         this.square[start] = 0
 
+        // update piece list
+        this.pl.Remove(capturedPiece, target)
+        this.pl.Move(movedPiece, start, target)
+
+        
+        // promotion logic
+        if (Move.IsPromotion(move)){
+            // create new piece
+            const color = movedPiece & 0b11000
+            
+            const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
+            const pieceType = pieceTypes[flag & 0b0011]
+
+            const newPiece = color | pieceType
+            this.square[target] = newPiece
+
+            // Piece lists
+            this.pl.Remove(movedPiece, target)
+            this.pl.Add(newPiece, target)
+        }
+
+        
         // incremental king tracking
         if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = target
         if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = target
@@ -228,15 +241,23 @@ export class Board {
             const rookSquare = start + 3
             const targetSquare = start + 1
 
-            this.square[targetSquare] = this.square[rookSquare]
+            const rook = this.square[rookSquare]
+
+            this.square[targetSquare] = rook
             this.square[rookSquare] = 0
+
+            this.pl.Move(rook, rookSquare, targetSquare)
         }
         else if (flag == Move.flags.queenCastle){
             const rookSquare = start - 4
             const targetSquare = start - 1
 
-            this.square[targetSquare] = this.square[rookSquare]
+            const rook = this.square[rookSquare]
+
+            this.square[targetSquare] = rook
             this.square[rookSquare] = 0
+
+            this.pl.Move(rook, rookSquare, targetSquare)
         }
         
         
@@ -246,18 +267,16 @@ export class Board {
     }
 
     Unmake_Move(move){
-        //sjekkar om det eksisterer ein spelhistorikk
-        //Dersom det ikkje er det avbryter den operasjonen
+        // Restores the previous position if one exists
         if (this.ply == 0) return
         
         // Flips the turn
         this.white_To_Move = !this.white_To_Move
         
-
         // Restore lost data from history tables
         this.ply--
 
-        const capturedPiece = this.capturedPieceHistory[this.ply]
+        
         this.castlingRights = this.castlingRightsHistory[this.ply]
         this.enPassantSquare = this.epSquareHistory[this.ply]
         this.zobrist.hash = this.hashHistory[this.ply]
@@ -269,27 +288,44 @@ export class Board {
         const target = Move.Target(move)
         const flag = Move.Flag(move)
 
-        // Reconstructing position
-        let movedPiece = this.square[target]
-        //const capturedPiece = previousPosition.capturedPiece
-        
+        const capturedPiece = this.capturedPieceHistory[this.ply]
+        const movedPiece = this.square[target]
+
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
+
+        // Undo the move
+        this.square[start]  = movedPiece
+        this.square[target] = capturedPiece
+
+        this.pl.Move(movedPiece, target, start)
+
         // checking if the moved piece was a promoted pawn
         if (Move.IsPromotion(move)){
-            movedPiece = Piece.pawn | friendlyColor
+            this.square[start] = Piece.pawn | friendlyColor
         }
-
-        this.square[start] = movedPiece
-        this.square[target] = capturedPiece
 
         // move rook back in case of castling
         if (flag == Move.flags.kingCastle){
-            this.square[start + 1] = 0
-            this.square[start + 3] = Piece.rook | friendlyColor
+            const rook = Piece.rook | friendlyColor
+            
+            const rookStart = start + 3
+            const rookEnd = start + 1
+
+            this.square[rookStart] = rook
+            this.square[rookEnd] = 0
+
+            this.pl.Move(rook, rookEnd, rookStart)
         }
         else if (flag == Move.flags.queenCastle){
-            this.square[start - 1] = 0
-            this.square[start - 4] = Piece.rook | friendlyColor
+            const rook = Piece.rook | friendlyColor
+            
+            const rookStart = start - 4
+            const rookEnd = start - 1
+
+            this.square[rookStart] = rook
+            this.square[rookEnd] = 0
+
+            this.pl.Move(rook, rookEnd, rookStart)
         }
         
         // en passant capture
