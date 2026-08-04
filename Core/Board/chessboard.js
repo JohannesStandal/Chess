@@ -8,10 +8,11 @@ import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
+import { PieceLists } from "./PieceLists.js"
 
 export class Board {
     constructor(){
-        // blir fiksa når du lastar inn ein FEN
+        // board representation
         this.square = new Uint8Array(64).fill(0)
         this.white_To_Move = true
         this.castlingRights = 0b1111
@@ -19,19 +20,22 @@ export class Board {
         this.enPassantSquare = null
         this.ply = 0
         
-        // lagrer spillhistorikk
+        // history 
         this.playedMoves = []
         this.capturedPieceHistory = new Array(maxNumMoves)
         this.castlingRightsHistory = new Array(maxNumMoves)
         this.epSquareHistory = new Array (maxNumMoves)
         this.hashHistory = new Array (maxNumMoves)
         
-        // this.stack = []
+        // Hash
         this.zobrist = new zobrist_hashing()
 
-        // Track kings
+        // Track pieces
         this.whiteKingSquare = 0
         this.blackKingSquare = 0
+
+        
+        this.pl = new PieceLists()
     }
 
     Reset(){
@@ -42,43 +46,54 @@ export class Board {
     }
 
     Load_Fen(fen){
-        //Tømmer brett
+        // Empty the board
         this.Reset()
 
-        //Deler opp FEN i dei ulike infodelane
-        // 0 = Posisjon, 1 = Spelar sin tur, 2 = Rokade, 3 = en pessant, 4/5 half move clock
+        // Parse the fen info: position, color to move, castle rights, EP square, halfmove clock
         const data = fen.split(" ")
         const piece_positions = data[0].split("")
 
-        //Setter opp posisjon
+        // Set up the positon
         let file = 0
         let rank = 7
 
         piece_positions.forEach(char => {
             if (char == "/"){
+                // Start next rank
                 file = 0
                 rank --
             }
+        
             else {
+                // jump to next file specified by number
                 if (!isNaN(char)){
                     file += parseInt(char)
                 }
+        
                 else {
-                    let color = (char == char.toLowerCase()) ? Piece.black : Piece.white
+                    // piece data
+                    const color = (char == char.toLowerCase()) ? Piece.black : Piece.white
                     const piece = color | Piece.From_Symbol[char.toLowerCase()]
-                    const index = rank*8+file
+                    const index = rank * 8 + file
+
+                    // place the piece
                     this.square[index] = piece
+
+                    // track kings
                     if (piece == (Piece.white | Piece.king)) this.whiteKingSquare = index
                     if (piece == (Piece.black | Piece.king)) this.blackKingSquare = index
+
+                    // add to Piece Lists
+                    this.pl.Add(piece, index)
                     file ++
                 }
             }
         });
 
-        //Kven sin tur det er
+        // Side to move
         this.white_To_Move = (data[1] == "w") 
         
-        //Rokade
+        // Castle Rights
         this.castlingRights = 0b0000
         const castlingRights = data[2].split("")
         castlingRights.forEach(char => {
@@ -89,8 +104,9 @@ export class Board {
             else if (char == "q") this.castlingRights += 0b0001
         })
 
+        // Hash
         this.zobrist.createHash(this.square, this.white_To_Move)
-        this.repetitionTable = [this.zobrist.hash]
+        this.hashHistory = [this.zobrist.hash]
     }
 
     Export_Fen(){
