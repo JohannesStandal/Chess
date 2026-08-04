@@ -298,10 +298,17 @@ export class Board {
         this.square[target] = capturedPiece
 
         this.pl.Move(movedPiece, target, start)
+        this.pl.Add(capturedPiece, target)
 
         // checking if the moved piece was a promoted pawn
         if (Move.IsPromotion(move)){
-            this.square[start] = Piece.pawn | friendlyColor
+            // Replace the promoted piece with a pawn
+            const pawn = Piece.pawn | friendlyColor
+            this.square[start] = pawn
+            
+            // Replace promoted piece in the piece list
+            this.pl.Remove(movedPiece, start)
+            this.pl.Add(pawn, start)
         }
 
         // move rook back in case of castling
@@ -331,7 +338,10 @@ export class Board {
         // en passant capture
         if (flag == Move.flags.epCapture){
             const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
-            this.square[this.enPassantSquare] = Piece.pawn | enemyColor
+            const pawn = Piece.pawn | enemyColor
+
+            this.square[this.enPassantSquare] = pawn
+            this.pl.Add(pawn, this.enPassantSquare)
         }
 
         // incremental king tracking

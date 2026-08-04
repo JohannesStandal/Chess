@@ -30,6 +30,8 @@ export class PieceLists {
     }
 
     Add(piece, squareIndex){
+        if (piece == Piece.none) return
+        
         // Find corresponding piece list
         const list = this.listFromPiece[piece]
         
