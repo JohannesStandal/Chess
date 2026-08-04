@@ -66,7 +66,7 @@ function RenderBoard(board, legalMoves=[]){
             }
             
           
-            e.innerHTML = String(index)
+            //e.innerHTML = String(index)
 
             // Render piece images
             let pieceType = board.square[index]

@@ -188,6 +188,15 @@ export class Board {
         this.castlingRights &= ChessHelper.updateCastleRights[start] 
         this.castlingRights &= ChessHelper.updateCastleRights[target]
 
+        // moving the piece
+        this.square[target] = movedPiece
+        this.square[start] = 0
+
+        // update piece list
+        this.pl.Remove(capturedPiece, target)
+        this.pl.Move(movedPiece, start, target)
+
+
         // en-passant capture
         if (flag == Move.flags.epCapture){
             // remove pawn from piece list
@@ -206,37 +215,28 @@ export class Board {
             this.enPassantSquare = null
         }
 
-        // moving the piece
-        this.square[target] = movedPiece
-        this.square[start] = 0
-
-        // update piece list
-        this.pl.Remove(capturedPiece, target)
-        this.pl.Move(movedPiece, start, target)
-
         
         // promotion logic
         if (Move.IsPromotion(move)){
             // create new piece
-            const color = movedPiece & 0b11000
-            
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
             const pieceType = pieceTypes[flag & 0b0011]
-
+            const color = movedPiece & 0b11000
+            
             const newPiece = color | pieceType
+
             this.square[target] = newPiece
 
-            // Piece lists
+            // Replace pawn with promoted piece in piece lists
             this.pl.Remove(movedPiece, target)
             this.pl.Add(newPiece, target)
         }
 
-        
         // incremental king tracking
         if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = target
         if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = target
 
-        // if there is a castle, the rook should be moved as well
+        // Move the rook when castling
         if (flag == Move.flags.kingCastle){
             const rookSquare = start + 3
             const targetSquare = start + 1
@@ -248,6 +248,7 @@ export class Board {
 
             this.pl.Move(rook, rookSquare, targetSquare)
         }
+        // same for queenside
         else if (flag == Move.flags.queenCastle){
             const rookSquare = start - 4
             const targetSquare = start - 1
@@ -261,9 +262,8 @@ export class Board {
         }
         
         
-        // flip turn and store game history
+        // Switch color to move
         this.white_To_Move = !this.white_To_Move
-        
     }
 
     Unmake_Move(move){

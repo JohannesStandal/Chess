@@ -192,34 +192,33 @@ export class MoveGenerator {
         if (1 < this.checkers.length) return 
 
         // Generate all other moves
-        for (let startSquare = 0; startSquare < 64; startSquare++){
-            const pieceOnTargetSquare = board.square[startSquare]
-            
-            // Skip empty or enemy squares
-            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)
-            const emptySquare = (pieceOnTargetSquare == 0)
+        const friendlyColor = (board.white_To_Move) ? Piece.white : Piece.black
 
-            if (enemySquare || emptySquare){
-                continue
-            }
-
-            // pawn moves
-            if (Piece.IsType(pieceOnTargetSquare, Piece.pawn)){
-                this.GeneratePawnMoves(board, startSquare)
-            }
-
-            // knight moves
-            if (Piece.IsType(pieceOnTargetSquare, Piece.knight)){
-                this.GenerateKnightMoves(board, startSquare)   
-            }
-
-            // sliding moves
-            if (Piece.IsSlidingPiece(pieceOnTargetSquare)){
-                this.GenerateSlidingMoves(board, pieceOnTargetSquare, startSquare)
-            }
+        // Pawn moves
+        for (const pawnSquare of board.pl.listFromPiece[Piece.pawn | friendlyColor]){
+            this.GeneratePawnMoves(board, pawnSquare)
         }
-        
-        //return this.moves.slice(0, this.count)
+
+        // Knight moves
+        for (const knightSquare of board.pl.listFromPiece[Piece.knight | friendlyColor]){
+            this.GenerateKnightMoves(board, knightSquare)
+        }
+
+        // Bishop moves
+        for (const bishopSquare of board.pl.listFromPiece[Piece.bishop | friendlyColor]){
+            this.GenerateSlidingMoves(board, bishopSquare, false, true)
+        }
+
+        // Rook moves
+        for (const rookSquare of board.pl.listFromPiece[Piece.rook | friendlyColor]){
+            this.GenerateSlidingMoves(board, rookSquare, true, false)
+        }
+
+        // Queen moves
+        for (const queenSquare of board.pl.listFromPiece[Piece.queen | friendlyColor]){
+            this.GenerateSlidingMoves(board, queenSquare, true, true)
+        }
+
     }
 
     TacticalMoves(board, ply=0){
@@ -416,16 +415,15 @@ export class MoveGenerator {
         }
     }
 
-    GenerateSlidingMoves(board, piece, start){
+    GenerateSlidingMoves(board, start, horizontal, diagonal){
         // Get the piece type and position data
-        let pieceType = piece & 0b111
         let data = ChessHelper.numSquaresToEdge[start]
 
-        // horizontal movement
-        let startIndex = (pieceType == Piece.bishop) ? 4 : 0
+        // horizontal movement 0-4
+        let startIndex = (horizontal) ? 0 : 4
 
-        // diagonal movement
-        let endIndex = (pieceType == Piece.rook) ? 4 : 8
+        // diagonal movement 4-8
+        let endIndex = (diagonal) ? 8 : 4
 
         for (let i = startIndex; i < endIndex; i++){
             
