@@ -52,12 +52,12 @@
   <li> Alpha beta pruning (with Move ordering) </li>
   <li> Transposition table </li>
   <li> Iterative deepening </li>
-  <li> Check extensions <li>
+  <li> Check extensions </li>
 </ul>
 
 <h2> Move ordering </h2>
 <ul>
-  <li> Previous Bestmove From Iterative Deepening </li>
+  <li> Previous Bestmove </li>
   <li> Hash Move </li>
   <li> MVV-LVA (capture moves)  </li>
   <li> PST (quiet moves)</li>  
