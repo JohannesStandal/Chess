@@ -165,7 +165,7 @@ export class Board {
         this.ply ++
         
         // Update hash
-        // this.zobrist.incrementHash(move, this)
+        //this.zobrist.incrementHash(move, this)
         
         // update castling rights
         this.castlingRights &= ChessHelper.updateCastleRights[start] 
@@ -290,7 +290,7 @@ export class Board {
 
     CheckThreeFold(){
         return false
-        
+
         const currentPosHash = this.zobrist.hash
         let frequency = 1
         let end = this.ply
