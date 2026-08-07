@@ -18,8 +18,8 @@ export class MoveGenerator {
         this.maxNumLegalMoves = 218
         
         // Move Array
-        this.moves = new Uint16Array(this.maxNumLegalMoves * maxSearchDepth)
-        this.scores = new Array(this.maxNumLegalMoves * maxSearchDepth)
+        this.moves = new Uint16Array(this.maxNumLegalMoves * 256)
+        this.scores = new Array(this.maxNumLegalMoves * 256)
         this.count = 0
         this.ply = 0
     }
@@ -41,7 +41,6 @@ export class MoveGenerator {
         ) return
 
         const move = Move.EncodeUINT16(start, target, flag)
-        if (move == 0) console.log("bug")
         this.moves[this.ply * this.maxNumLegalMoves + this.count] = move
         this.count++
     }

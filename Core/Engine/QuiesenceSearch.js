@@ -26,15 +26,19 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     else {
         moveGenerator.TacticalMoves(board, ply)
     }
+
     
     const numMoves = moveGenerator.count
     const moveStart = moveGenerator.GetMoveIndex(0, ply)
     const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)
 
+    
+
     // Checkmate detection
     if (numMoves == 0 && inCheck){
         return - (checkMateScore - ply)
     }
+
 
     // stand pat
     let standPat = Evaluation.evaluate(board)
@@ -47,7 +51,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     // Recursive search with alpha beta pruning
     for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
         const move = moveGenerator.moves[moveIndex]
-
+        
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
         board.Unmake_Move(move)

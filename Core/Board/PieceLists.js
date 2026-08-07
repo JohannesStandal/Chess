@@ -62,6 +62,8 @@ export class PieceLists {
     }
 
     Move(piece, startSquare, targetSquare){
+        if (piece == Piece.none) return
+        
         // Get the corresponding list and list index for the specific piece
         const list = this.listFromPiece[piece]
         const listIndex = this.pieceListIndexes[startSquare]

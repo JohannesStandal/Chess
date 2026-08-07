@@ -31,6 +31,12 @@ export class Chess {
         return moves
     }
 
+    TacticalMoves(){
+        this.MoveGenerator.TacticalMoves(this.board)
+        const moves = this.MoveGenerator.moves.slice(0, this.MoveGenerator.count)
+        return moves
+    }
+
     InCheck(){
         return AttackDetector.InCheck(chess.board, chess.board.white_To_Move)
     }
