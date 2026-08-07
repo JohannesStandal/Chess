@@ -1,4 +1,4 @@
-export const maxSearchDepth = 16
+export const maxSearchDepth = 32
 export const maxExtensions = 8
 
 export const checkMateScore = 100000

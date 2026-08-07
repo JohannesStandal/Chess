@@ -296,13 +296,13 @@ export class Board {
         const capturedPiece = this.capturedPieceHistory[this.ply]
         const movedPiece = this.square[target]
 
-        // if (movedPiece == Piece.none){
-        //     console.log("\n No piece moved WTF? Line was")
-        //     this.playedMoves.forEach(move => {
-        //         console.log(Move.ToUCI(move))
-        //     })
-        //     console.log("\n")
-        // }
+        if (movedPiece == Piece.none){
+            console.log("\n No piece moved WTF? Line was")
+            this.playedMoves.forEach(move => {
+                console.log(Move.ToUCI(move))
+            })
+            console.log("\n")
+        }
             
 
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
