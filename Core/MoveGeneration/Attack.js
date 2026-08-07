@@ -43,7 +43,7 @@ export class AttackDetector {
             // check for pawn
             if (piece == (Piece.pawn | attackerColor)) return true
         }
-
+        
         // generate attacking sliding moves
         for (let i = 0; i < 8; i++){
             const offset = Piece.directionOffsets[i]

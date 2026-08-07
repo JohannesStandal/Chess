@@ -58,9 +58,17 @@ export class Evaluation {
         let score = 0
 
         const pawnStructureWeight = 1
+
+        const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
+        const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
+
+        //console.log(whitePawns, blackPawns)
+
+        const sign = board.white_To_Move ? 1 : -1
+        score += this.pawnStructure(whitePawns, blackPawns) * sign
         
-        score += this.pawnStructure(board,  board.white_To_Move) * pawnStructureWeight
-        score -= this.pawnStructure(board, !board.white_To_Move) * pawnStructureWeight
+        // score += this.pawnStructure(board,  board.white_To_Move) * pawnStructureWeight
+        // score -= this.pawnStructure(board, !board.white_To_Move) * pawnStructureWeight
         
         return score
     }
@@ -340,58 +348,23 @@ export class Evaluation {
     }
 
     // Pawn structure
-    static pawnStructure(board, white){
-        let pawnStructureScore = 0
 
-        // Weights
-        const passedPawnWeight = 1
-        const isolatedPawnWeight = 1
-        const doubleStackedPawnWeight = 1
-
-        
-        const friendlyPawn = Piece.pawn | ( (white) ? Piece.white : Piece.black )
-        const opponentPawn = Piece.pawn | ( (white) ? Piece.black : Piece.white )
-        
-        // Count up number of friendly pawns for every file
-        const numFriendlyPawnsOnFile = new Array(8)
-
-        // Find the highes pawn rank (closest to promotion) on every file
-        const whitePawnRankOnFile = new Array(8)
-        const blackPawnRankOnFile = new Array(8)
-
-        for (let file = 0; file < 8; file++){
-            numFriendlyPawnsOnFile[file] = this.numPawnsOnFile(board, file, friendlyPawn)
-
-            whitePawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.white), white)
-            blackPawnRankOnFile[file] = this.RankOnFile(board, file, (Piece.pawn | Piece.black), white)
-        }
-        // console.log(whitePawnRankOnFile, blackPawnRankOnFile)
-
-        // Provide penalty for poor structure regarding isolated and doubled pawns
-        pawnStructureScore += this.doubleStackedPawns(numFriendlyPawnsOnFile)
-        pawnStructureScore += this.isolatedPawns(numFriendlyPawnsOnFile)
-        pawnStructureScore += this.passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white)
-        
-        return pawnStructureScore
-    }
-
-    static isolatedPawns(numFriendlyPawnsOnFile){
+    static isolatedPawns(numPawnsOnFile){
         // penalty for an isolated pawn
         const penalty = -20
         let totalPenalty = 0
         
         for (let file = 0; file < 8; file++){
             // Check if there is a pawn on this file
-            if (numFriendlyPawnsOnFile[file] == 0) continue
-
+            if (numPawnsOnFile[file] == 0) continue
 
             let totalPawns = 0
 
             const fileLeft = Math.max(0, file - 1)
             const fileRight = Math.min(7, file + 1)            
 
-            if (fileLeft  != file) totalPawns += numFriendlyPawnsOnFile[fileLeft ]
-            if (fileRight != file) totalPawns += numFriendlyPawnsOnFile[fileRight]
+            if (fileLeft  != file) totalPawns += numPawnsOnFile[fileLeft ]
+            if (fileRight != file) totalPawns += numPawnsOnFile[fileRight]
 
             if (totalPawns == 0){
                 // console.log("Isolated pawn on file: ", file)
@@ -403,7 +376,7 @@ export class Evaluation {
         return totalPenalty
     }
 
-    static doubleStackedPawns(numFriendlyPawnsOnFile){
+    static stackedPawns(numPawnsOnFile){
         // penalties for number of pawns on the same file
         const penalties = [0, 0, -8, -15, -25, -40, 0, 0]
         let totalPenalty = 0
@@ -411,9 +384,10 @@ export class Evaluation {
 
         for (let file = 0; file < 8; file++){
             // sum up the penalty for number of pawns on this file
-            const numPawns = numFriendlyPawnsOnFile[file]
-            // if (1 < numPawns) console.log(numPawns, " stacked pawn on file: ", file)
+            const numPawns = numPawnsOnFile[file]
             totalPenalty += penalties[numPawns]
+
+            // console.log(numPawns, "Stacked pawns on file: ", file)
         }
 
         return totalPenalty
@@ -431,7 +405,7 @@ export class Evaluation {
             
             if (white){
                 const highestWhitePawnRank =  whitePawnRankOnFile[file]
-                if (highestWhitePawnRank < 0) continue
+                if (highestWhitePawnRank < 1) continue
                 
                 const highestBlackPawnRankLeft = blackPawnRankOnFile[fileLeft]
                 const highestBlackPawnRankForward = blackPawnRankOnFile[file]
@@ -451,20 +425,20 @@ export class Evaluation {
             }
             else {
                 const lowestBlackPawnRank =  blackPawnRankOnFile[file]
-                if (7 < lowestBlackPawnRank) continue
+                if (6 < lowestBlackPawnRank) continue
 
                 const lowestWhitePawnRankLeft = whitePawnRankOnFile[fileLeft]
                 const lowestWhitePawnRankForward = whitePawnRankOnFile[file]
                 const lowestWhitePawnRankRight =  whitePawnRankOnFile[fileRight]
 
                 const passedPawn = (
-                    lowestWhitePawnRankLeft    >= lowestBlackPawnRank &&
-                    lowestWhitePawnRankForward >= lowestBlackPawnRank &&
-                    lowestWhitePawnRankRight   >= lowestBlackPawnRank
+                    lowestBlackPawnRank <= lowestWhitePawnRankLeft    &&
+                    lowestBlackPawnRank <= lowestWhitePawnRankForward &&
+                    lowestBlackPawnRank <= lowestWhitePawnRankRight  
                 )
 
                 if (passedPawn){
-                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
+                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file), file)
                     score += passedPawnBonus[8 - lowestBlackPawnRank]
                 }
             }
@@ -473,41 +447,61 @@ export class Evaluation {
         return score
     }
 
-    static numPawnsOnFile(board, file, pawn){
-        let numPawnsOnFile = 0
+    static pawnStructure(whitePawns, blackPawns){
+        // Evaluates the pawnstructure for isolated, passed, and stacked pawns
+        // The heuristic gives a positive score for white and negative for black
 
-        for (let i = file; i < 64; i += 8){
-            const pieceOnSquare = board.square[i]
-            if (pieceOnSquare == pawn) numPawnsOnFile ++
-        }
+        const isolatedWeight = 1
+        const passedPawnWeight = 1
+        const stackedPawnWeight = 1
 
-        return numPawnsOnFile
-    }
 
-    static RankOnFile(board, file, pawn, highest){
-        // Find the pawn with the highest rankIndex on this file
-        if (highest){
-            // Start on the top of the board and loop down
-            const startSquare = 56 + file
-            for (let i = startSquare; 0 < i; i -= 8){
-                const pieceOnSquare = board.square[i]
-
-                // If the piece is a pawn we have found the highest rank
-                if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
-            }
-            return -1
-        }
-        // Find the pawn with the lowest rankIndex on this file
-        else {
-            const startSquare = file
-            for (let i = startSquare; i < 64; i += 8){
-                const pieceOnSquare = board.square[i]
-
-                // If the piece is a pawn we have found the lowest rank
-                if (pieceOnSquare == pawn) return ChessHelper.RankIndex(i)
-            }
-            return 8
-        }
         
+        // Precompute data for pawn structure
+        const highestRankWP = new Array(8).fill(0)
+        const highestRankBP = new Array(8).fill(0)
+        
+        const lowestRankWP  = new Array(8).fill(7)
+        const lowestRankBP  = new Array(8).fill(7)
+
+        const numBlackPawnsOnFile = new Array(8).fill(0)
+        const numWhitePawnsOnFile = new Array(8).fill(0)
+
+        for (const whitePawnIndex of whitePawns){
+            const file = ChessHelper.FileIndex(whitePawnIndex)
+            const rank = ChessHelper.RankIndex(whitePawnIndex)
+
+            highestRankWP[file] = Math.max(rank, highestRankWP[file])
+            lowestRankWP[file]  = Math.min(rank, lowestRankWP[file])
+            
+            numWhitePawnsOnFile[file] ++
+        }
+
+        for (const blackPawnIndex of blackPawns){
+            const file = ChessHelper.FileIndex(blackPawnIndex)
+            const rank = ChessHelper.RankIndex(blackPawnIndex)
+
+            highestRankBP[file] = Math.max(rank, highestRankBP[file])
+            lowestRankBP[file]  = Math.min(rank, lowestRankBP[file])
+            
+            numBlackPawnsOnFile[file] ++
+        }
+
+        // Count total score for pawn structure
+        let score = 0
+
+        // Isolated pawns
+        score += this.isolatedPawns(numWhitePawnsOnFile) * isolatedWeight
+        score -= this.isolatedPawns(numBlackPawnsOnFile) * isolatedWeight
+
+        // Multiple pawns on file
+        score += this.stackedPawns(numWhitePawnsOnFile) * stackedPawnWeight
+        score -= this.stackedPawns(numBlackPawnsOnFile) * stackedPawnWeight
+
+        // Passed pawns
+        score += this.passedPawns(highestRankWP, highestRankBP, true) * passedPawnWeight
+        score -= this.passedPawns(lowestRankWP, lowestRankBP, false ) * passedPawnWeight
+
+        return score
     }
 }

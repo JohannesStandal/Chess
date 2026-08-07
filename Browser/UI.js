@@ -65,8 +65,9 @@ function RenderBoard(board, legalMoves=[]){
                 e.classList.add("blue")
             }
             
-          
-            //e.innerHTML = String(index)
+            if (gameData.showSquareIndexes){
+                e.innerHTML = String(index)
+            }
 
             // Render piece images
             let pieceType = board.square[index]
