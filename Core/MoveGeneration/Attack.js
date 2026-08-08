@@ -9,17 +9,6 @@ export class AttackDetector {
         // Checks if a squareIndex is under attack by the enemy
         const attackerColor = (byWhite) ? Piece.white : Piece.black 
         const friendlyColor = (byWhite) ? Piece.black : Piece.white 
-        
-        // Check for potential attacking knights
-        const knightAttacks = AttackTables.knight[squareIndex]
-        for (let i = 0; i < knightAttacks.length; i++){
-            // Find every possible knight attacker
-            const attackIndex = knightAttacks[i]
-            const piece = board.square[attackIndex]
-
-            // check for knight
-            if (piece == (Piece.knight | attackerColor)) return true
-        }
 
         // check for potential attacking king
         const kingAttacks = AttackTables.king[squareIndex]
@@ -31,21 +20,49 @@ export class AttackDetector {
             if (piece == (Piece.king | attackerColor)) return true
         }
 
+        // Check for potential attacking knights
+        const numKnights = board.pl.Count(Piece.knight | attackerColor)
+        if (0 < numKnights){
+            const knightAttacks = AttackTables.knight[squareIndex]
+            for (let i = 0; i < knightAttacks.length; i++){
+                // Find every possible knight attacker
+                const attackIndex = knightAttacks[i]
+                const piece = board.square[attackIndex]
+    
+                // check for knight
+                if (piece == (Piece.knight | attackerColor)) return true
+            }
+        }
+
         // Check for potential attacking pawns
-        const pawnAttacks = (byWhite) ? 
-            AttackTables.blackPawn[squareIndex] : // Pawn moves might look backwards because a pawn 
-            AttackTables.whitePawn[squareIndex]   // attacking a pawn will always be mirrored
-        
-        for (let i = 0; i < pawnAttacks.length; i++){
-            const attackIndex = pawnAttacks[i]
-            const piece = board.square[attackIndex]
+        const numPawns = board.pl.Count(Piece.pawn | attackerColor)
+        if (0 < numPawns){
+            const pawnAttacks = (byWhite) ? 
+                AttackTables.blackPawn[squareIndex] : // Pawn moves might look backwards because a pawn 
+                AttackTables.whitePawn[squareIndex]   // attacking a pawn will always be mirrored
             
-            // check for pawn
-            if (piece == (Piece.pawn | attackerColor)) return true
+            for (let i = 0; i < pawnAttacks.length; i++){
+                const attackIndex = pawnAttacks[i]
+                const piece = board.square[attackIndex]
+                
+                // check for pawn
+                if (piece == (Piece.pawn | attackerColor)) return true
+            }
         }
         
+        // Check if a sliding attack is possible
+        const numBishops = board.pl.Count(Piece.bishop | attackerColor)
+        const numRooks   = board.pl.Count(Piece.rook   | attackerColor)
+        const numQueens  = board.pl.Count(Piece.queen  | attackerColor)
+
+        const needsHorizontalCheck = 0 < (numRooks + numQueens)
+        const needsDiagonalCheck   = 0 < (numBishops + numQueens)
+        
+        const startIndex = needsHorizontalCheck ? 0 : 4
+        const endIndex = needsDiagonalCheck ? 8 : 4
+        
         // generate attacking sliding moves
-        for (let i = 0; i < 8; i++){
+        for (let i = startIndex; i < endIndex; i++){
             const offset = Piece.directionOffsets[i]
             const numSquaresToEdge = ChessHelper.numSquaresToEdge[squareIndex][i]
             const slidingPiece = (i < 4) ? (Piece.rook | attackerColor) : (Piece.bishop | attackerColor)
