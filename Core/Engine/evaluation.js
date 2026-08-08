@@ -26,13 +26,22 @@ export class Evaluation {
 
     static evaluate(board){
         /**
-         * Estimate how good the position is for the current player to move. Positive -> Winning
-         * while negative -> losing.
-        */
-       
-        // we generally assume we are evaluating for white. We multiply by the sign to correct for black
-        const sign = board.white_To_Move ? 1 : -1
-
+         * Estimate who is winning the position. Positive values for white
+         * and negative values for black. Before returing the value it is multiplied by
+         * a sign variable so that a positive score correspond to the current player
+         * making it compatible with the negamax algorithm         
+         **/
+        
+        /**
+         * Todo. 
+         * flip all calculation to the white is winning, black is losing scheme.
+         * 
+         * - pawn shields
+         * - PST
+         * - Castle rights 
+         * - king exposure
+         */
+        
         // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
         const phase = this.calculateGamePhase(board)
         
@@ -40,40 +49,44 @@ export class Evaluation {
         const whiteMaterial = this.countMaterial(board, true)
         const blackMaterial = this.countMaterial(board, false)
 
-        const materialScore = sign * (whiteMaterial - blackMaterial)
-
-        // advantage?
-        const materialAdvantage = (350 < materialScore)
+        const materialScore = whiteMaterial - blackMaterial
 
         // Accumulate the scores
         const generalScore = this.generalScore(board)
-        const midGameScore = this.midGameScore(board, materialAdvantage) * phase
-        const endGameScore = this.endGameScore(board, materialAdvantage) * (1 - phase)
-    
-        return materialScore + generalScore + midGameScore + endGameScore
+        const midGameScore = this.midGameScore(board) * phase
+        const endGameScore = this.endGameScore(board) * (1 - phase)
+
+        // Mop up score
+        const mopUpScore = this.mopUp(board, materialScore) * (1  - phase)
+        
+        // Add it all together        
+        const totalScore = 
+            materialScore + 
+            generalScore  + 
+            midGameScore  + 
+            endGameScore  + 
+            mopUpScore
+        
+        const sign = (board.white_To_Move) ? 1 : -1
+
+        return sign * totalScore
     }
 
     static generalScore(board){
         // Evaluation terms that apply for the entire game
         let score = 0
-
+        
         const pawnStructureWeight = 1
-
+        
         const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
         const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
-
-        //console.log(whitePawns, blackPawns)
-
-        const sign = board.white_To_Move ? 1 : -1
-        score += this.pawnStructure(whitePawns, blackPawns) * sign
         
-        // score += this.pawnStructure(board,  board.white_To_Move) * pawnStructureWeight
-        // score -= this.pawnStructure(board, !board.white_To_Move) * pawnStructureWeight
+        score += this.pawnStructure(whitePawns, blackPawns) 
         
         return score
     }
 
-    static midGameScore(board, materialAdvantage){
+    static midGameScore(board){
         // Evaluation terms important for the midgame
         let midGameScore = 0
 
@@ -84,22 +97,20 @@ export class Evaluation {
         const pawnShieldWeight = 1
         const castleRightWeight = 1
 
-        // find kings
-        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
-        const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
-
         // Piece Square tables
         midGameScore += this.PSTmidgame(board) * PSTweight
         
         // Sliding piece mobility bonus
-        midGameScore += this.mobilityBonus(board) * mobilityWeight
+        midGameScore += this.mobilityBonus(board, true)  * mobilityWeight
+        midGameScore -= this.mobilityBonus(board, false) * mobilityWeight
 
         // King Exposure
-        midGameScore += this.kingExposure(board, friendlyKingSquare, enemyKingSquare) * kingExposureWeight
+        midGameScore += this.kingExposure(board, board.whiteKingSquare) * kingExposureWeight
+        midGameScore -= this.kingExposure(board, board.blackKingSquare) * kingExposureWeight
 
         // Pawn shields. 
-        midGameScore += this.pawnShields(board, friendlyKingSquare, board.white_To_Move) * pawnShieldWeight
-        midGameScore -= this.pawnShields(board, enemyKingSquare, !board.white_To_Move)   * pawnShieldWeight
+        midGameScore += this.pawnShields(board, board.whiteKingSquare, true)  * pawnShieldWeight
+        midGameScore -= this.pawnShields(board, board.blackKingSquare, false) * pawnShieldWeight
 
         // castle penalty
         midGameScore += this.lostCastleRightsPenalty(board,  board.white_To_Move) * castleRightWeight
@@ -114,18 +125,10 @@ export class Evaluation {
 
         // Weights for endgame score
         const PSTweight = 1
-        const mopUpWeigth = 30
-
-        // find kings
-        const friendlyKingSquare = board.white_To_Move ? board.whiteKingSquare : board.blackKingSquare
-        const enemyKingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
-
+        
         // PST and mopup eval
         endGameScore += this.PSTendgame(board) * PSTweight
-
-        if (materialAdvantage){
-            endGameScore += this.mopUpScore(board, friendlyKingSquare, enemyKingSquare) * mopUpWeigth
-        }
+        
 
         return endGameScore
     }
@@ -174,108 +177,146 @@ export class Evaluation {
 
     // Positioning of individual pieces
     static PSTmidgame(board){
-        let score = 0
-        for (let i = 0; i < 64; i++){
-            const piece = board.square[i]
-            if (piece == 0) continue
+        const pieces = [
+            Piece.king,
+            Piece.pawn,
+            Piece.knight,
+            Piece.bishop,
+            Piece.rook,
+            Piece.queen
+        ]
+        const colors = [
+            Piece.white,
+            Piece.black,
+        ]
 
+        let pstBonus = 0
 
-            const bonus = PieceSquareTables.MidgameValue(piece, i)
-            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            
-            
-            score += sign * bonus
+        for (const pieceType of pieces){
+            for (const color of colors){
+
+                const piece = pieceType | color
+                const pieceList = board.pl.listFromPiece[piece]
+
+                for (const squareIndex of pieceList){
+                    pstBonus += PieceSquareTables.MidgameValue(piece, squareIndex)
+                }
+            }
         }
 
-        return score
+        return pstBonus
     }
 
     static PSTendgame(board){
-        let score = 0
-        for (let i = 0; i < 64; i++){
-            const piece = board.square[i]
-            if (piece == 0) continue
+        const pieces = [
+            Piece.king,
+            Piece.pawn,
+            Piece.knight,
+            Piece.bishop,
+            Piece.rook,
+            Piece.queen
+        ]
+        const colors = [
+            Piece.white,
+            Piece.black,
+        ]
 
+        let pstBonus = 0
 
-            const bonus = PieceSquareTables.EndgameValue(piece, i)
-            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            
-            
-            score += sign * bonus
-        }
+        for (const pieceType of pieces){
+            for (const color of colors){
 
-        return score
-    }
+                const piece = pieceType | color
+                const pieceList = board.pl.listFromPiece[piece]
 
-    static mobilityBonus(board){
-        // Count up non pawn material
-        let mobilityScore = 0
-
-        for (let i = 0; i<64; i++){
-            const piece = board.square[i]
-            const sign = Piece.CheckPieceColor(piece, board.white_To_Move) ? 1 : -1
-            const pieceType = Piece.Type(piece)
-
-            let mobility;
-            switch (pieceType){
-                case(Piece.bishop):
-                    mobility = AttackDetector.Mobility(board, i, false, true)
-                    mobilityScore += sign * mobility * 4
-                    break
-
-                case(Piece.rook):
-                    mobility = AttackDetector.Mobility(board, i, true, false)
-                    mobilityScore += sign * mobility * 2 
-                    break
-
-                case(Piece.queen):
-                    mobility = AttackDetector.Mobility(board, i, true, true)
-                    mobilityScore += sign * mobility * 1
-                    break
+                for (const squareIndex of pieceList){
+                    pstBonus += PieceSquareTables.EndgameValue(piece, squareIndex)
+                }
             }
         }
-        return mobilityScore
+
+        return pstBonus
     }
 
-    static mopUpScore(board, friendlyKingSquare, enemyKingSquare){
+    static mobilityBonus(board, white){
+        // Reward mobility for sliding pieces
+        let mobilityScore = 0
+
+        const color = white ? Piece.white : Piece.black
+
+        const bishops = board.pl.listFromPiece[color | Piece.bishop]
+        const rooks   = board.pl.listFromPiece[color | Piece.rook  ]
+        const queens  = board.pl.listFromPiece[color | Piece.queen ]
+
+        for (const bishop of bishops){
+            mobilityScore += 4 * AttackDetector.Mobility(board, bishop, false, true)
+        }
+        for (const rook of rooks){
+            mobilityScore += 2 * AttackDetector.Mobility(board, rook, false, true)
+        }
+        for (const queen of queens){
+            mobilityScore += 1 * AttackDetector.Mobility(board, queen, false, true)
+        }
+
+        return mobilityScore
+    }
+    
+    // Mop up for endgame
+    static mopUp(board, materialScore){
+        const mopUpWeigth = 30
+
         let score = 0
 
-        // friendly king
-        const friendlyKingRank = ChessHelper.RankIndex(friendlyKingSquare)
-        const friendlyKingFile = ChessHelper.FileIndex(friendlyKingSquare)
+        // white advantage
+        if (300 < materialScore){
+            score += this.mopUpScore(board.whiteKingSquare, board.blackKingSquare)
+        }
+        
+        // black advantage
+        if (materialScore < -300){
+            score -= this.mopUpScore(board.blackKingSquare, board.whiteKingSquare)
+        }
+
+        return score * mopUpWeigth
+    }
+
+    static mopUpScore(chasingKing, runningKing){
+        let score = 0
+
+        // The king doing the chasing
+        const chasingKingRank = ChessHelper.RankIndex(chasingKing)
+        const chasingKingFile = ChessHelper.FileIndex(chasingKing)
        
-        // rekn ut avstand til midthen for fiendtleg konge
-        const enemyKingRank = ChessHelper.RankIndex(enemyKingSquare)
-        const enemyKingFile = ChessHelper.FileIndex(enemyKingSquare)
+        // The king being chased
+        const runningKingRank = ChessHelper.RankIndex(runningKing)
+        const runningKingFile = ChessHelper.FileIndex(runningKing)
 
-        // oppfordre til å få fiendtlig konge til hjørne av brettet
-        const enemyKingDstToCenterRank = Math.abs(enemyKingRank - 3.5)
-        const enemyKingDstToCenterFile = Math.abs(enemyKingFile - 3.5)
+        // Make the running king stay away from the center
+        const runningKingDstToCenterRank = Math.abs(runningKingRank - 3.5)
+        const runningKingDstToCenterFile = Math.abs(runningKingFile - 3.5)
 
-        // total distance to center
-        const enemyKingDstToCenter = (enemyKingDstToCenterRank + enemyKingDstToCenterFile)
-        score += enemyKingDstToCenter / 7
+        // Give an advantage for manhattan distance to center
+        const runningKingDstToCenter = (runningKingDstToCenterRank + runningKingDstToCenterFile)
+        score += runningKingDstToCenter / 7
         
-        // encourage kings to be close to each other
-        const RankDistance = Math.abs(friendlyKingRank - enemyKingRank) 
-        const FileDistance = Math.abs(friendlyKingFile - enemyKingFile) 
+        
+        // Encourage closing manhattan distance between the kings
+        const RankDistance = Math.abs(chasingKingRank - runningKingRank) 
+        const FileDistance = Math.abs(chasingKingFile - runningKingFile) 
+
         const kingDistance = FileDistance + RankDistance
-
-        
         score += (14 - kingDistance) / 14
 
         return score
     }
 
     // King safety
-    static kingExposure(board, friendlyKingSquare, enemyKingSquare){
+    static kingExposure(board, kingSquare){
         let score = 0
-        // Punish having an exposed king, but incentivise an exposed enemy king
-        score -= AttackDetector.Mobility(board, friendlyKingSquare, true, false) * 4
-        score -= AttackDetector.Mobility(board, friendlyKingSquare, false, true) * 2
 
-        score += AttackDetector.Mobility(board, enemyKingSquare, true, false) * 4
-        score += AttackDetector.Mobility(board, enemyKingSquare, false, true) * 2
+        // Punish having an exposed king, but incentivise an exposed enemy king
+        score -= AttackDetector.Mobility(board, kingSquare, true, false) * 4
+        score -= AttackDetector.Mobility(board, kingSquare, false, true) * 2
 
         return score
     }
@@ -387,7 +428,7 @@ export class Evaluation {
             const numPawns = numPawnsOnFile[file]
             totalPenalty += penalties[numPawns]
 
-            // console.log(numPawns, "Stacked pawns on file: ", file)
+            // if (1 < numPawns) console.log(numPawns, "Stacked pawns on file: ", file)
         }
 
         return totalPenalty
@@ -438,7 +479,7 @@ export class Evaluation {
                 )
 
                 if (passedPawn){
-                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file), file)
+                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
                     score += passedPawnBonus[8 - lowestBlackPawnRank]
                 }
             }

@@ -197,7 +197,7 @@ export class PieceSquareTables {
         const mirroredMap = new Array(64)
         for (let i = 0; i<64; i++){
             const mirrorIndex = this.mirroredBoard[i]
-            mirroredMap[i] = map[mirrorIndex]
+            mirroredMap[i] = - map[mirrorIndex]
         }
         return mirroredMap
     }
