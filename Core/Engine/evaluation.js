@@ -249,13 +249,42 @@ export class Evaluation {
         const queens  = board.pl.listFromPiece[color | Piece.queen ]
 
         for (const bishop of bishops){
-            mobilityScore += 4 * AttackDetector.Mobility(board, bishop, false, true)
+            const mobility = AttackDetector.Mobility(board, bishop, false, true)
+            // Piece is trapped
+            if (mobility == 0){
+                mobilityScore -= 50
+            }
+
+            // Mobility bonus
+            else {
+                mobilityScore += 4 * mobility
+            }
         }
+
         for (const rook of rooks){
-            mobilityScore += 2 * AttackDetector.Mobility(board, rook, false, true)
+            const mobility = AttackDetector.Mobility(board, rook, true, false)
+            // Piece is trapped
+            if (mobility == 0){
+                mobilityScore -= 100
+            }
+            
+            // Mobility bonus
+            else {
+                mobilityScore += 2 * mobility
+            }
         }
+
         for (const queen of queens){
-            mobilityScore += 1 * AttackDetector.Mobility(board, queen, false, true)
+            const mobility = AttackDetector.Mobility(board, queen, true, true)
+            // Piece is trapped
+            if (mobility == 0){
+                mobilityScore -= 500
+            }
+            
+            // Mobility bonus
+            else {
+                mobilityScore += 1 * mobility
+            }
         }
 
         return mobilityScore
@@ -389,7 +418,6 @@ export class Evaluation {
     }
 
     // Pawn structure
-
     static isolatedPawns(numPawnsOnFile){
         // penalty for an isolated pawn
         const penalty = -20
