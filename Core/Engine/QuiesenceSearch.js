@@ -52,7 +52,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
         
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
-        if (this.timeManager.cancelSearch) return 0
+        if (timeManager.cancelSearch) return 0
         board.Unmake_Move(move)
 
         if (score >= beta) return score
