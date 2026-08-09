@@ -115,19 +115,27 @@ export class MoveGenerator {
             const blockingSquares = []
             let potentialPinnedPiece;
             
-            //directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
-            //  0 -> 3: Rette trekk
-            //  4 -> 7: Diagonale trekk
+            // Check if a sliding attack is possible
+            const numBishops = board.pl.Count(Piece.bishop | enemyColor)
+            const numRooks   = board.pl.Count(Piece.rook   | enemyColor)
+            const numQueens  = board.pl.Count(Piece.queen  | enemyColor)
+
+            const needsHorizontalCheck = 0 < (numRooks + numQueens)
+            const needsDiagonalCheck   = 0 < (numBishops + numQueens)
+            
+            const startIndex = needsHorizontalCheck ? 0 : 4
+            const endIndex = needsDiagonalCheck ? 8 : 4
     
-            for (let i = 0; i < 8; i++){
+            for (let i = startIndex; i < endIndex; i++){
                 // Double check means there are only king moves and no need to compute pins
                 if (2 == this.checkers.length) return
                 
-                // Valid sliding piece type
-                const otherSlidingPiece = (i < 4) ? Piece.rook : Piece.bishop
-                
                 const offset = Piece.directionOffsets[i]
                 const pinType = Piece.pins[i]
+
+                // Valid sliding piece type
+                const minorSlidingPiece = (i < 4) ? Piece.rook : Piece.bishop
+                
                 
                 blockingSquares.length = 0
                 potentialPinnedPiece = null
@@ -135,8 +143,9 @@ export class MoveGenerator {
                 for (let n = 0; n < data[i]; n++){
                     // Move along path
                     const target = friendlyKingSquare + offset * (n+1)
-                    const pieceOnTargetSquare = board.square[target]
                     blockingSquares.push(target)
+
+                    const pieceOnTargetSquare = board.square[target]
                     
                     // If the square is empty we continue
                     if (pieceOnTargetSquare == 0){
@@ -145,7 +154,7 @@ export class MoveGenerator {
     
                     // Enemy checker
                     else if (pieceOnTargetSquare == (Piece.queen | enemyColor) || 
-                             pieceOnTargetSquare == (otherSlidingPiece | enemyColor)){
+                             pieceOnTargetSquare == (minorSlidingPiece | enemyColor)){
                             
                         // if there is no pinned piece our king is in danger
                         if (potentialPinnedPiece == null){
