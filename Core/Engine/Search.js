@@ -160,7 +160,7 @@ export class Search {
             }
             
             //Stalemate
-            this.TT.AddPosition(hash, drawScore, depth, "EXACT")
+            //this.TT.AddPosition(hash, drawScore, depth, "EXACT")
             return drawScore
         }
 
@@ -232,15 +232,15 @@ export class Search {
                 // 
                 // 2: -9997 -> m in 3 ply -> -9999
 
-                let scaledStore = score
+                let scaledScore = score
                 
                 // Mate scaling
-                if (mateTreshold < scaledStore)
-                    scaledStore += ply
-                else if (scaledStore < -mateTreshold)
-                    scaledStore -= ply
+                if (mateTreshold < scaledScore)
+                    scaledScore += ply
+                else if (scaledScore < -mateTreshold)
+                    scaledScore -= ply
 
-                this.TT.AddPosition(hash, scaledStore, depth, "LOWER", move)
+                this.TT.AddPosition(hash, scaledScore, depth, "LOWER", move)
 
                 return score
             }       

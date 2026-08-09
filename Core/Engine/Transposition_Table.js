@@ -24,9 +24,10 @@ export class Transposition_Table {
             return
         }
         // if the entry alreadt exists for deeper depth, we dont want to overwrite it
-        if (depth < entry.depth){
+        if (depth <= entry.depth){
             return
         }
+
         this.table.set(hash, {
                 score: score, 
                 depth: depth,

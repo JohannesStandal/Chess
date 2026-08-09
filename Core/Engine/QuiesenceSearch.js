@@ -11,7 +11,7 @@ const moveGenerator = new MoveGenerator()
 export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
     // https://www.chessprogramming.org/Quiescence_Search
-    if (timeManager.ExceededTimeLimit()) return alpha
+    if (timeManager.ExceededTimeLimit()) return 0
     nodeCount ++
     
     // move generation
@@ -52,6 +52,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
         
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
+        if (this.timeManager.cancelSearch) return 0
         board.Unmake_Move(move)
 
         if (score >= beta) return score
