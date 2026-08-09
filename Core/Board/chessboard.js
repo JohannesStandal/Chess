@@ -365,7 +365,6 @@ export class Board {
     }
 
     CheckThreeFold(){
-        return false
 
         const currentPosHash = this.zobrist.hash
         let frequency = 1

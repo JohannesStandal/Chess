@@ -22,17 +22,15 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     if (inCheck){
         moveGenerator.GenerateMoves(board, ply)
     }
+
     // Generate tactical moves (Promotion, captures, checks)
     else {
         moveGenerator.TacticalMoves(board, ply)
     }
-
     
     const numMoves = moveGenerator.count
     const moveStart = moveGenerator.GetMoveIndex(0, ply)
-    const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)
-
-    
+    const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)    
 
     // Checkmate detection
     if (numMoves == 0 && inCheck){
