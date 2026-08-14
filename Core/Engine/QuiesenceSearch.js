@@ -49,7 +49,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     // Recursive search with alpha beta pruning
     for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
         const move = moveGenerator.moves[moveIndex]
-        
+        if (Move.ToUCI(move) == "a1a1") console.log("WTF quiescence ")
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
         if (timeManager.cancelSearch) return 0

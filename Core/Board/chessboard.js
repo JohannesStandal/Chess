@@ -21,7 +21,6 @@ export class Board {
         this.ply = 0
         
         // history 
-        this.playedMoves = []
         this.capturedPieceHistory = new Array(maxNumMoves)
         this.castlingRightsHistory = new Array(maxNumMoves)
         this.epSquareHistory = new Array (maxNumMoves)
@@ -39,11 +38,21 @@ export class Board {
     }
 
     Reset(){
-        this.square = new Array(64).fill(0)
-        this.pl.Clear()
-        this.stack = []
+        this.ply = 0
+        this.halfMoveClock = 0
+
+        this.square = new Uint8Array(64).fill(0)
+
+        this.capturedPieceHistory = new Array(maxNumMoves)
+        this.castlingRightsHistory = new Array(maxNumMoves)
+        this.epSquareHistory = new Array (maxNumMoves)
+        this.hashHistory = new Array (maxNumMoves)
+
         this.playedMoves = []
-        this.repetitionTable = []
+        this.playedMovesUCI = []
+
+        this.pl.Clear()
+        
     }
 
     Load_Fen(fen){
@@ -164,6 +173,9 @@ export class Board {
     }
     
     Make_Move(move){
+        this.playedMoves.push(move)
+        this.playedMovesUCI.push(Move.ToUCI(move))
+
         if (move == null){
             console.log("Null move wtf? position was")
             console.log(this.Export_Fen())
@@ -177,12 +189,15 @@ export class Board {
         const movedPiece = this.square[start]
         const capturedPiece = this.square[target]
 
+        if (movedPiece == Piece.none){
+            console.log("No piece moved in make move WTF")
+        }
+
         // save game state for unmake move
         this.capturedPieceHistory[this.ply] = capturedPiece
         this.castlingRightsHistory[this.ply] = this.castlingRights
         this.epSquareHistory[this.ply] = this.enPassantSquare
         this.hashHistory[this.ply] = this.zobrist.hash
-        this.playedMoves[this.ply] = move
         
         this.ply ++
         
@@ -272,6 +287,9 @@ export class Board {
     }
 
     Unmake_Move(move){
+        this.playedMoves.pop()
+        this.playedMovesUCI.pop()
+
         // Restores the previous position if one exists
         if (this.ply == 0) return
         
@@ -286,8 +304,6 @@ export class Board {
         this.enPassantSquare = this.epSquareHistory[this.ply]
         this.zobrist.hash = this.hashHistory[this.ply]
 
-        this.playedMoves[this.ply] = 0
-
         // decode move
         const start = Move.Start(move)
         const target = Move.Target(move)
@@ -297,10 +313,9 @@ export class Board {
         const movedPiece = this.square[target]
 
         if (movedPiece == Piece.none){
-            console.log("\n No piece moved WTF? Line was")
-            this.playedMoves.forEach(move => {
-                console.log(Move.ToUCI(move))
-            })
+            console.log("\n No piece moved in unmakeMove WTF? Line was")
+            console.log(this.playedMovesUCI)
+            console.log(this.playedMoves)
             console.log("\n")
         }
             

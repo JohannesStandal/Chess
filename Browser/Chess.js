@@ -7,9 +7,15 @@ export class Chess {
     constructor(){
         this.board = new Board()
         this.MoveGenerator = new MoveGenerator()
+        
+        this.startFen = ""
+        this.playedMoves = []
     }
 
     loadFen(fen){
+        this.startFen = fen
+        this.playedMoves = []
+
         this.board.Load_Fen(fen)
     }
 
@@ -18,10 +24,12 @@ export class Chess {
     }
     
     makeMove(move){
+        this.playedMoves.push(move)
         this.board.Make_Move(move)
     }
 
     unmakeMove(move){
+        this.playedMoves.pop()
         this.board.Unmake_Move(move)
     }
 
