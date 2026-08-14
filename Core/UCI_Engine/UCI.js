@@ -25,8 +25,8 @@ export class UCI {
 
     // handshake communication
     if (firstWord === "uci") {
-      this.send("id name PrebenV1");
-      this.send("id author Johanens Husevåg Standal");
+      this.send("id name PrebenV5");
+      this.send("id author Johannes Husevåg Standal");
       this.send("uciok");
       return;
     }

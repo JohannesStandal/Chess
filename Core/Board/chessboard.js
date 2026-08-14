@@ -190,7 +190,7 @@ export class Board {
         const capturedPiece = this.square[target]
 
         if (movedPiece == Piece.none){
-            console.log("No piece moved in make move WTF")
+            console.error("No piece moved in make move WTF")
         }
 
         // save game state for unmake move
@@ -313,10 +313,10 @@ export class Board {
         const movedPiece = this.square[target]
 
         if (movedPiece == Piece.none){
-            console.log("\n No piece moved in unmakeMove WTF? Line was")
-            console.log(this.playedMovesUCI)
-            console.log(this.playedMoves)
-            console.log("\n")
+            console.error("\n No piece moved in unmakeMove WTF? Line was")
+            console.error(this.playedMovesUCI)
+            console.error(this.playedMoves)
+            console.error("\n")
         }
             
 

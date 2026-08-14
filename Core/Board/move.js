@@ -97,12 +97,24 @@ export class Move {
             flag |= Move.flags.captures
         }
 
+        
+        // double push
         const isPawn = Piece.IsType(movedPiece, Piece.pawn)
         const doublePush = (Math.abs(start - target) == 16)
         if (isPawn && doublePush){
             flag = Move.flags.doublePush
         }
+
+
+        // en passant
+        let offset = (board.white_To_Move) ? -8 : 8
+        const epCapture = (target + offset == board.enPassantSquare)
+
+        if (epCapture){
+            flag = Move.flags.epCapture
+        }
         
+        // promotion
         if (parts.length == 5){
             const letterToFlag = {
             "n": Move.flags.knightPromotion,
@@ -114,10 +126,10 @@ export class Move {
             flag += letterToFlag[parts[4]]
         }
 
+        // castling
         if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
         if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
-        if (target == board.enPassantSquare) flag = Move.flags.enPassant
-
+        
         return Move.EncodeUINT16(start, target, flag)
     }
 }
