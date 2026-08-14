@@ -49,11 +49,12 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     // Recursive search with alpha beta pruning
     for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
         const move = moveGenerator.moves[moveIndex]
-        if (Move.ToUCI(move) == "a1a1") console.log("WTF quiescence ")
+        
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
-        if (timeManager.cancelSearch) return 0
         board.Unmake_Move(move)
+
+        if (timeManager.cancelSearch) return 0
 
         if (score >= beta) return score
         alpha = Math.max(alpha, score)

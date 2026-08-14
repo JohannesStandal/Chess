@@ -190,13 +190,13 @@ export class Search {
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
             const move = this.MoveGenerator.moves[moveIndex]
 
-            // Evaluate future position
-            this.board.Make_Move(move)
-
+            
             // Check and promotion extension
             const moveIsPromotion = Move.IsPromotion(move)
             const extensions = (canExtend && (inCheck || moveIsPromotion) ) ? 1 : 0
-
+            
+            // Evaluate future position
+            this.board.Make_Move(move)
         
             const score = - this.Negamax(
                 depth - 1 + extensions, 
