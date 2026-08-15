@@ -63,6 +63,8 @@ export class Piece {
         this.Images[this.white | this.pawn]   = "Images/Pawn_White.png"
 
         //from Number
+        this.From_Number[Piece.none] = " "
+
         this.From_Number[Piece.white | Piece.pawn]   = "P"
         this.From_Number[Piece.white | Piece.knight] = "N"
         this.From_Number[Piece.white | Piece.bishop] = "B"

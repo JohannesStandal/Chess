@@ -225,4 +225,6 @@ function SelectPiece(squareIndex){
     RenderBoard(chess.board, legalMoves)
 }
 
+
+
 export { chess as board, gameData, RenderBoard, UpdateLegalMovesLookUp, AnimateMove, Make_Move_On_Board, UndoLastMove}

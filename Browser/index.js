@@ -8,6 +8,7 @@ import { Evaluation } from "../Core/Engine/evaluation.js"
 import { Board } from "../Core/Board/chessboard.js"
 import { Chess } from "../Browser/Chess.js"
 
+
 // Testsuite availability
 import { Tests } from "../Tests/Tests.js"
 import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
@@ -126,6 +127,7 @@ export function GameLoop(){
         },300)
     }
 }
+
 StartGame()
 //StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
 //StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
