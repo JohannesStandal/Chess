@@ -77,11 +77,16 @@ export class Evaluation {
         let score = 0
         
         const pawnStructureWeight = 1
+        const bishopPairWeight = 1
         
+        // pawn structure
         const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
         const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
         
         score += this.pawnStructure(whitePawns, blackPawns) 
+
+        // bishop pair
+        score += this.bishopPair(board)
         
         return score
     }
@@ -573,4 +578,18 @@ export class Evaluation {
 
         return score
     }
+
+    // Bishop pair
+    static bishopPair(board){
+        // 30 centipawns for a bishop pair
+        let score = 0
+
+        const numWP = board.pl.Count(Piece.white | Piece.bishop)
+        const numBP = board.pl.Count(Piece.black | Piece.bishop)
+
+        if (1 < numWP) score += 30
+        if (1 < numBP) score -= 30
+
+        return score
+    }   
 }

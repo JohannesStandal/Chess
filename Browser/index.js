@@ -87,7 +87,6 @@ tests.board = chess.board
 export function GameLoop(){
 
     const gameOver = (chess.GenerateMoves().length == 0)
-    const threefoldRepetition = chess.board.CheckThreeFold(chess.board.repetitionTable)
     const check = chess.InCheck()
 
     if (gameOver){
@@ -105,7 +104,7 @@ export function GameLoop(){
         gameData.active = false
         return
     }
-    else if (threefoldRepetition){
+    else if (chess.Threefold()){
         let message = "Uavgjort ved repetisjon"
         EndGame(message)
         return

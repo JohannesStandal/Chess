@@ -48,4 +48,8 @@ export class Chess {
     InCheck(){
         return AttackDetector.InCheck(chess.board, chess.board.white_To_Move)
     }
+
+    Threefold(){
+        return this.board.CheckThreeFold()
+    }
 }
