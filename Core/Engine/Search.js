@@ -51,11 +51,16 @@ export class Search {
             }
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
-                //console.log("Search canceled", this.currentDepth)
                 break
             }
         }
         console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
+
+        // In case a depth 1 search we pick the best move from move ordering
+        if (this.bestMove == null){
+            this.bestMove = this.MoveGenerator.moves[0]
+        }
+        
         return this.bestMove
     }
 
