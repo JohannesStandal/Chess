@@ -13,6 +13,9 @@ export class Piece {
     static white   = 8 //01_000
     static black  = 16 //10_000
 
+    static typeMask = 7  // 00_111
+    static colorMask = 24// 11_000
+
     //Ordliste for Forsyth Edwards Notasjon (FEN)
     static From_Symbol = {
             "k": this.king,    //001

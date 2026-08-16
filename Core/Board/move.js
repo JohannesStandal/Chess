@@ -72,7 +72,6 @@ export class Move {
     }
 
     static UCItoUINT16(UCIMove, board){
-        
         const parts = UCIMove.split("")
 
         const letterToNumber = {
@@ -106,24 +105,27 @@ export class Move {
         }
 
 
-        // en passant
-        let offset = (board.white_To_Move) ? -8 : 8
-        const epCapture = (target + offset == board.enPassantSquare)
-
-        if (epCapture){
-            flag = Move.flags.epCapture
-        }
-        
-        // promotion
-        if (parts.length == 5){
-            const letterToFlag = {
-            "n": Move.flags.knightPromotion,
-            "b": Move.flags.bishopPromotion,
-            "r": Move.flags.rookPromotion,
-            "q": Move.flags.queenPromotion,
+        // pawn rules
+        if (movedPiece & Piece.typeMask == Piece.pawn){
+            // en passant
+            let offset = (board.white_To_Move) ? -8 : 8
+            const epCapture = (target + offset == board.enPassantSquare)
+    
+            if (epCapture){
+                flag = Move.flags.epCapture
             }
 
-            flag += letterToFlag[parts[4]]
+            // promotion
+            if (parts.length == 5){
+                const letterToFlag = {
+                "n": Move.flags.knightPromotion,
+                "b": Move.flags.bishopPromotion,
+                "r": Move.flags.rookPromotion,
+                "q": Move.flags.queenPromotion,
+                }
+    
+                flag += letterToFlag[parts[4]]
+            }
         }
 
         // castling if the moved piece was a king
