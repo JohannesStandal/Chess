@@ -126,9 +126,11 @@ export class Move {
             flag += letterToFlag[parts[4]]
         }
 
-        // castling
-        if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
-        if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
+        // castling if the moved piece was a king
+        if (Piece.IsType(movedPiece, Piece.king)){
+            if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
+            if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
+        }
         
         return Move.EncodeUINT16(start, target, flag)
     }
