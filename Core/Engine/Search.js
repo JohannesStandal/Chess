@@ -58,6 +58,7 @@ export class Search {
 
         // In case a depth 1 search we pick the best move from move ordering
         if (this.bestMove == null){
+            this.MoveGenerator.GenerateMoves(this.board, 0)
             this.bestMove = this.MoveGenerator.moves[0]
         }
         
