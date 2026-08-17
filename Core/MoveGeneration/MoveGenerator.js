@@ -12,7 +12,7 @@ export class MoveGenerator {
     constructor(){
         // Important data for generating legal moves
         this.pinMask = new Array(64).fill(0)
-        this.blockingSquares = []
+        this.blockingSquares = new Array(64).fill(false)
         this.checkers = []
         
         this.maxNumLegalMoves = 218
@@ -32,13 +32,28 @@ export class MoveGenerator {
         return this.moves[this.GetMoveIndex(index, ply)]
     }
 
-    Add(start, target, flag, king=false){   
+    Add(start, target, flag, kingMove=false){
+        const inCheck = (0 < this.checkers.length)
+        const epCapture = (flag == Move.flags.epCapture)
+        const blockCheck = this.blockingSquares[target]
+
+        // en passant and king moves have done a strict checks earlier
+        if (epCapture || kingMove){
+            // all good
+        }
+
+        // When in check any move must the check 
+        else if (inCheck && !blockCheck){
+            return
+        }
+
+
         // See if the move resolves the check. 
-        if (flag != Move.flags.epCapture && // En passant moves have a sperate strict check
-            0 < this.checkers.length &&     // Are you in check
-            !this.blockingSquares.includes(target) && // Does the move resolve the check
-            !king // Are you moving your king out of the way
-        ) return
+        // if (flag != Move.flags.epCapture && // En passant moves have a sperate strict check
+        //      0 < this.checkers.length &&     // Are you in check
+        //     !this.blockingSquares.includes(target) && // Does the move resolve the check
+        //     !kingMove // Are you moving your king out of the way
+        // ) return
 
         const move = Move.EncodeUINT16(start, target, flag)
         this.moves[this.ply * this.maxNumLegalMoves + this.count] = move
@@ -65,7 +80,7 @@ export class MoveGenerator {
             // Clear arrays
             this.pinMask.fill(0)
             this.checkers.length = 0
-            this.blockingSquares.length = 0
+            this.blockingSquares = new Array(64).fill(false)
             
             // the squares you can move to in order to resolve a check (either by blocking path or capturing the attacker)
             // This will be countered by a double check in wich we only generate king moves
@@ -85,7 +100,7 @@ export class MoveGenerator {
                 const piece = board.square[startSquare]
                 if (piece == (Piece.knight | enemyColor) ){
                     this.checkers.push(startSquare)
-                    this.blockingSquares.push(startSquare)
+                    this.blockingSquares[startSquare] = true
                 }
             }
     
@@ -98,7 +113,7 @@ export class MoveGenerator {
                 const piece = board.square[startSquare]
                 if (piece == (Piece.pawn | enemyColor) ){
                     this.checkers.push(startSquare)
-                    this.blockingSquares.push(startSquare)
+                    this.blockingSquares[startSquare] = true
                 }
             }
     
@@ -112,7 +127,7 @@ export class MoveGenerator {
             
             
             let data = ChessHelper.numSquaresToEdge[friendlyKingSquare]
-            const blockingSquares = []
+            const potentialBlockingSquares = []
             let potentialPinnedPiece;
             
             // Check if a sliding attack is possible
@@ -125,7 +140,7 @@ export class MoveGenerator {
             
             const startIndex = needsHorizontalCheck ? 0 : 4
             const endIndex = needsDiagonalCheck ? 8 : 4
-    
+            
             for (let i = startIndex; i < endIndex; i++){
                 // Double check means there are only king moves and no need to compute pins
                 if (2 == this.checkers.length) return
@@ -137,13 +152,13 @@ export class MoveGenerator {
                 const minorSlidingPiece = (i < 4) ? Piece.rook : Piece.bishop
                 
                 
-                blockingSquares.length = 0
+                potentialBlockingSquares.length = 0
                 potentialPinnedPiece = null
     
                 for (let n = 0; n < data[i]; n++){
                     // Move along path
                     const target = friendlyKingSquare + offset * (n+1)
-                    blockingSquares.push(target)
+                    potentialBlockingSquares.push(target)
 
                     const pieceOnTargetSquare = board.square[target]
                     
@@ -158,7 +173,11 @@ export class MoveGenerator {
                             
                         // if there is no pinned piece our king is in danger
                         if (potentialPinnedPiece == null){
-                            this.blockingSquares = [...blockingSquares]
+                            
+                            for (const square of potentialBlockingSquares){
+                                this.blockingSquares[square] = true
+                            }
+
                             this.checkers.push(target)
                         }
                         // Add pinmask if there is a potentially pinned piece
