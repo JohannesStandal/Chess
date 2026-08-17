@@ -44,15 +44,22 @@
   to determine the best positions.
 </p>
 
+
+<h2>Board </h2>
+<li> 8x8 Mailbox </li>
+<li> Piece lists</li>
+<li> Zobrist hashing</li>
+
 <h2>Search</h2>
 <ul>
   <li> Opening Book </li>
   <li> Negamax </li>
   <li> Quiesence search </li>
   <li> Alpha beta pruning (with Move ordering) </li>
+  <li> Null Move Pruning</li>
   <li> Transposition table </li>
   <li> Iterative deepening </li>
-  <li> Check extensions </li>
+  <li> Search extensions (Checks and promotions)</li>
 </ul>
 
 <h2> Move ordering </h2>
@@ -68,12 +75,15 @@
 <ul>
   <li> Material count </li>
   <li> Piece Square Tables (MG & EG)</li>
+
+  <li> Bishop pair</li>
   <li> Double stacked pawns penalty </li>
   <li> Isolated pawn penalty </li>
-  <li> Passed pawn bonus </li>
-  <li> King Exposure (MG) </li>
   <li> Pawn Shields (MG) </li>
+  <li> Passed pawn bonus </li>
+  <li> Virtual King Mobility (MG) </li>
   <li> Lost castle right penalty (MG) </li>
-  <li> Mobility (MG) </li>
+  <li> Sliding piece mobility (MG) </li>
+  <li> Trapped piece penalty (MG) </li>
   <li> Mop Up (winning EG) </li>
 </ul>
