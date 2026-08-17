@@ -46,9 +46,11 @@
 
 
 <h2>Board </h2>
-<li> 8x8 Mailbox </li>
-<li> Piece lists</li>
-<li> Zobrist hashing</li>
+  <ul>
+  <li> 8x8 Mailbox </li>
+  <li> Piece lists</li>
+  <li> Zobrist hashing</li>
+</ul>
 
 <h2>Search</h2>
 <ul>
