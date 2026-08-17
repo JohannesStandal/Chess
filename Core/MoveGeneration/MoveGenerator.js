@@ -47,14 +47,6 @@ export class MoveGenerator {
             return
         }
 
-
-        // See if the move resolves the check. 
-        // if (flag != Move.flags.epCapture && // En passant moves have a sperate strict check
-        //      0 < this.checkers.length &&     // Are you in check
-        //     !this.blockingSquares.includes(target) && // Does the move resolve the check
-        //     !kingMove // Are you moving your king out of the way
-        // ) return
-
         const move = Move.EncodeUINT16(start, target, flag)
         this.moves[this.ply * this.maxNumLegalMoves + this.count] = move
         this.count++

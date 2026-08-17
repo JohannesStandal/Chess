@@ -379,6 +379,49 @@ export class Board {
 
     }
 
+    Make_NullMove(){
+        // A null move is simply skipping your turn.
+        
+        // store history stuff
+        this.epSquareHistory[this.ply] = this.enPassantSquare
+        this.capturedPieceHistory[this.ply] = Piece.none
+        this.castlingRightsHistory[this.ply] = this.castlingRights
+        this.hashHistory[this.ply] = this.zobrist.hash
+        
+        // skip your turn
+        this.white_To_Move = !this.white_To_Move
+        this.zobrist.toggleTurn()
+        
+        // remove ep square
+        this.enPassantSquare = null
+
+        this.ply += 1
+    }
+
+    Unmake_NullMove(){
+        // A null move is simply skipping your turn.
+        this.ply --
+
+        // get history stuff
+        this.enPassantSquare = this.epSquareHistory[this.ply]
+        this.zobrist.hash = this.hashHistory[this.ply]
+        
+        // skip your turn
+        this.white_To_Move = !this.white_To_Move
+        this.zobrist.toggleTurn()
+    }
+
+    HasNonPawnMaterial(){
+        const color = this.white_To_Move ? Piece.white : Piece.black
+
+
+        const numBishops = this.pl.Count(color | Piece.bishop)
+        const numRooks   = this.pl.Count(color | Piece.rook  )
+        const numQueens  = this.pl.Count(color | Piece.queen )
+
+        return 0 < (numBishops + numRooks + numQueens)
+    }
+
     CheckThreeFold(){
 
         const currentPosHash = this.zobrist.hash
