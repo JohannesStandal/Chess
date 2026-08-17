@@ -97,7 +97,7 @@ export class ChessHelper {
     }
 
     static FileIndex(squareIndex){
-        return (squareIndex % 8) - 1
+        return squareIndex % 8
     }
 
     static SquareIndex(rank, file){

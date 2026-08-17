@@ -8,10 +8,11 @@ import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { zobrist_hashing} from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
+import { PieceLists } from "./PieceLists.js"
 
 export class Board {
     constructor(){
-        // blir fiksa når du lastar inn ein FEN
+        // board representation
         this.square = new Uint8Array(64).fill(0)
         this.white_To_Move = true
         this.castlingRights = 0b1111
@@ -19,66 +20,90 @@ export class Board {
         this.enPassantSquare = null
         this.ply = 0
         
-        // lagrer spillhistorikk
-        this.playedMoves = []
+        // history 
         this.capturedPieceHistory = new Array(maxNumMoves)
         this.castlingRightsHistory = new Array(maxNumMoves)
         this.epSquareHistory = new Array (maxNumMoves)
         this.hashHistory = new Array (maxNumMoves)
         
-        // this.stack = []
+        // Hash
         this.zobrist = new zobrist_hashing()
 
-        // Track kings
+        // Track pieces
         this.whiteKingSquare = 0
         this.blackKingSquare = 0
+
+        
+        this.pl = new PieceLists()
     }
 
     Reset(){
-        this.square = new Array(64).fill(0)
-        this.stack = []
+        this.ply = 0
+        this.halfMoveClock = 0
+
+        this.square = new Uint8Array(64).fill(0)
+
+        this.capturedPieceHistory = new Array(maxNumMoves)
+        this.castlingRightsHistory = new Array(maxNumMoves)
+        this.epSquareHistory = new Array (maxNumMoves)
+        this.hashHistory = new Array (maxNumMoves)
+
         this.playedMoves = []
-        this.repetitionTable = []
+        this.playedMovesUCI = []
+
+        this.pl.Clear()
+        
     }
 
     Load_Fen(fen){
-        //Tømmer brett
+        // Empty the board
         this.Reset()
 
-        //Deler opp FEN i dei ulike infodelane
-        // 0 = Posisjon, 1 = Spelar sin tur, 2 = Rokade, 3 = en pessant, 4/5 half move clock
+        // Parse the fen info: position, color to move, castle rights, EP square, halfmove clock
         const data = fen.split(" ")
         const piece_positions = data[0].split("")
 
-        //Setter opp posisjon
+        // Set up the positon
         let file = 0
         let rank = 7
 
         piece_positions.forEach(char => {
             if (char == "/"){
+                // Start next rank
                 file = 0
                 rank --
             }
+        
             else {
+                // jump to next file specified by number
                 if (!isNaN(char)){
                     file += parseInt(char)
                 }
+        
                 else {
-                    let color = (char == char.toLowerCase()) ? Piece.black : Piece.white
+                    // piece data
+                    const color = (char == char.toLowerCase()) ? Piece.black : Piece.white
                     const piece = color | Piece.From_Symbol[char.toLowerCase()]
-                    const index = rank*8+file
+                    const index = rank * 8 + file
+
+                    // place the piece
                     this.square[index] = piece
+
+                    // track kings
                     if (piece == (Piece.white | Piece.king)) this.whiteKingSquare = index
                     if (piece == (Piece.black | Piece.king)) this.blackKingSquare = index
+
+                    // add to Piece Lists
+                    this.pl.Add(piece, index)
                     file ++
                 }
             }
         });
 
-        //Kven sin tur det er
+        // Side to move
         this.white_To_Move = (data[1] == "w") 
         
-        //Rokade
+        // Castle Rights
         this.castlingRights = 0b0000
         const castlingRights = data[2].split("")
         castlingRights.forEach(char => {
@@ -89,8 +114,9 @@ export class Board {
             else if (char == "q") this.castlingRights += 0b0001
         })
 
+        // Hash
         this.zobrist.createHash(this.square, this.white_To_Move)
-        this.repetitionTable = [this.zobrist.hash]
+        this.hashHistory = [this.zobrist.hash]
     }
 
     Export_Fen(){
@@ -147,20 +173,31 @@ export class Board {
     }
     
     Make_Move(move){
+        this.playedMoves.push(move)
+        this.playedMovesUCI.push(Move.ToUCI(move))
+
+        if (move == null){
+            console.log("Null move wtf? position was")
+            console.log(this.Export_Fen())
+        }
+            
         // decode move
         const start = Move.Start(move)
         const target = Move.Target(move)
         const flag = Move.Flag(move)
 
+        const movedPiece = this.square[start]
+        const capturedPiece = this.square[target]
 
-        let capturedPiece = this.square[target]
+        if (movedPiece == Piece.none){
+            console.error("No piece moved in make move WTF")
+        }
 
         // save game state for unmake move
         this.capturedPieceHistory[this.ply] = capturedPiece
         this.castlingRightsHistory[this.ply] = this.castlingRights
         this.epSquareHistory[this.ply] = this.enPassantSquare
         this.hashHistory[this.ply] = this.zobrist.hash
-        this.playedMoves[this.ply] = move
         
         this.ply ++
         
@@ -171,9 +208,22 @@ export class Board {
         this.castlingRights &= ChessHelper.updateCastleRights[start] 
         this.castlingRights &= ChessHelper.updateCastleRights[target]
 
+        // moving the piece
+        this.square[target] = movedPiece
+        this.square[start] = 0
+
+        // update piece list
+        this.pl.Remove(capturedPiece, target)
+        this.pl.Move(movedPiece, start, target)
+
+
         // en-passant capture
         if (flag == Move.flags.epCapture){
-            capturedPiece = this.square[this.enPassantSquare]
+            // remove pawn from piece list
+            const pawn = this.square[this.enPassantSquare]
+            this.pl.Remove(pawn, this.enPassantSquare) 
+            
+            // Remove pawn from board
             this.square[this.enPassantSquare] = 0
         }
 
@@ -185,101 +235,142 @@ export class Board {
             this.enPassantSquare = null
         }
 
-        // Find original piece
-        let movedPiece = this.square[start]
-
+        
         // promotion logic
         if (Move.IsPromotion(move)){
             // create new piece
             const pieceTypes = [Piece.knight, Piece.bishop, Piece.rook, Piece.queen]
-            const color = movedPiece & 0b11000
-
             const pieceType = pieceTypes[flag & 0b0011]
+            const color = movedPiece & 0b11000
             
-            movedPiece = color | pieceType
-        } 
+            const newPiece = color | pieceType
 
-        // moving the piece
-        this.square[target] = movedPiece
-        this.square[start] = 0
+            this.square[target] = newPiece
+
+            // Replace pawn with promoted piece in piece lists
+            this.pl.Remove(movedPiece, target)
+            this.pl.Add(newPiece, target)
+        }
 
         // incremental king tracking
         if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = target
         if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = target
 
-        // if there is a castle, the rook should be moved as well
+        // Move the rook when castling
         if (flag == Move.flags.kingCastle){
             const rookSquare = start + 3
             const targetSquare = start + 1
 
-            this.square[targetSquare] = this.square[rookSquare]
+            const rook = this.square[rookSquare]
+
+            this.square[targetSquare] = rook
             this.square[rookSquare] = 0
+
+            this.pl.Move(rook, rookSquare, targetSquare)
         }
+        // same for queenside
         else if (flag == Move.flags.queenCastle){
             const rookSquare = start - 4
             const targetSquare = start - 1
 
-            this.square[targetSquare] = this.square[rookSquare]
+            const rook = this.square[rookSquare]
+
+            this.square[targetSquare] = rook
             this.square[rookSquare] = 0
+
+            this.pl.Move(rook, rookSquare, targetSquare)
         }
         
         
-        // flip turn and store game history
+        // Switch color to move
         this.white_To_Move = !this.white_To_Move
-        
     }
 
     Unmake_Move(move){
-        //sjekkar om det eksisterer ein spelhistorikk
-        //Dersom det ikkje er det avbryter den operasjonen
+        this.playedMoves.pop()
+        this.playedMovesUCI.pop()
+
+        // Restores the previous position if one exists
         if (this.ply == 0) return
         
         // Flips the turn
         this.white_To_Move = !this.white_To_Move
         
-
         // Restore lost data from history tables
         this.ply--
 
-        const capturedPiece = this.capturedPieceHistory[this.ply]
+        
         this.castlingRights = this.castlingRightsHistory[this.ply]
         this.enPassantSquare = this.epSquareHistory[this.ply]
         this.zobrist.hash = this.hashHistory[this.ply]
-
-        this.playedMoves[this.ply] = 0
 
         // decode move
         const start = Move.Start(move)
         const target = Move.Target(move)
         const flag = Move.Flag(move)
 
-        // Reconstructing position
-        let movedPiece = this.square[target]
-        //const capturedPiece = previousPosition.capturedPiece
-        
+        const capturedPiece = this.capturedPieceHistory[this.ply]
+        const movedPiece = this.square[target]
+
+        if (movedPiece == Piece.none){
+            console.error("\n No piece moved in unmakeMove WTF? Line was")
+            console.error(this.playedMovesUCI)
+            console.error(this.playedMoves)
+            console.error("\n")
+        }
+            
+
         const friendlyColor = (this.white_To_Move) ? Piece.white : Piece.black
+
+        // Undo the move
+        this.square[start]  = movedPiece
+        this.square[target] = capturedPiece
+
+        this.pl.Move(movedPiece, target, start)
+        this.pl.Add(capturedPiece, target)
+
         // checking if the moved piece was a promoted pawn
         if (Move.IsPromotion(move)){
-            movedPiece = Piece.pawn | friendlyColor
+            // Replace the promoted piece with a pawn
+            const pawn = Piece.pawn | friendlyColor
+            this.square[start] = pawn
+            
+            // Replace promoted piece in the piece list
+            this.pl.Remove(movedPiece, start)
+            this.pl.Add(pawn, start)
         }
-
-        this.square[start] = movedPiece
-        this.square[target] = capturedPiece
 
         // move rook back in case of castling
         if (flag == Move.flags.kingCastle){
-            this.square[start + 1] = 0
-            this.square[start + 3] = Piece.rook | friendlyColor
+            const rook = Piece.rook | friendlyColor
+            
+            const rookStart = start + 3
+            const rookEnd = start + 1
+
+            this.square[rookStart] = rook
+            this.square[rookEnd] = 0
+
+            this.pl.Move(rook, rookEnd, rookStart)
         }
         else if (flag == Move.flags.queenCastle){
-            this.square[start - 1] = 0
-            this.square[start - 4] = Piece.rook | friendlyColor
+            const rook = Piece.rook | friendlyColor
+            
+            const rookStart = start - 4
+            const rookEnd = start - 1
+
+            this.square[rookStart] = rook
+            this.square[rookEnd] = 0
+
+            this.pl.Move(rook, rookEnd, rookStart)
         }
         
         // en passant capture
         if (flag == Move.flags.epCapture){
             const enemyColor = (this.white_To_Move) ? Piece.black : Piece.white
-            this.square[this.enPassantSquare] = Piece.pawn | enemyColor
+            const pawn = Piece.pawn | enemyColor
+
+            this.square[this.enPassantSquare] = pawn
+            this.pl.Add(pawn, this.enPassantSquare)
         }
 
         // incremental king tracking
@@ -289,7 +380,6 @@ export class Board {
     }
 
     CheckThreeFold(){
-        return false
 
         const currentPosHash = this.zobrist.hash
         let frequency = 1

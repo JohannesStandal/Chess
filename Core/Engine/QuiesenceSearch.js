@@ -11,7 +11,7 @@ const moveGenerator = new MoveGenerator()
 export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
     // https://www.chessprogramming.org/Quiescence_Search
-    if (timeManager.ExceededTimeLimit()) return alpha
+    if (timeManager.ExceededTimeLimit()) return 0
     nodeCount ++
     
     // move generation
@@ -22,6 +22,7 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     if (inCheck){
         moveGenerator.GenerateMoves(board, ply)
     }
+
     // Generate tactical moves (Promotion, captures, checks)
     else {
         moveGenerator.TacticalMoves(board, ply)
@@ -29,12 +30,13 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     
     const numMoves = moveGenerator.count
     const moveStart = moveGenerator.GetMoveIndex(0, ply)
-    const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)
+    const moveEnd = moveGenerator.GetMoveIndex(numMoves, ply)    
 
     // Checkmate detection
     if (numMoves == 0 && inCheck){
         return - (checkMateScore - ply)
     }
+
 
     // stand pat
     let standPat = Evaluation.evaluate(board)
@@ -47,10 +49,12 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
     // Recursive search with alpha beta pruning
     for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
         const move = moveGenerator.moves[moveIndex]
-
+        
         board.Make_Move(move)
         let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
         board.Unmake_Move(move)
+
+        if (timeManager.cancelSearch) return 0
 
         if (score >= beta) return score
         alpha = Math.max(alpha, score)

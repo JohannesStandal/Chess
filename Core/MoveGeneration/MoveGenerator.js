@@ -12,14 +12,14 @@ export class MoveGenerator {
     constructor(){
         // Important data for generating legal moves
         this.pinMask = new Array(64).fill(0)
-        this.blockingSquares = []
+        this.blockingSquares = new Array(64).fill(false)
         this.checkers = []
         
         this.maxNumLegalMoves = 218
         
         // Move Array
-        this.moves = new Uint16Array(this.maxNumLegalMoves * maxSearchDepth)
-        this.scores = new Array(this.maxNumLegalMoves * maxSearchDepth)
+        this.moves = new Uint16Array(this.maxNumLegalMoves * 256)
+        this.scores = new Array(this.maxNumLegalMoves * 256)
         this.count = 0
         this.ply = 0
     }
@@ -32,16 +32,30 @@ export class MoveGenerator {
         return this.moves[this.GetMoveIndex(index, ply)]
     }
 
-    Add(start, target, flag, king=false){   
+    Add(start, target, flag, kingMove=false){
+        const inCheck = (0 < this.checkers.length)
+        const epCapture = (flag == Move.flags.epCapture)
+        const blockCheck = this.blockingSquares[target]
+
+        // en passant and king moves have done a strict checks earlier
+        if (epCapture || kingMove){
+            // all good
+        }
+
+        // When in check any move must the check 
+        else if (inCheck && !blockCheck){
+            return
+        }
+
+
         // See if the move resolves the check. 
-        if (flag != Move.flags.epCapture && // En passant moves have a sperate strict check
-            0 < this.checkers.length &&     // Are you in check
-            !this.blockingSquares.includes(target) && // Does the move resolve the check
-            !king // Are you moving your king out of the way
-        ) return
+        // if (flag != Move.flags.epCapture && // En passant moves have a sperate strict check
+        //      0 < this.checkers.length &&     // Are you in check
+        //     !this.blockingSquares.includes(target) && // Does the move resolve the check
+        //     !kingMove // Are you moving your king out of the way
+        // ) return
 
         const move = Move.EncodeUINT16(start, target, flag)
-        if (move == 0) console.log("bug")
         this.moves[this.ply * this.maxNumLegalMoves + this.count] = move
         this.count++
     }
@@ -66,7 +80,7 @@ export class MoveGenerator {
             // Clear arrays
             this.pinMask.fill(0)
             this.checkers.length = 0
-            this.blockingSquares.length = 0
+            this.blockingSquares = new Array(64).fill(false)
             
             // the squares you can move to in order to resolve a check (either by blocking path or capturing the attacker)
             // This will be countered by a double check in wich we only generate king moves
@@ -86,7 +100,7 @@ export class MoveGenerator {
                 const piece = board.square[startSquare]
                 if (piece == (Piece.knight | enemyColor) ){
                     this.checkers.push(startSquare)
-                    this.blockingSquares.push(startSquare)
+                    this.blockingSquares[startSquare] = true
                 }
             }
     
@@ -99,7 +113,7 @@ export class MoveGenerator {
                 const piece = board.square[startSquare]
                 if (piece == (Piece.pawn | enemyColor) ){
                     this.checkers.push(startSquare)
-                    this.blockingSquares.push(startSquare)
+                    this.blockingSquares[startSquare] = true
                 }
             }
     
@@ -113,31 +127,40 @@ export class MoveGenerator {
             
             
             let data = ChessHelper.numSquaresToEdge[friendlyKingSquare]
-            const blockingSquares = []
+            const potentialBlockingSquares = []
             let potentialPinnedPiece;
             
-            //directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
-            //  0 -> 3: Rette trekk
-            //  4 -> 7: Diagonale trekk
-    
-            for (let i = 0; i < 8; i++){
+            // Check if a sliding attack is possible
+            const numBishops = board.pl.Count(Piece.bishop | enemyColor)
+            const numRooks   = board.pl.Count(Piece.rook   | enemyColor)
+            const numQueens  = board.pl.Count(Piece.queen  | enemyColor)
+
+            const needsHorizontalCheck = 0 < (numRooks + numQueens)
+            const needsDiagonalCheck   = 0 < (numBishops + numQueens)
+            
+            const startIndex = needsHorizontalCheck ? 0 : 4
+            const endIndex = needsDiagonalCheck ? 8 : 4
+            
+            for (let i = startIndex; i < endIndex; i++){
                 // Double check means there are only king moves and no need to compute pins
                 if (2 == this.checkers.length) return
                 
-                // Valid sliding piece type
-                const otherSlidingPiece = (i < 4) ? Piece.rook : Piece.bishop
-                
                 const offset = Piece.directionOffsets[i]
                 const pinType = Piece.pins[i]
+
+                // Valid sliding piece type
+                const minorSlidingPiece = (i < 4) ? Piece.rook : Piece.bishop
                 
-                blockingSquares.length = 0
+                
+                potentialBlockingSquares.length = 0
                 potentialPinnedPiece = null
     
                 for (let n = 0; n < data[i]; n++){
                     // Move along path
                     const target = friendlyKingSquare + offset * (n+1)
+                    potentialBlockingSquares.push(target)
+
                     const pieceOnTargetSquare = board.square[target]
-                    blockingSquares.push(target)
                     
                     // If the square is empty we continue
                     if (pieceOnTargetSquare == 0){
@@ -146,11 +169,15 @@ export class MoveGenerator {
     
                     // Enemy checker
                     else if (pieceOnTargetSquare == (Piece.queen | enemyColor) || 
-                             pieceOnTargetSquare == (otherSlidingPiece | enemyColor)){
+                             pieceOnTargetSquare == (minorSlidingPiece | enemyColor)){
                             
                         // if there is no pinned piece our king is in danger
                         if (potentialPinnedPiece == null){
-                            this.blockingSquares = [...blockingSquares]
+                            
+                            for (const square of potentialBlockingSquares){
+                                this.blockingSquares[square] = true
+                            }
+
                             this.checkers.push(target)
                         }
                         // Add pinmask if there is a potentially pinned piece
@@ -192,34 +219,33 @@ export class MoveGenerator {
         if (1 < this.checkers.length) return 
 
         // Generate all other moves
-        for (let startSquare = 0; startSquare < 64; startSquare++){
-            const pieceOnTargetSquare = board.square[startSquare]
-            
-            // Skip empty or enemy squares
-            const enemySquare = Piece.CheckPieceColor(pieceOnTargetSquare, !board.white_To_Move)
-            const emptySquare = (pieceOnTargetSquare == 0)
+        const friendlyColor = (board.white_To_Move) ? Piece.white : Piece.black
 
-            if (enemySquare || emptySquare){
-                continue
-            }
-
-            // pawn moves
-            if (Piece.IsType(pieceOnTargetSquare, Piece.pawn)){
-                this.GeneratePawnMoves(board, startSquare)
-            }
-
-            // knight moves
-            if (Piece.IsType(pieceOnTargetSquare, Piece.knight)){
-                this.GenerateKnightMoves(board, startSquare)   
-            }
-
-            // sliding moves
-            if (Piece.IsSlidingPiece(pieceOnTargetSquare)){
-                this.GenerateSlidingMoves(board, pieceOnTargetSquare, startSquare)
-            }
+        // Pawn moves
+        for (const pawnSquare of board.pl.listFromPiece[Piece.pawn | friendlyColor]){
+            this.GeneratePawnMoves(board, pawnSquare)
         }
-        
-        //return this.moves.slice(0, this.count)
+
+        // Knight moves
+        for (const knightSquare of board.pl.listFromPiece[Piece.knight | friendlyColor]){
+            this.GenerateKnightMoves(board, knightSquare)
+        }
+
+        // Bishop moves
+        for (const bishopSquare of board.pl.listFromPiece[Piece.bishop | friendlyColor]){
+            this.GenerateSlidingMoves(board, bishopSquare, false, true)
+        }
+
+        // Rook moves
+        for (const rookSquare of board.pl.listFromPiece[Piece.rook | friendlyColor]){
+            this.GenerateSlidingMoves(board, rookSquare, true, false)
+        }
+
+        // Queen moves
+        for (const queenSquare of board.pl.listFromPiece[Piece.queen | friendlyColor]){
+            this.GenerateSlidingMoves(board, queenSquare, true, true)
+        }
+
     }
 
     TacticalMoves(board, ply=0){
@@ -416,16 +442,15 @@ export class MoveGenerator {
         }
     }
 
-    GenerateSlidingMoves(board, piece, start){
+    GenerateSlidingMoves(board, start, horizontal, diagonal){
         // Get the piece type and position data
-        let pieceType = piece & 0b111
         let data = ChessHelper.numSquaresToEdge[start]
 
-        // horizontal movement
-        let startIndex = (pieceType == Piece.bishop) ? 4 : 0
+        // horizontal movement 0-4
+        let startIndex = (horizontal) ? 0 : 4
 
-        // diagonal movement
-        let endIndex = (pieceType == Piece.rook) ? 4 : 8
+        // diagonal movement 4-8
+        let endIndex = (diagonal) ? 8 : 4
 
         for (let i = startIndex; i < endIndex; i++){
             

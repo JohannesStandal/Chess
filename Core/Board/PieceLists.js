@@ -2,55 +2,78 @@ import { Piece } from "./piece.js"
 
 export class PieceLists {
     constructor() {
-
-        // White pieces
-        this.nWhitePawns = 0
-        this.nWhiteKnights = 0
-        this.nWhiteBishops = 0
-        this.nWhiteRooks = 0
-        this.nWhiteQueens = 0
-
-        this.whitePawnsList = new Array(8)   // Max 8 pawns
-        this.whiteKnightList = new Array(10) // Max 10 knights
-        this.whiteBishopList = new Array(10) // Max 10 bishops
-        this.whiteRookList = new Array(10)   // Max 10 rooks
-        this.whiteQueenList = new Array(10)  // Max 10 queens
-
-        // Black pieces
-        this.nBlackPawns = 0
-        this.nBlackKnights = 0
-        this.nBlackBishops = 0
-        this.nBlackRooks = 0
-        this.nBlackQueens = 0
-
-        this.blackPawnsList = new Array(8)   // Max 8 pawns
-        this.blackKnightList = new Array(10) // Max 10 knights
-        this.blackBishopList = new Array(10) // Max 10 bishops
-        this.blackRookList = new Array(10)   // Max 10 rooks
-        this.blackQueenList = new Array(10)  // Max 10 queens
-        
-        // Easy acces to the different lists
-        this.listFromPiece = new Array(22)
-
-        this.listFromPiece[Piece.pawn   | Piece.white] = this.whitePawnsList
-        this.listFromPiece[Piece.knight | Piece.white] = this.whiteKnightList
-        this.listFromPiece[Piece.bishop | Piece.white] = this.whiteBishopList
-        this.listFromPiece[Piece.rook   | Piece.white] = this.whiteRookList
-        this.listFromPiece[Piece.queen  | Piece.white] = this.whiteQueenList
-
-        this.listFromPiece[Piece.pawn   | Piece.black] = this.blackPawnsList
-        this.listFromPiece[Piece.knight | Piece.black] = this.blackKnightList
-        this.listFromPiece[Piece.bishop | Piece.black] = this.blackBishopList
-        this.listFromPiece[Piece.rook   | Piece.black] = this.blackRookList
-        this.listFromPiece[Piece.queen  | Piece.black] = this.blackQueenList
+        this.listFromPiece = new Array(32)
+        this.Clear()
 
         // Keep track of a pieces index in their corresponding piece list
         this.pieceListIndexes = new Uint16Array(64)
     }
 
-    Add(){
-        
+    Clear(){
+        this.listFromPiece[Piece.king   | Piece.white] = []
+        this.listFromPiece[Piece.pawn   | Piece.white] = []
+        this.listFromPiece[Piece.knight | Piece.white] = []
+        this.listFromPiece[Piece.bishop | Piece.white] = []
+        this.listFromPiece[Piece.rook   | Piece.white] = []
+        this.listFromPiece[Piece.queen  | Piece.white] = []
+
+        this.listFromPiece[Piece.king   | Piece.black] = []
+        this.listFromPiece[Piece.pawn   | Piece.black] = []
+        this.listFromPiece[Piece.knight | Piece.black] = []
+        this.listFromPiece[Piece.bishop | Piece.black] = []
+        this.listFromPiece[Piece.rook   | Piece.black] = []
+        this.listFromPiece[Piece.queen  | Piece.black] = []
     }
 
+    Count(piece){
+        return this.listFromPiece[piece].length
+    }
 
+    Add(piece, squareIndex){
+        if (piece == Piece.none) return
+        
+        // Find corresponding piece list
+        const list = this.listFromPiece[piece]
+        
+        // Add to list and track index
+        list.push(squareIndex)
+        this.pieceListIndexes[squareIndex] = list.length - 1
+    }
+
+    Remove(piece, square){
+        if (piece == Piece.none) return
+        // Get the corresponding list and list index for the specific piece
+        const list = this.listFromPiece[piece]
+        const listIndex = this.pieceListIndexes[square]
+        // console.log(list)
+        // console.log(square, listIndex)
+        // return
+
+        // Get the list and square index for the piece at the end of the corresponding piece list
+        const lastPieceIndex = list.length - 1
+        const lastPieceSquare = list[lastPieceIndex]
+
+        // Replace the piece we want to remove, with the last one in the list
+        list[listIndex] = lastPieceSquare
+        this.pieceListIndexes[lastPieceSquare] = listIndex
+
+        // Remove last piece in the list
+        list.pop()
+    }
+
+    Move(piece, startSquare, targetSquare){
+        if (piece == Piece.none) return
+        
+        // Get the corresponding list and list index for the specific piece
+        const list = this.listFromPiece[piece]
+        const listIndex = this.pieceListIndexes[startSquare]
+
+        // Update the piece in the piece list
+        list[listIndex] = targetSquare
+        
+        // Update piecelist index lookup array
+        this.pieceListIndexes[targetSquare] = listIndex
+    }
+
+    
 }

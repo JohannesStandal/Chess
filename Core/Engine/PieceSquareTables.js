@@ -197,18 +197,26 @@ export class PieceSquareTables {
         const mirroredMap = new Array(64)
         for (let i = 0; i<64; i++){
             const mirrorIndex = this.mirroredBoard[i]
-            mirroredMap[i] = map[mirrorIndex]
+            mirroredMap[i] = - map[mirrorIndex]
         }
         return mirroredMap
     }
 
     static MidgameValue(piece, square){
+        if (piece == Piece.none){
+            console.log(`WTF PST mid says there is a piece on square ${square} but there is none `)
+            return 0
+        }
         const mapMid = this.midMapForPiece[piece]
         const bonusMid = mapMid[square]
         return bonusMid
     }
 
     static EndgameValue(piece, square){
+        if (piece == Piece.none){
+            console.log(`WTF PST end says there is a piece on square ${square} but there is none `)
+            return 0
+        }
         const mapEnd = this.endMapForPiece[piece]
         const bonusEnd = mapEnd[square]
         return bonusEnd

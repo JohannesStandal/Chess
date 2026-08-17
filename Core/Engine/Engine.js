@@ -33,12 +33,12 @@ TODO:
 import { Board } from "../Board/chessboard.js"
 import { Search } from "./Search.js"
 import { TimeManager } from "./TimeManager.js"
-//import { openingBook } from "../Openings/openingBook.js"
+import { openingBook } from "../Openings/openingBook.js"
 
 export class Engine {
     constructor(thinkingTime=1000){
         this.board = new Board()
-        this.book = false
+        this.book = true
         this.timeManager = new TimeManager(thinkingTime)
 
         this.search = new Search(this.board, this.timeManager)
@@ -52,8 +52,10 @@ export class Engine {
         this.board.Load_Fen(fen)
     }
 
-    ImportGameHistory(repetitionTable){
-        this.board.repetitionTable = repetitionTable
+    PlayedMoves(moves){
+        for (const move of moves){
+            this.board.Make_Move(move)
+        }
     }
 
     ThinkingTime(thinkingTime){

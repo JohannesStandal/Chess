@@ -51,11 +51,17 @@ export class Search {
             }
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
-                //console.log("Search canceled", this.currentDepth)
                 break
             }
         }
         console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
+
+        // In case a depth 1 search we pick the best move from move ordering
+        if (this.bestMove == null){
+            this.MoveGenerator.GenerateMoves(this.board, 0)
+            this.bestMove = this.MoveGenerator.moves[0]
+        }
+        
         return this.bestMove
     }
 
@@ -76,7 +82,7 @@ export class Search {
 
     Negamax(depth, ply, alpha, beta, totalExtensions){
         if (this.timeManager.ExceededTimeLimit()){
-            return alpha
+            return 0
         }
         this.nodeCount ++
 
@@ -114,29 +120,29 @@ export class Search {
             */
             
             // Positive checkmate -> subtract ply
-            let mutatedScore = entry.score
+            let scaledScore = entry.score
 
             if (mateTreshold < entry.score){    
-                mutatedScore = entry.score - ply
+                scaledScore = entry.score - ply
             }
             else if (entry.score < -mateTreshold){
-                mutatedScore = entry.score + ply 
+                scaledScore = entry.score + ply 
             }
 
             // TT position is accurate
             if (entry.flag == "EXACT"){
-                return mutatedScore
+                return scaledScore
             }
             // update upper or lower bound
             if (entry.flag == "UPPER"){
-                beta = Math.min(beta, mutatedScore)
+                beta = Math.min(beta, scaledScore)
             }
             else if (entry.flag == "LOWER"){
-                alpha = Math.max(alpha, mutatedScore)
+                alpha = Math.max(alpha, scaledScore)
             }
             // early cutoff
             if (alpha >= beta){
-                return mutatedScore
+                return scaledScore
             }
         }
 
@@ -156,12 +162,11 @@ export class Search {
             //Checkmate
             if (inCheck){
                 const mateScore = -(checkMateScore - ply)
-                this.TT.AddPosition(hash, -checkMateScore, depth, "EXACT", null)
                 return mateScore
             }
             
             //Stalemate
-            this.TT.AddPosition(hash, drawScore, depth, "EXACT")
+            //this.TT.AddPosition(hash, drawScore, depth, "EXACT")
             return drawScore
         }
 
@@ -191,13 +196,13 @@ export class Search {
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
             const move = this.MoveGenerator.moves[moveIndex]
 
-            // Evaluate future position
-            this.board.Make_Move(move)
-
+            
             // Check and promotion extension
             const moveIsPromotion = Move.IsPromotion(move)
             const extensions = (canExtend && (inCheck || moveIsPromotion) ) ? 1 : 0
-
+            
+            // Evaluate future position
+            this.board.Make_Move(move)
         
             const score = - this.Negamax(
                 depth - 1 + extensions, 
@@ -210,7 +215,7 @@ export class Search {
             this.board.Unmake_Move(move)
             
             // exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return alpha
+            if (this.timeManager.cancelSearch) return 0
 
             // If the best possible outcome exceeds precious search results, overwrite
             // the best move and the best score in this position
@@ -233,15 +238,15 @@ export class Search {
                 // 
                 // 2: -9997 -> m in 3 ply -> -9999
 
-                let scoreToStore = score
+                let scaledScore = score
                 
                 // Mate scaling
-                if (mateTreshold < scoreToStore)
-                    scoreToStore += ply
-                else if (scoreToStore < -mateTreshold)
-                    scoreToStore -= ply
+                if (mateTreshold < scaledScore)
+                    scaledScore += ply
+                else if (scaledScore < -mateTreshold)
+                    scaledScore -= ply
 
-                this.TT.AddPosition(hash, scoreToStore, depth, "LOWER", move)
+                this.TT.AddPosition(hash, scaledScore, depth, "LOWER", move)
 
                 return score
             }       
@@ -255,16 +260,17 @@ export class Search {
         else flag = "EXACT";
 
 
-        let scoreToStore = alpha
+        let scaledScore = alpha
+
         // adjust checkmate scores to our depth
         // when storing in transposition table
-        if (mateTreshold < scoreToStore)
-            scoreToStore += ply
-        else if (scoreToStore < -mateTreshold)
-            scoreToStore -= ply
+        if (mateTreshold < scaledScore)
+            scaledScore += ply
+        else if (scaledScore < -mateTreshold)
+            scaledScore -= ply
 
     
-        this.TT.AddPosition(hash, scoreToStore, depth, flag, bestMoveThisIteration)
+        this.TT.AddPosition(hash, scaledScore, depth, flag, bestMoveThisIteration)
     
         return alpha
     }

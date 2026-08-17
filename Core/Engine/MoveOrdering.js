@@ -40,6 +40,7 @@ function EstimateMoveScore(move, board){
         let score = 0
         const start = Move.Start(move)
         const target = Move.Target(move) 
+        const flag = Move.Flag(move)
         
         
         if (Move.IsCapture(move)){
@@ -49,11 +50,20 @@ function EstimateMoveScore(move, board){
             const movedPiece = board.square[start]
 
             // PST ordering
-            const startBonus = PieceSquareTables.MidgameValue(movedPiece, start)
-            const targetBonus = PieceSquareTables.MidgameValue(movedPiece, target)
+            const startBonus = Math.abs (PieceSquareTables.MidgameValue(movedPiece, start))
+            const targetBonus = Math.abs (PieceSquareTables.MidgameValue(movedPiece, target))
 
             // Incentivise moving to a better square for the given piece
             score += (targetBonus - startBonus)
+        }
+
+        // Promotion bonus
+        if (Move.IsPromotion(move)){
+            // Score for knights, bishops, rooks, and queens
+            const promotionScores = [300, 320, 500, 900]
+            const index = flag & 0b11
+
+            score += promotionScores[index]
         }
         
         return score

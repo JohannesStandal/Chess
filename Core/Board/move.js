@@ -72,7 +72,6 @@ export class Move {
     }
 
     static UCItoUINT16(UCIMove, board){
-        
         const parts = UCIMove.split("")
 
         const letterToNumber = {
@@ -93,31 +92,49 @@ export class Move {
         const capturedPiece = board.square[target]
 
         let flag = 0b0000
-        if (capturedPiece != 0){
-            flag |= Move.flags.captures
-        }
-
-        const isPawn = Piece.IsType(movedPiece, Piece.pawn)
-        const doublePush = (Math.abs(start - target) == 16)
-        if (isPawn && doublePush){
-            flag = Move.flags.doublePush
-        }
         
-        if (parts.length == 5){
-            const letterToFlag = {
-            "n": Move.flags.knightPromotion,
-            "b": Move.flags.bishopPromotion,
-            "r": Move.flags.rookPromotion,
-            "q": Move.flags.queenPromotion,
+        // pawn rules
+        const pawnMove = Piece.IsType(movedPiece, Piece.pawn)
+
+        if (pawnMove){
+
+            // double push
+            const doublePush = (Math.abs(start - target) == 16)
+            if (doublePush){
+                flag = Move.flags.doublePush
             }
 
-            flag += letterToFlag[parts[4]]
+            // en passant
+            let offset = (board.white_To_Move) ? -8 : 8
+            const epCapture = (target + offset == board.enPassantSquare)
+    
+            if (epCapture){
+                flag = Move.flags.epCapture
+            }
+
+            // promotion
+            if (parts.length == 5){
+                const letterToFlag = {
+                "n": Move.flags.knightPromotion,
+                "b": Move.flags.bishopPromotion,
+                "r": Move.flags.rookPromotion,
+                "q": Move.flags.queenPromotion,
+                }
+    
+                flag = letterToFlag[parts[4]]
+            }
         }
 
-        if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
-        if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
-        if (target == board.enPassantSquare) flag = Move.flags.enPassant
+        // castling if the moved piece was a king
+        if (Piece.IsType(movedPiece, Piece.king)){
+            if (UCIMove == "e1g1" || UCIMove == "e8g8") flag = Move.flags.kingCastle
+            if (UCIMove == "e1c1" || UCIMove == "e8c8") flag = Move.flags.queenCastle
+        }
 
+        if (capturedPiece != Piece.none){
+            flag |= Move.flags.captures
+        }
+        
         return Move.EncodeUINT16(start, target, flag)
     }
 }

@@ -8,6 +8,7 @@ import { Evaluation } from "../Core/Engine/evaluation.js"
 import { Board } from "../Core/Board/chessboard.js"
 import { Chess } from "../Browser/Chess.js"
 
+
 // Testsuite availability
 import { Tests } from "../Tests/Tests.js"
 import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
@@ -17,9 +18,9 @@ export const chess = new Chess()
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
+    showSquareIndexes: false,
     playerTurn: false,
     active: false, 
-    playedMoves: [],    //for å lagre alle trekk som har blitt spelt
     fromWhitePerspective: false,
     moveLookUpTable: null,
 }
@@ -35,10 +36,10 @@ window.evaluate = Evaluation
 const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
 
+
 function StartGame(fen = startPos){
-    rootPos = fen
-    window.rootPos = rootPos
     gameData.active = true
+
     RenderScene(1)
     Reset()
     
@@ -87,7 +88,6 @@ tests.board = chess.board
 export function GameLoop(){
 
     const gameOver = (chess.GenerateMoves().length == 0)
-    const threefoldRepetition = chess.board.CheckThreeFold(chess.board.repetitionTable)
     const check = chess.InCheck()
 
     if (gameOver){
@@ -105,7 +105,7 @@ export function GameLoop(){
         gameData.active = false
         return
     }
-    else if (threefoldRepetition){
+    else if (chess.Threefold()){
         let message = "Uavgjort ved repetisjon"
         EndGame(message)
         return
@@ -121,14 +121,15 @@ export function GameLoop(){
         setTimeout(()=>{
             engine.postMessage({
                 type: "SEARCH",
-                fen: chess.exportFen(),
-                repetitionTable: chess.board.repetitionTable,
+                fen: chess.startFen,
+                moves: chess.playedMoves,
             })
         },300)
     }
 }
 
 StartGame()
+//StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
 //StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 //StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
 
