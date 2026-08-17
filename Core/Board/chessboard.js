@@ -379,7 +379,7 @@ export class Board {
 
     }
 
-    NullMove(){
+    Make_NullMove(){
         // A null move is simply skipping your turn.
         
         // store history stuff

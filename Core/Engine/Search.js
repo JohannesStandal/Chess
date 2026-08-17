@@ -26,7 +26,6 @@ export class Search {
         this.timeManager.Start()
         this.bestMove = null
 
-        //console.log("EndgameWGH: ",  ChessHelper.CalculateEndgameWeight(this.board))
         this.totalNodeCount = 0
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){
@@ -34,7 +33,7 @@ export class Search {
             this.nodeCount = 0
                         
             // search the position
-            const score = this.Negamax(depth, 0, -Infinity, Infinity, 0)
+            const score = this.Negamax(depth, 0, -Infinity, Infinity, 0, true)
             this.totalNodeCount += this.nodeCount
 
             console.log(
@@ -80,7 +79,7 @@ export class Search {
         const move = Move.ToUCI(this.bestMove)
     }
 
-    Negamax(depth, ply, alpha, beta, totalExtensions){
+    Negamax(depth, ply, alpha, beta, totalExtensions, doNull){
         if (this.timeManager.ExceededTimeLimit()){
             return 0
         }
@@ -88,8 +87,7 @@ export class Search {
 
         // check for threefold repetition
         if (this.board.CheckThreeFold()) {
-            //console.log("found threefold repetition in search at ply: ", ply)
-            return drawScore
+           return drawScore
         }
 
         // Save old hash
@@ -166,8 +164,7 @@ export class Search {
             }
             
             //Stalemate
-            //this.TT.AddPosition(hash, drawScore, depth, "EXACT")
-            return drawScore
+           return drawScore
         }
 
         // Moveordering. TT moves comes first, except for in the root node
@@ -185,6 +182,30 @@ export class Search {
 
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
+
+        // Null move pruning 
+        const nmpAllowed = (
+                doNull     && // Not already in a null move branch
+                !inCheck   && // Not in check
+                4 <= depth && // Prevents reducing shallow searches
+                0 < ply    && // Avoid NMP at root node
+                this.board.HasNonPawnMaterial() // Avoid zugswang
+            )
+        
+        if (nmpAllowed){
+            // Search a null move window
+            this.board.Make_NullMove()
+            const score = - this.Negamax(depth - 4, ply + 1, -beta, -beta + 1, totalExtensions, false)
+            this.board.Unmake_NullMove()
+
+            // Important exit point for iterative deepening
+            if (this.timeManager.cancelSearch) return 0
+
+            // If the nullmove
+            if (beta <= score){
+                return beta
+            }
+        }
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
@@ -194,8 +215,10 @@ export class Search {
         const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, ply)
 
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
-            const move = this.MoveGenerator.moves[moveIndex]
+            
+            
 
+            const move = this.MoveGenerator.moves[moveIndex]
             
             // Check and promotion extension
             const moveIsPromotion = Move.IsPromotion(move)
