@@ -99,7 +99,7 @@ export class Evaluation {
         const PSTweight = 1 
         const mobilityWeight = 1
         const kingExposureWeight = 1
-        const pawnShieldWeight = 1
+        const pawnShieldWeight = 2
         const castleRightWeight = 1
 
         // Piece Square tables

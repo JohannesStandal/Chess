@@ -20,7 +20,7 @@ export class PieceSquareTables {
     // King should hide in the corner during the mid game
     // In endgames the king should centralize to support pawns
     static kingMid = [
-         20, 30, 10,  0,  0, 10, 30, 20,
+         50, 50, 150,  0,  0, 20, 150, 50,
          20, 20,  0,  0,  0,  0, 20, 20,
         -10,-20,-20,-20,-20,-20,-20,-10,
         -20,-30,-30,-40,-40,-30,-30,-20,
@@ -45,7 +45,7 @@ export class PieceSquareTables {
     // but should aim to promote in endgames
     static pawnMid = [
          0,  0,  0,  0,  0,  0,  0,  0,
-         5, 10, 10,-20,-20, 10, 10,  5,
+         20, 20, 20,-20,-20, 20, 20,  20,
          5, -5,-10,  0,  0,-10, -5,  5,
          0,  0,  0, 20, 20,  0,  0,  0,
          5,  5, 10, 25, 25, 10,  5,  5,

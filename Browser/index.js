@@ -17,7 +17,7 @@ export const chess = new Chess()
 
 export var gameData = {
     playAsWhite: !true, //false betyr at AI speler
-    playAsBlack: !false, // ^ --||--
+    playAsBlack: false, // ^ --||--
     showSquareIndexes: false,
     playerTurn: false,
     active: false, 
