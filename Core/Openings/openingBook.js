@@ -1,4 +1,5 @@
 import { Board } from "../Board/chessboard.js";
+import { Move } from "../Board/move.js";
 import openings from "../Openings/openingBook.json" with { type: "json" };
 
 export class openingBook {
@@ -36,6 +37,7 @@ export class openingBook {
         // Accumulate all frequencies in a table
         for (const variation of entry){
             sum += variation[1]
+            // console.log(Move.ToUCI(variation[0]), variation[1])
             const accumulatedFrequency = sum
             lookUp.push(accumulatedFrequency)
         }
