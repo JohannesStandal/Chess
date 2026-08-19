@@ -210,8 +210,13 @@ export class Board {
         this.ply ++
         
         // update castling rights
+        const oldCastleRights = this.castlingRights
+
         this.castlingRights &= ChessHelper.updateCastleRights[start] 
         this.castlingRights &= ChessHelper.updateCastleRights[target]
+
+        const updatedCastlingRights = (~this.castlingRights) & oldCastleRights
+        this.hash.CastlingRights(updatedCastlingRights)
 
         // moving the piece
         this.square[target] = movedPiece
@@ -312,8 +317,8 @@ export class Board {
     }
 
     Unmake_Move(move){
-        this.playedMoves.pop()
-        this.playedMovesUCI.pop()
+        // this.playedMoves.pop()
+        // this.playedMovesUCI.pop()
 
         // Restores the previous position if one exists
         if (this.ply == 0) return
@@ -327,7 +332,9 @@ export class Board {
         
         this.castlingRights = this.castlingRightsHistory[this.ply]
         this.enPassantSquare = this.epSquareHistory[this.ply]
-        this.hash.hash = this.hashHistory[this.ply]
+
+        this.hash.high = this.hashHighHistory[this.ply]
+        this.hash.low  = this.hashHighHistory[this.ply]
 
         // decode move
         const start = Move.Start(move)

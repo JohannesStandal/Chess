@@ -67,6 +67,7 @@ export class zobristHash {
 
     CastlingRights(castlingRightsUpdate){
         // castlingRights is a 4 bit integer
+        if (castlingRightsUpdate == 0) return
 
         // white king
         if (castlingRightsUpdate & 0b1000){
