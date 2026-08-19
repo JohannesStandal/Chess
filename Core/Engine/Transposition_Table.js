@@ -1,7 +1,7 @@
 import { mateTreshold } from "../Constants/SearchConstants.js"
 
 export class Transposition_Table {
-    constructor (mb = 256){
+    constructor (mb = 1000){
         this.SetSizeMB(mb)
     }
 
@@ -25,6 +25,8 @@ export class Transposition_Table {
         this.depth = new Array(this.numEntries).fill(0)     // 1 bytes
         this.score = new Array(this.numEntries)    // 4 bytes 
         this.flag = new Array(this.numEntries)           // 16 byte
+
+        this.collisions = 0
 
     }
 
@@ -56,6 +58,7 @@ export class Transposition_Table {
                 mateScaledScore = score + ply 
             }
 
+            // console.log("Succsessfull TT read", ply, index)
             return {
                 "hit": true,
                 "move": bestMove,
@@ -63,6 +66,7 @@ export class Transposition_Table {
                 "flag": flag
             }
         }
+        if (ttHigh != undefined) this.collisions ++
 
         return {
             "hit": false, "move": null
@@ -100,5 +104,6 @@ export class Transposition_Table {
         this.flag[index] = flag
         this.bestMove[index] = bestMove
         
+        // console.log("Succsesfull TT store", ply, index)
     }
 }

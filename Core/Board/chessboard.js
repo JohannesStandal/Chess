@@ -334,7 +334,7 @@ export class Board {
         this.enPassantSquare = this.epSquareHistory[this.ply]
 
         this.hash.high = this.hashHighHistory[this.ply]
-        this.hash.low  = this.hashHighHistory[this.ply]
+        this.hash.low  = this.hashLowHistory[this.ply]
 
         // decode move
         const start = Move.Start(move)
@@ -418,6 +418,7 @@ export class Board {
         this.epSquareHistory[this.ply] = this.enPassantSquare
         this.capturedPieceHistory[this.ply] = Piece.none
         this.castlingRightsHistory[this.ply] = this.castlingRights
+
         this.hashHighHistory[this.ply] = this.hash.high
         this.hashLowHistory[this.ply] = this.hash.low
         
@@ -438,6 +439,7 @@ export class Board {
 
         // get history stuff
         this.enPassantSquare = this.epSquareHistory[this.ply]
+        
         this.hash.high = this.hashHighHistory[this.ply]
         this.hash.low  = this.hashLowHistory[this.ply]
         

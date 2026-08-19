@@ -26,6 +26,7 @@ export class Search {
         // start searchtime
         this.timeManager.Start()
         this.bestMove = null
+        this.TT.collisions = 0
 
         this.totalNodeCount = 0
         // iterative deepening
@@ -55,7 +56,7 @@ export class Search {
             }
         }
         console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
-
+        console.log("TT collisions ", this.TT.collisions)
         // In case a depth 1 search we pick the best move from move ordering
         if (this.bestMove == null){
             this.MoveGenerator.GenerateMoves(this.board, 0)
@@ -152,29 +153,29 @@ export class Search {
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
 
-        // Null move pruning 
-        const nmpAllowed = (
-                doNull     && // Not already in a null move branch
-                !inCheck   && // Not in check
-                4 <= depth && // Prevents reducing shallow searches
-                0 < ply    && // Avoid NMP at root node
-                this.board.HasNonPawnMaterial() // Avoid zugswang
-            )
+        // // Null move pruning 
+        // const nmpAllowed = (
+        //         doNull     && // Not already in a null move branch
+        //         !inCheck   && // Not in check
+        //         4 <= depth && // Prevents reducing shallow searches
+        //         0 < ply    && // Avoid NMP at root node
+        //         this.board.HasNonPawnMaterial() // Avoid zugswang
+        //     )
         
-        if (nmpAllowed){
-            // Search a null move window
-            this.board.Make_NullMove()
-            const score = - this.Negamax(depth - 4, ply + 1, -beta, -beta + 1, totalExtensions, false)
-            this.board.Unmake_NullMove()
+        // if (nmpAllowed){
+        //     // Search a null move window
+        //     this.board.Make_NullMove()
+        //     const score = - this.Negamax(depth - 4, ply + 1, -beta, -beta + 1, totalExtensions, false)
+        //     this.board.Unmake_NullMove()
 
-            // Important exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return 0
+        //     // Important exit point for iterative deepening
+        //     if (this.timeManager.cancelSearch) return 0
 
-            // If the nullmove
-            if (beta <= score){
-                return beta
-            }
-        }
+        //     // If the nullmove
+        //     if (beta <= score){
+        //         return beta
+        //     }
+        // }
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
