@@ -17,7 +17,7 @@ export const chess = new Chess()
 
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
-    playAsBlack: false, // ^ --||--
+    playAsBlack: !false, // ^ --||--
     showSquareIndexes: false,
     playerTurn: false,
     active: false, 
@@ -89,6 +89,8 @@ export function GameLoop(){
 
     const gameOver = (chess.GenerateMoves().length == 0)
     const check = chess.InCheck()
+
+    console.log(chess.board.hash)
 
     if (gameOver){
         let message = ""

@@ -5,7 +5,7 @@
 const maxNumMoves = 512
 
 import { ChessHelper } from "../Utils/Chess_Helper.js"
-import { zobristHash } from "./zobrist_hashing.js"
+import { zobristHash } from "./hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { PieceLists } from "./PieceLists.js"
@@ -179,8 +179,8 @@ export class Board {
     }
     
     Make_Move(move){
-        this.playedMoves.push(move)
-        this.playedMovesUCI.push(Move.ToUCI(move))
+        // this.playedMoves.push(move)
+        // this.playedMovesUCI.push(Move.ToUCI(move))
 
         if (move == null){
             console.log("Null move wtf? position was")
@@ -203,12 +203,11 @@ export class Board {
         this.capturedPieceHistory[this.ply] = capturedPiece
         this.castlingRightsHistory[this.ply] = this.castlingRights
         this.epSquareHistory[this.ply] = this.enPassantSquare
-        this.hashHistory[this.ply] = this.hash.hash
+
+        this.hashHighHistory[this.ply] = this.hash.high
+        this.hashLowHistory[this.ply] = this.hash.low
         
         this.ply ++
-        
-        // Update hash
-        this.hash.incrementHash(move, this)
         
         // update castling rights
         this.castlingRights &= ChessHelper.updateCastleRights[start] 
@@ -222,13 +221,17 @@ export class Board {
         this.pl.Remove(capturedPiece, target)
         this.pl.Move(movedPiece, start, target)
 
+        // update hash for the capture and move
+        this.hash.Remove(capturedPiece, target)
+        this.hash.Move(movedPiece, start, target)
 
         // en-passant capture
         if (flag == Move.flags.epCapture){
             // remove pawn from piece list
             const pawn = this.square[this.enPassantSquare]
-            this.pl.Remove(pawn, this.enPassantSquare) 
-            
+            // Remove pawn from piece list
+            this.pl.Remove(pawn, this.enPassantSquare)
+
             // Remove pawn from board
             this.square[this.enPassantSquare] = 0
         }
@@ -236,12 +239,20 @@ export class Board {
         // updates en-passant square
         if (flag == Move.flags.doublePush){
             this.enPassantSquare = target
+
+            // Add ep square from hash
+            this.hash.EnPassantSquare(this.enPassantSquare)
+            
+
         }
         else {
+            // Remove ep square from hash
+            this.hash.EnPassantSquare(this.enPassantSquare)
+            
             this.enPassantSquare = null
         }
 
-        
+
         // promotion logic
         if (Move.IsPromotion(move)){
             // create new piece
@@ -256,9 +267,13 @@ export class Board {
             // Replace pawn with promoted piece in piece lists
             this.pl.Remove(movedPiece, target)
             this.pl.Add(newPiece, target)
+
+            // Replace pawn with promoted piece in hash
+            this.hash.Remove(movedPiece, target)
+            this.hash.Add(newPiece, target)
         }
 
-        // incremental king tracking
+        // incremental king tracking (kind of reduntand with pl but meeh)
         if (movedPiece == (Piece.white | Piece.king)) this.whiteKingSquare = target
         if (movedPiece == (Piece.black | Piece.king)) this.blackKingSquare = target
 
@@ -271,8 +286,10 @@ export class Board {
 
             this.square[targetSquare] = rook
             this.square[rookSquare] = 0
-
+            
+            // Move rook in pl and hash
             this.pl.Move(rook, rookSquare, targetSquare)
+            this.hash.Move(rook, rookSquare, targetSquare)
         }
         // same for queenside
         else if (flag == Move.flags.queenCastle){
@@ -284,12 +301,14 @@ export class Board {
             this.square[targetSquare] = rook
             this.square[rookSquare] = 0
 
+            // Move rook in pl and hash
             this.pl.Move(rook, rookSquare, targetSquare)
+            this.hash.Move(rook, rookSquare, targetSquare)
         }
-        
         
         // Switch color to move
         this.white_To_Move = !this.white_To_Move
+        this.hash.whiteToMove()
     }
 
     Unmake_Move(move){
@@ -430,13 +449,17 @@ export class Board {
 
     CheckThreeFold(){
 
-        const currentPosHash = this.hash.hash
+        const currentHigh = this.hash.high
+        const currentLow = this.hash.low
+
         let frequency = 1
         let end = this.ply
 
         for (let i = 0; i < end; i++){
-            const hash = this.hashHistory[i]
-            if (hash == currentPosHash){
+            const high = this.hashHighHistory[i]
+            const low  = this.hashLowHistory[i]
+
+            if (currentHigh == high && currentLow == low){
                 frequency ++
             }
             if (2 < frequency){

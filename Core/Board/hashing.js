@@ -23,7 +23,7 @@ export class zobristHash {
         }
 
         // Castling rights
-        this.castlingRights(board.castlingRights)
+        this.CastlingRights(board.castlingRights)
 
         // Ep square
         this.EnPassantSquare(board.enPassantSquare)
