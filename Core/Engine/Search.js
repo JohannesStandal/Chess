@@ -91,7 +91,7 @@ export class Search {
         }
 
         // Save old hash
-        const hash = this.board.zobrist.hash
+        const hash = this.board.hash.high >>> 0
 
         //transposition table
         let TTbestMove = null

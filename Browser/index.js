@@ -25,7 +25,6 @@ export var gameData = {
     moveLookUpTable: null,
 }
 
-
 export const sounds = {
         quietMove: new Audio("Sounds/move-self.mp3"),
         capture: new Audio("Sounds/capture.mp3"),
@@ -129,6 +128,7 @@ export function GameLoop(){
 }
 
 StartGame()
+
 //StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
 //StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 //StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
