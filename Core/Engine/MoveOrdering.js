@@ -2,7 +2,7 @@ import { Evaluation } from "./evaluation.js"
 import { PieceSquareTables } from "./PieceSquareTables.js"
 import { Move } from "../Board/move.js"
 
-export function MoveOrder(board, moveGenerator, ply, TTbestMove, bestRootMove){
+export function MoveOrder(board, moveGenerator, ply, hashMove){
     // Define the area of the move array we are working with
     const moveStart = moveGenerator.GetMoveIndex(0, ply)
     const moveEnd = moveGenerator.GetMoveIndex(moveGenerator.count, ply)
@@ -10,12 +10,9 @@ export function MoveOrder(board, moveGenerator, ply, TTbestMove, bestRootMove){
     // Score every relevant move in the move array
     for (let i = moveStart; i < moveEnd; i++){
         const move = moveGenerator.moves[i]
-        // Best move from previous iterations of iterative deepening is first
-        if (move == bestRootMove){
-            moveGenerator.scores[i] = 1200000
-        }
+        
         // Transposition table best move is second, if it is not the same as the previous best move
-        else if (move == TTbestMove){
+        if (move == hashMove){
             moveGenerator.scores[i] = 1000000
         }
         // Score the move from heuristic evaluation

@@ -1,49 +1,104 @@
+import { mateTreshold } from "../Constants/SearchConstants.js"
+
 export class Transposition_Table {
-    constructor (){
-        this.table = new Map()
+    constructor (mb = 256){
+        this.SetSizeMB(mb)
     }
 
-    Clear(){
-        this.table = new Map()
+    SetSizeMB(mb){
+        const bytes = mb * 1024 * 1024
+        const numEntries = Math.floor(bytes / 31)
+
+        // find power of two that makes the table big enough
+        this.numEntries = 1
+        while (this.numEntries < numEntries){
+           this.numEntries = this.numEntries << 1
+        }
+        this.numEntries = this.numEntries >> 1
+        this.mask = this.numEntries - 1
+
+        // Initialize arrays
+        this.hashHigh = new Array(this.numEntries) // 4 bytes
+        this.hashLow  = new Array(this.numEntries) // 4 bytes
+
+        this.bestMove = new Array(this.numEntries) // 2 bytes
+        this.depth = new Array(this.numEntries).fill(0)     // 1 bytes
+        this.score = new Array(this.numEntries)    // 4 bytes 
+        this.flag = new Array(this.numEntries)           // 16 byte
+
     }
 
-    AddPosition(hash, score, depth, flag, bestMove){
-        return
-        // Avoid storing draws as it threefold repetition is history dependent
-        // and TT table is state dependant, so it can cause false positives
+    Read(high, low, ply, currentDepth){
+        const index = (high >>> 0) & this.mask
+
+        // Relevant to see if entry is useful
+        const ttHigh = this.hashHigh[index]
+        const ttLow = this.hashLow[index]
+        const depth = this.depth[index]
+
+        // Values that describe the position
+        const score = this.score[index]
+        const flag = this.flag[index]
+        const bestMove = this.bestMove[index]
+
+        // TT hit
+        if (ttHigh == high && ttLow  == low){
+            // Is the current search shallower than the one we stored
+            if (depth <= currentDepth) return {"hit": false, "move": bestMove} 
+
+            // Checkmate scaling
+            let mateScaledScore = score
+            
+            if (mateTreshold < score){    
+                mateScaledScore = score - ply
+            }
+            else if (score < -mateTreshold){
+                mateScaledScore = score + ply 
+            }
+
+            return {
+                "hit": true,
+                "move": bestMove,
+                "score": mateScaledScore,
+                "flag": flag
+            }
+        }
+
+        return {
+            "hit": false, "move": null
+        }
+    }
+
+    Store(high, low, ply, currentDepth, score, flag, bestMove){
+        // We dont want to store draws because threefold repetition is history dependent
         if (score == 0) return
 
-        const entry = this.table.get(hash) 
-        if (entry == undefined){
-            // add position to the table
-            this.table.set(hash, {
-                score: score, 
-                depth: depth,
-                flag: flag,
-                bestMove: bestMove,
-            })
-            return
-        }
-        // if the entry alreadt exists for deeper depth, we dont want to overwrite it
-        if (depth <= entry.depth){
-            return
-        }
+        const index = (high >>> 0) & this.mask
 
-        this.table.set(hash, {
-                score: score, 
-                depth: depth,
-                flag: flag,
-                bestMove: bestMove,
-        })
+        // Relevant to see if entry is useful
+        const ttHigh = this.hashHigh[index]
+        const ttLow = this.hashLow[index]
+        const depth = this.depth[index]
+
+        // Entry should not be overwritten
+        if (ttHigh == high && ttLow == low && currentDepth <= depth) return
+
+        // Checkmate scaling
+        let mateScaledScore = score
+
+        if (mateTreshold < mateScaledScore)
+            mateScaledScore += ply
+        else if (mateScaledScore < -mateTreshold)
+            mateScaledScore -= ply
+
+        // Store entry
+        this.hashHigh[index] = high
+        this.hashLow[index] = low
+        this.depth[index] = currentDepth
+
+        this.score[index] = mateScaledScore
+        this.flag[index] = flag
+        this.bestMove[index] = bestMove
         
-    }
-
-    IsValidTransposition(hash, currentDepth){
-        const entry = this.table.get(hash) 
-        if (entry == undefined){
-            return false
-        }
-        let depthSearched = entry.depth
-        return (depthSearched >= currentDepth)
     }
 }

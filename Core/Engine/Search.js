@@ -13,6 +13,7 @@ export class Search {
         this.MoveGenerator = new MoveGenerator()
         this.timeManager = timeManager
         this.TT = new Transposition_Table()
+        console.log(this.TT)
 
         this.bestMove = null
 
@@ -91,63 +92,36 @@ export class Search {
         }
 
         // Save old hash
-        const hash = this.board.hash.high >>> 0
+        const hashHigh = this.board.hash.high
+        const hashLow = this.board.hash.low
 
         //transposition table
-        let TTbestMove = null
-        
-        if (this.TT.IsValidTransposition(hash, depth)){
-            
-            const entry = this.TT.table.get(hash)
-            TTbestMove = entry.bestMove
-            if (ply == 0 && this.bestMove == null){
-                this.bestMove = entry.bestMove
-            }
-            
-            /**
-             Scale checkmates to match depth
-             a M2 found at 3ply -> M3
-            
-             5 -> 9995 m in 5 ply "10 total ply" -> 9990
-             same pos
-             3 -> 9995 m in 5 ply " 8 total ply" -> 9992
-            
-             5 -> -9995 m in 5 ply "10 total ply" -> -9990
-             same pos
-             3 -> -9995 m in 5 ply " 8 total ply" -> -9992
-            */
-            
-            // Positive checkmate -> subtract ply
-            let scaledScore = entry.score
+        const TT = this.TT.Read(hashHigh, hashLow, ply, depth)
 
-            if (mateTreshold < entry.score){    
-                scaledScore = entry.score - ply
-            }
-            else if (entry.score < -mateTreshold){
-                scaledScore = entry.score + ply 
-            }
-
+        if (TT.hit){
             // TT position is accurate
-            if (entry.flag == "EXACT"){
-                return scaledScore
+            if (TT.flag == "EXACT"){
+                return TT.score
             }
+
             // update upper or lower bound
-            if (entry.flag == "UPPER"){
-                beta = Math.min(beta, scaledScore)
+            if (TT.flag == "UPPER"){
+                beta = Math.min(beta, TT.score)
             }
-            else if (entry.flag == "LOWER"){
-                alpha = Math.max(alpha, scaledScore)
+            else if (TT.flag == "LOWER"){
+                alpha = Math.max(alpha, TT.score)
             }
+
             // early cutoff
             if (alpha >= beta){
-                return scaledScore
+                return TT.score
             }
         }
 
         // Start quiesence search at leaf nodes
         if (depth == 0){
             return QuiescenceSearch(this.board, this.timeManager, ply + 1, alpha, beta, this.nodeCount)
-        } 
+        }
 
         // Generate legal moves
         this.MoveGenerator.GenerateMoves(this.board, ply)
@@ -169,12 +143,7 @@ export class Search {
 
         // Moveordering. TT moves comes first, except for in the root node
         // where the best move from the previous search should be considered first
-        let bestRootMove = null
-        if (ply == 0){
-            bestRootMove = this.bestMove
-        }
-
-        MoveOrder(this.board, this.MoveGenerator, ply, TTbestMove, bestRootMove)
+        MoveOrder(this.board, this.MoveGenerator, ply, TT.move)
         
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
@@ -232,7 +201,8 @@ export class Search {
                 ply + 1, 
                 -beta, 
                 -alpha, 
-                totalExtensions + extensions
+                totalExtensions + extensions,
+                true,
             )
             
             this.board.Unmake_Move(move)
@@ -253,24 +223,7 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= score){
-                // 5: 9990 -> m in 10 ply -> 9995
-                // 
-                // 2: 9997 -> m in 3 ply -> 9999
-
-                // 5: -9990 -> m in 10 ply -> -9995
-                // 
-                // 2: -9997 -> m in 3 ply -> -9999
-
-                let scaledScore = score
-                
-                // Mate scaling
-                if (mateTreshold < scaledScore)
-                    scaledScore += ply
-                else if (scaledScore < -mateTreshold)
-                    scaledScore -= ply
-
-                this.TT.AddPosition(hash, scaledScore, depth, "LOWER", move)
-
+                this.TT.Store(hashHigh, hashLow, ply, depth, score, "LOWER", bestMoveThisIteration)
                 return score
             }       
         }
@@ -282,18 +235,7 @@ export class Search {
         else if (alpha >= beta) flag = "LOWER";
         else flag = "EXACT";
 
-
-        let scaledScore = alpha
-
-        // adjust checkmate scores to our depth
-        // when storing in transposition table
-        if (mateTreshold < scaledScore)
-            scaledScore += ply
-        else if (scaledScore < -mateTreshold)
-            scaledScore -= ply
-
-    
-        this.TT.AddPosition(hash, scaledScore, depth, flag, bestMoveThisIteration)
+        this.TT.Store(hashHigh, hashLow, ply, depth, alpha, flag, bestMoveThisIteration)
     
         return alpha
     }

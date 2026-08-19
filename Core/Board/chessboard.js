@@ -418,13 +418,15 @@ export class Board {
         this.epSquareHistory[this.ply] = this.enPassantSquare
         this.capturedPieceHistory[this.ply] = Piece.none
         this.castlingRightsHistory[this.ply] = this.castlingRights
-        this.hashHistory[this.ply] = this.hash.hash
+        this.hashHighHistory[this.ply] = this.hash.high
+        this.hashLowHistory[this.ply] = this.hash.low
         
         // skip your turn
         this.white_To_Move = !this.white_To_Move
-        this.hash.toggleTurn()
+        this.hash.whiteToMove()
         
         // remove ep square
+        this.hash.EnPassantSquare(this.enPassantSquare)
         this.enPassantSquare = null
 
         this.ply += 1
@@ -436,11 +438,11 @@ export class Board {
 
         // get history stuff
         this.enPassantSquare = this.epSquareHistory[this.ply]
-        this.hash.hash = this.hashHistory[this.ply]
+        this.hash.high = this.hashHighHistory[this.ply]
+        this.hash.low  = this.hashLowHistory[this.ply]
         
         // skip your turn
         this.white_To_Move = !this.white_To_Move
-        this.hash.toggleTurn()
     }
 
     HasNonPawnMaterial(){
