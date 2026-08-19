@@ -118,7 +118,7 @@ export class UCI {
       const myTimeLeft = (this.engine.board.white_To_Move) ? wTime : bTime
 
       const minTime = 100
-      const maxTime = 2000
+      const maxTime = 5000
 
       const desiredTime = myTimeLeft / 30
       const thinkingTime = Math.min( Math.max(minTime, desiredTime), maxTime)

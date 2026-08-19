@@ -7,7 +7,7 @@ export class openingBook {
         const key = String(hash)
         const entry = openings[key]
         
-        if (entry == null) return 0 // a1a1 = null move
+        if (entry == null || entry.length == 0) return 0 // a1a1 = null move
 
         const move = this.chooseMove(entry)
         return move
@@ -37,7 +37,7 @@ export class openingBook {
         // Accumulate all frequencies in a table
         for (const variation of entry){
             sum += variation[1]
-            // console.log(Move.ToUCI(variation[0]), variation[1])
+            console.log(Move.ToUCI(variation[0]), variation[1])
             const accumulatedFrequency = sum
             lookUp.push(accumulatedFrequency)
         }

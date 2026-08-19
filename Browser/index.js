@@ -16,7 +16,7 @@ import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
 export const chess = new Chess()
 
 export var gameData = {
-    playAsWhite: !true, //false betyr at AI speler
+    playAsWhite: true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
     showSquareIndexes: false,
     playerTurn: false,

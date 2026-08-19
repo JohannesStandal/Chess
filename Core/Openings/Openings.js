@@ -1,3 +1,6 @@
+// Run command to create opening book.json
+// node -max-old-space-size=8192 Core/Openings/Openings.js
+
 // Import data
 import { Board } from "../Board/chessboard.js";
 import { Move } from "../Board/move.js";
@@ -6,8 +9,9 @@ import rawOpeningLines from "../Openings/rawLines.json" with { type: "json" };
 import fs from "fs";
 
 // Opening book dictionary
-const openingBook = {}
+const openingBook = new Map
 
+let numLines = 0
 // Loop through all raw openinglines
 const board = new Board()
 for (const line of rawOpeningLines){
@@ -21,12 +25,21 @@ for (const line of rawOpeningLines){
         addMoveToBook(hash, move)
         board.Make_Move(move)
     }
+    numLines ++
+    console.log("adding line nr", numLines)
+    if (numLines == 1500000) break
 }
 
 // Filter all entries 
+numLines = 0
 for (const key of Object.keys(openingBook)){
     let entry = openingBook[key]
     filter(entry)    
+    if (entry.length == 0){
+        delete openingBook[key]
+    }
+    numLines ++
+    console.log("Filtering line nr", numLines)
 }
 
 // write to JSON
@@ -60,7 +73,7 @@ function addMoveToBook(hash, move){
 
 function filter(entry){
     const maxVariations = 8  // Only store N most common variations
-    const minFrequency = 0   // A move must have occured more than X times to be valid
+    const minFrequency = 5   // A move must have occured more than X times to be valid
 
     // console.log("sort", entry)
     const numVariations = entry.length
