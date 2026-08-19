@@ -35,9 +35,11 @@ export class zobristHash {
     }
 
     Get64BitHash(){
-        const high = this.high >>> 0
-        const low = this.low >>> 0
-        return `${high}${low}`
+        const high = BigInt(this.high)
+        const low = BigInt(this.low)
+
+        const hash = (high << 32) | low 
+        return hash
     }
 
     // Add and remove does the same, but this naming makes it far more intuitive to use

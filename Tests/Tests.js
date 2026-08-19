@@ -22,10 +22,15 @@ export class Tests {
         for (let i = 0; i < numMoves; i++){
             const move = this.moveGenerator.GetMove(i, ply)
 
+            const prevHigh = this.board.hash.high
+            const prevLow = this.board.hash.low
+
             this.board.Make_Move(move)
             sum += this.MoveGenerationCount(depth-1, log_moves, ply+1, move)
             this.board.Unmake_Move(move)
-        }
+
+            if (prevHigh != this.board.hash.high || prevLow != this.board.hash.low) console.log("Mistake with hash")
+        }   
         
         if (log_moves && ply == 1){
             console.log(Move.ToUCI(previousMove), sum)

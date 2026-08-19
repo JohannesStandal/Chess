@@ -15,6 +15,7 @@ export class Transposition_Table {
            this.numEntries = this.numEntries << 1
         }
         this.numEntries = this.numEntries >> 1
+        // this.numEntries = 1 << 20
         this.mask = this.numEntries - 1
 
         // Initialize arrays
@@ -31,7 +32,9 @@ export class Transposition_Table {
     }
 
     Read(high, low, ply, currentDepth){
-        const index = (high >>> 0) & this.mask
+        high >>>= 0
+        low >>>= 0
+        const index = high & this.mask
 
         // Relevant to see if entry is useful
         const ttHigh = this.hashHigh[index]
@@ -46,6 +49,7 @@ export class Transposition_Table {
         // TT hit
         if (ttHigh == high && ttLow  == low){
             // Is the current search shallower than the one we stored
+            // We can still use the previous bestmove for move ordering
             if (depth <= currentDepth) return {"hit": false, "move": bestMove} 
 
             // Checkmate scaling
@@ -74,6 +78,9 @@ export class Transposition_Table {
     }
 
     Store(high, low, ply, currentDepth, score, flag, bestMove){
+        high >>>= 0
+        low >>>= 0
+        
         // We dont want to store draws because threefold repetition is history dependent
         if (score == 0) return
 

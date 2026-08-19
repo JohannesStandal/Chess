@@ -439,7 +439,7 @@ export class Board {
 
         // get history stuff
         this.enPassantSquare = this.epSquareHistory[this.ply]
-        
+
         this.hash.high = this.hashHighHistory[this.ply]
         this.hash.low  = this.hashLowHistory[this.ply]
         
