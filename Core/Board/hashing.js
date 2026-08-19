@@ -1,6 +1,3 @@
-import { Piece } from "./piece.js"
-import { Move } from "./move.js"
-
 import {
     pieceHashHigh, pieceHashLow, 
     epHashHigh, epHashLow, 
@@ -14,6 +11,27 @@ export class zobristHash {
         // High and low 32 bit numbers as JS does not feature native 64 bit
         this.high = 0
         this.low = 0 
+    }
+
+    CreateHash(board){
+        // Pieces
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i]
+            if (piece == 0) continue
+
+            this.Add(piece, i)
+        }
+
+        // Castling rights
+        this.castlingRights(board.castlingRights)
+
+        // Ep square
+        this.EnPassantSquare(board.enPassantSquare)
+
+        // player turn
+        if (board.white_To_Move){
+            this.whiteToMove()
+        }
     }
 
     // Add and remove does the same, but this naming makes it far more intuitive to use
@@ -73,5 +91,10 @@ export class zobristHash {
             this.high ^= castleHigh[3]
             this.low  ^= castleLow [3]
         }
+    }
+
+    whiteToMove(){
+        this.high ^= whiteToMoveHigh
+        this.low  ^= whiteToMoveLow
     }
 }

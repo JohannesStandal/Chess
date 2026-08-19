@@ -5,7 +5,7 @@
 const maxNumMoves = 512
 
 import { ChessHelper } from "../Utils/Chess_Helper.js"
-import { zobrist_hashing} from "./zobrist_hashing.js"
+import { zobristHash } from "./zobrist_hashing.js"
 import { Piece} from "./piece.js"
 import { Move } from "./move.js"
 import { PieceLists } from "./PieceLists.js"
@@ -24,10 +24,12 @@ export class Board {
         this.capturedPieceHistory = new Array(maxNumMoves)
         this.castlingRightsHistory = new Array(maxNumMoves)
         this.epSquareHistory = new Array (maxNumMoves)
-        this.hashHistory = new Array (maxNumMoves)
+
+        this.hashHighHistory = new Array (maxNumMoves)
+        this.hashLowHistory = new Array (maxNumMoves)
         
         // Hash
-        this.zobrist = new zobrist_hashing()
+        this.hash = new zobristHash()
 
         // Track pieces
         this.whiteKingSquare = 0
@@ -46,7 +48,9 @@ export class Board {
         this.capturedPieceHistory = new Array(maxNumMoves)
         this.castlingRightsHistory = new Array(maxNumMoves)
         this.epSquareHistory = new Array (maxNumMoves)
-        this.hashHistory = new Array (maxNumMoves)
+
+        this.hashHighHistory = new Array (maxNumMoves)
+        this.hashLowHistory = new Array (maxNumMoves)
 
         this.playedMoves = []
         this.playedMovesUCI = []
@@ -115,8 +119,10 @@ export class Board {
         })
 
         // Hash
-        this.zobrist.createHash(this.square, this.white_To_Move)
-        this.hashHistory = [this.zobrist.hash]
+        this.hash.CreateHash(this)
+
+        this.hashHighHistory[this.ply] = this.hash.high
+        this.hashLowHistory [this.ply] = this.hash.low
     }
 
     Export_Fen(){
@@ -197,12 +203,12 @@ export class Board {
         this.capturedPieceHistory[this.ply] = capturedPiece
         this.castlingRightsHistory[this.ply] = this.castlingRights
         this.epSquareHistory[this.ply] = this.enPassantSquare
-        this.hashHistory[this.ply] = this.zobrist.hash
+        this.hashHistory[this.ply] = this.hash.hash
         
         this.ply ++
         
         // Update hash
-        this.zobrist.incrementHash(move, this)
+        this.hash.incrementHash(move, this)
         
         // update castling rights
         this.castlingRights &= ChessHelper.updateCastleRights[start] 
@@ -302,7 +308,7 @@ export class Board {
         
         this.castlingRights = this.castlingRightsHistory[this.ply]
         this.enPassantSquare = this.epSquareHistory[this.ply]
-        this.zobrist.hash = this.hashHistory[this.ply]
+        this.hash.hash = this.hashHistory[this.ply]
 
         // decode move
         const start = Move.Start(move)
@@ -386,11 +392,11 @@ export class Board {
         this.epSquareHistory[this.ply] = this.enPassantSquare
         this.capturedPieceHistory[this.ply] = Piece.none
         this.castlingRightsHistory[this.ply] = this.castlingRights
-        this.hashHistory[this.ply] = this.zobrist.hash
+        this.hashHistory[this.ply] = this.hash.hash
         
         // skip your turn
         this.white_To_Move = !this.white_To_Move
-        this.zobrist.toggleTurn()
+        this.hash.toggleTurn()
         
         // remove ep square
         this.enPassantSquare = null
@@ -404,11 +410,11 @@ export class Board {
 
         // get history stuff
         this.enPassantSquare = this.epSquareHistory[this.ply]
-        this.zobrist.hash = this.hashHistory[this.ply]
+        this.hash.hash = this.hashHistory[this.ply]
         
         // skip your turn
         this.white_To_Move = !this.white_To_Move
-        this.zobrist.toggleTurn()
+        this.hash.toggleTurn()
     }
 
     HasNonPawnMaterial(){
@@ -424,7 +430,7 @@ export class Board {
 
     CheckThreeFold(){
 
-        const currentPosHash = this.zobrist.hash
+        const currentPosHash = this.hash.hash
         let frequency = 1
         let end = this.ply
 
