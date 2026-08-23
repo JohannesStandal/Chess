@@ -41,7 +41,7 @@ export class Search {
             console.log(
                 "depth: ", depth, 
                 "Bestmove: ", Move.ToUCI(this.bestMove), 
-                " Nodes: ", this.nodeCount, 
+                "Nodes: ", this.nodeCount, 
                 "Score: ", Math.round(score)
             )
 
@@ -93,13 +93,19 @@ export class Search {
         }
 
         // Save old hash
-        const hashHigh = this.board.hash.high
-        const hashLow = this.board.hash.low
+        const hashHigh = (this.board.hash.high >>> 0)
+        const hashLow  = (this.board.hash.low  >>> 0)
+        
+        // Store the original lowerbound value before starting the search
+        // This will be used later when storing results in the transposition table
+        const originalAlpha = alpha
+        const originalBeta = beta
 
         //transposition table
         const TT = this.TT.Read(hashHigh, hashLow, ply, depth)
 
         if (TT.hit){
+            
             // TT position is accurate
             if (TT.flag == "EXACT"){
                 return TT.score
@@ -114,7 +120,7 @@ export class Search {
             }
 
             // early cutoff
-            if (alpha >= beta){
+            if (beta <= alpha){
                 return TT.score
             }
         }
@@ -134,8 +140,7 @@ export class Search {
         if (numMoves == 0){    
             //Checkmate
             if (inCheck){
-                const mateScore = -(checkMateScore - ply)
-                return mateScore
+                return -checkMateScore + ply
             }
             
             //Stalemate
@@ -144,12 +149,8 @@ export class Search {
 
         // Moveordering. TT moves comes first, except for in the root node
         // where the best move from the previous search should be considered first
-        MoveOrder(this.board, this.MoveGenerator, ply, TT.move)
+        MoveOrder(this.board, this.MoveGenerator, ply, TT.bestMove, this.bestMove)
         
-        // Store the original lowerbound value before starting the search
-        // This will be used later when storing results in the transposition table
-        const originalAlpha = alpha
-
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
 
@@ -162,7 +163,7 @@ export class Search {
         //         this.board.HasNonPawnMaterial() // Avoid zugswang
         //     )
         
-        // if (nmpAllowed){
+        // if (nmpAllowed && false){
         //     // Search a null move window
         //     this.board.Make_NullMove()
         //     const score = - this.Negamax(depth - 4, ply + 1, -beta, -beta + 1, totalExtensions, false)
@@ -185,8 +186,6 @@ export class Search {
         const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, ply)
 
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
-            
-            
 
             const move = this.MoveGenerator.moves[moveIndex]
             
@@ -218,7 +217,7 @@ export class Search {
                 bestMoveThisIteration = move
                 // Keep track of the best move from the root position as well
                 if (ply == 0){
-                    this.bestMove = move
+                    this.bestMove = bestMoveThisIteration
                 }
             }
     
@@ -233,7 +232,7 @@ export class Search {
         // Store final result in Transposition Table
         let flag = ""
         if (alpha <= originalAlpha) flag = "UPPER";
-        else if (alpha >= beta) flag = "LOWER";
+        else if (originalBeta <= alpha) flag = "LOWER";
         else flag = "EXACT";
 
         this.TT.Store(hashHigh, hashLow, ply, depth, alpha, flag, bestMoveThisIteration)

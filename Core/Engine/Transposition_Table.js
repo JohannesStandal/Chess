@@ -1,29 +1,61 @@
-import { mateTreshold } from "../Constants/SearchConstants.js"
+import { mateTreshold, checkMateScore } from "../Constants/SearchConstants.js"
+
+/**
+ * 
+ * TT.read()
+ * 
+ * - hit
+ *   - Stored position has been searched deeper
+ *       mate scaling
+ *       return {all data}
+ *      
+ *   - Needs a deeper search
+ *       return {no hit, bestmove}
+ * 
+ * - no hit
+ * 
+ * return {no hit, no bestmove}
+ * 
+ * 
+ * 
+ * TT.Store() 
+ * 
+ * - hit
+ * 
+ * - no hit
+ * Store all data
+ * 
+ */
+
+
 
 export class Transposition_Table {
-    constructor (mb = 1000){
+    constructor (mb = 64){
         this.SetSizeMB(mb)
+        this.disabled = false
     }
 
     SetSizeMB(mb){
         const bytes = mb * 1024 * 1024
-        const numEntries = Math.floor(bytes / 31)
+        this.numEntries = Math.floor(bytes / 31)
+        
 
-        // find power of two that makes the table big enough
-        this.numEntries = 1
-        while (this.numEntries < numEntries){
-           this.numEntries = this.numEntries << 1
-        }
-        this.numEntries = this.numEntries >> 1
-        // this.numEntries = 1 << 20
-        this.mask = this.numEntries - 1
+        // // find power of two that makes the table big enough
+        // this.numEntries = 1
+        // while (this.numEntries < numEntries){
+        //    this.numEntries = this.numEntries << 1
+        // }
+        // this.numEntries = this.numEntries >> 1
+        // // this.numEntries = 1 << 20
+        // this.mask = this.numEntries - 1
+        
 
         // Initialize arrays
         this.hashHigh = new Array(this.numEntries) // 4 bytes
         this.hashLow  = new Array(this.numEntries) // 4 bytes
 
         this.bestMove = new Array(this.numEntries) // 2 bytes
-        this.depth = new Array(this.numEntries).fill(0)     // 1 bytes
+        this.depth = new Array(this.numEntries).fill(-1)     // 1 bytes
         this.score = new Array(this.numEntries)    // 4 bytes 
         this.flag = new Array(this.numEntries)           // 16 byte
 
@@ -32,14 +64,15 @@ export class Transposition_Table {
     }
 
     Read(high, low, ply, currentDepth){
-        high >>>= 0
-        low >>>= 0
-        const index = high & this.mask
+        if (this.disabled) return {"hit": false, "move": null}
+
+        const index = (high % this.numEntries)
+        // console.log(index)
 
         // Relevant to see if entry is useful
         const ttHigh = this.hashHigh[index]
         const ttLow = this.hashLow[index]
-        const depth = this.depth[index]
+        const storedDepth = this.depth[index]
 
         // Values that describe the position
         const score = this.score[index]
@@ -48,9 +81,9 @@ export class Transposition_Table {
 
         // TT hit
         if (ttHigh == high && ttLow  == low){
-            // Is the current search shallower than the one we stored
+            // Is the current search deeper than the one we stored
             // We can still use the previous bestmove for move ordering
-            if (depth <= currentDepth) return {"hit": false, "move": bestMove} 
+            if (storedDepth < currentDepth) return {"hit": false, "move": bestMove} 
 
             // Checkmate scaling
             let mateScaledScore = score
@@ -78,21 +111,20 @@ export class Transposition_Table {
     }
 
     Store(high, low, ply, currentDepth, score, flag, bestMove){
-        high >>>= 0
-        low >>>= 0
-        
+        if (this.disabled) return
+
         // We dont want to store draws because threefold repetition is history dependent
         if (score == 0) return
 
-        const index = (high >>> 0) & this.mask
-
+        const index = (high % this.numEntries)
+       
         // Relevant to see if entry is useful
         const ttHigh = this.hashHigh[index]
         const ttLow = this.hashLow[index]
-        const depth = this.depth[index]
-
+        const storedDepth = this.depth[index]
+        
         // Entry should not be overwritten
-        if (ttHigh == high && ttLow == low && currentDepth <= depth) return
+        if (ttHigh == high && ttLow == low && currentDepth <= storedDepth) return
 
         // Checkmate scaling
         let mateScaledScore = score
@@ -110,7 +142,5 @@ export class Transposition_Table {
         this.score[index] = mateScaledScore
         this.flag[index] = flag
         this.bestMove[index] = bestMove
-        
-        // console.log("Succsesfull TT store", ply, index)
     }
 }

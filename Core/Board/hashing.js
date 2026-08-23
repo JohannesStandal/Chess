@@ -1,3 +1,4 @@
+import { Piece } from "./piece.js"
 import {
     pieceHashHigh, pieceHashLow, 
     epHashHigh, epHashLow, 
@@ -52,6 +53,7 @@ export class zobristHash {
     }
 
     Remove(piece, squareIndex){
+        if (piece == Piece.none) return
         // Removing a piece from the hash
         const index = piece * 64 + squareIndex
         
