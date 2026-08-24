@@ -1,4 +1,4 @@
-import { Transposition_Table } from "./TT_map.js"
+import { Transposition_Table } from "./Transposition_Table.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
@@ -24,13 +24,19 @@ export class Search {
         console.log("\n New Search ")
         // console.log("TT SIZE BEFORE:", this.TT.table.size)
         // console.log(this.TT)
-        // console.log(this.board.hash)
-        const startHash = this.board.hash.Get64BitHash()
-        // console.log("hash start: ", startHash)
 
-        // console.log("\n Expected TT hit for this search")
-        // console.log("Has entry: ", this.TT.table.has(startHash))
-        // console.log(this.TT.table.get(startHash))
+        // console.log(this.board.hash)
+        // const startHash = this.board.hash.Get64BitHash()
+        // console.log("hash start: ", startHash)
+        // Save old hash
+        const hashStartHigh = this.board.hash.high >>> 0
+        const hashStartlow = this.board.hash.low >>> 0
+
+        // this.TT.SetSizeMB(64)
+
+
+        console.log("\n Expected TT hit for this search")
+        console.log(this.TT.Read(hashStartHigh, hashStartlow, 0, 0))
         
         // start searchtime
         this.timeManager.Start()
@@ -45,7 +51,7 @@ export class Search {
             this.nodeCount = 0
                         
             // search the position
-            const score = this.Negamax(depth, 0, -Infinity, Infinity, 0, true)
+            const score = this.Negamax(depth, 0, -checkMateScore, checkMateScore, 0, true)
             this.totalNodeCount += this.nodeCount
 
             console.log(
@@ -72,7 +78,8 @@ export class Search {
         // console.log("TT SIZE AFTER:", this.TT.table.size)
 
         // console.log("\n root tt entry for next search")
-        // console.log(this.TT.table.get(startHash))
+        // console.log(this.TT.Read(hashStartHigh, hashStartlow, 0, 0))
+        
 
         // In case a depth 1 search we pick the best move from move ordering
         if (this.bestMove == null){
@@ -115,15 +122,15 @@ export class Search {
         }
 
         // Save old hash
-        const hash = this.board.hash.Get64BitHash()
-        
+        const high = this.board.hash.high >>> 0
+        const low = this.board.hash.low >>> 0
 
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
         const originalAlpha = alpha
     
         //transposition table
-        const TT = this.TT.Read(hash, ply, depth)
+        const TT = this.TT.Read(high, low, ply, depth)
         // if (ply == 0){
         //     console.log("Root TT hit: ", TT)
         // }
@@ -153,7 +160,7 @@ export class Search {
 
         // Start quiesence search at leaf nodes
         if (depth == 0){
-            return QuiescenceSearch(this.board, this.timeManager, ply + 1, alpha, beta, this.nodeCount)
+            return QuiescenceSearch(this.board, this.timeManager, ply, alpha, beta, this.nodeCount)
         }
 
         // Generate legal moves
@@ -180,29 +187,30 @@ export class Search {
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
 
-        // // Null move pruning 
-        // const nmpAllowed = (
-        //         doNull     && // Not already in a null move branch
-        //         !inCheck   && // Not in check
-        //         4 <= depth && // Prevents reducing shallow searches
-        //         0 < ply    && // Avoid NMP at root node
-        //         this.board.HasNonPawnMaterial() // Avoid zugswang
-        //     )
+        // Null move pruning 
+        const R = 3
+        const nmpAllowed = (
+                doNull         && // Not already in a null move branch
+                !inCheck       && // Not in check
+                R + 1 <= depth && // Prevents reducing shallow searches
+                0 < ply        && // Avoid NMP at root node
+                this.board.HasNonPawnMaterial() // Avoid zugswang
+            )
         
-        // if (nmpAllowed && false){
-        //     // Search a null move window
-        //     this.board.Make_NullMove()
-        //     const score = - this.Negamax(depth - 4, ply + 1, -beta, -beta + 1, totalExtensions, false)
-        //     this.board.Unmake_NullMove()
+        if (nmpAllowed){
+            // Search a null move window
+            this.board.Make_NullMove()
+            const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
+            this.board.Unmake_NullMove()
 
-        //     // Important exit point for iterative deepening
-        //     if (this.timeManager.cancelSearch) return 0
+            // Important exit point for iterative deepening
+            if (this.timeManager.cancelSearch) return 0
 
-        //     // If the nullmove
-        //     if (beta <= score){
-        //         return beta
-        //     }
-        // }
+            // If the nullmove
+            if (beta <= score){
+                return score
+            }
+        }
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
@@ -228,7 +236,7 @@ export class Search {
                 -beta, 
                 -alpha, 
                 totalExtensions + extensions,
-                true,
+                doNull,
             )
             
             this.board.Unmake_Move(move)
@@ -249,7 +257,7 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= score){
-                this.TT.Store(hash, ply, depth, score, "LOWER", bestMoveThisIteration)
+                this.TT.Store(high, low, ply, depth, score, "LOWER", bestMoveThisIteration)
                 return score
             }       
         }
@@ -260,7 +268,7 @@ export class Search {
         if (alpha <= originalAlpha) flag = "UPPER";
         else flag = "EXACT";
 
-        this.TT.Store(hash, ply, depth, alpha, flag, bestMoveThisIteration)
+        this.TT.Store(high, low, ply, depth, alpha, flag, bestMoveThisIteration)
     
         return alpha
     }
