@@ -13,8 +13,7 @@ export class Search {
         this.MoveGenerator = new MoveGenerator()
         this.timeManager = timeManager
         this.TT = new Transposition_Table()
-        console.log(this.TT)
-
+        
         this.bestMove = null
 
         this.nodeCount = 0
@@ -23,10 +22,21 @@ export class Search {
 
     IterativeDeepening(){
         console.log("\n New Search ")
+        // console.log("TT SIZE BEFORE:", this.TT.table.size)
+        // console.log(this.TT)
+        // console.log(this.board.hash)
+        const startHash = this.board.hash.Get64BitHash()
+        // console.log("hash start: ", startHash)
+
+        // console.log("\n Expected TT hit for this search")
+        // console.log("Has entry: ", this.TT.table.has(startHash))
+        // console.log(this.TT.table.get(startHash))
+        
         // start searchtime
         this.timeManager.Start()
         this.bestMove = null
         this.TT.collisions = 0
+
 
         this.totalNodeCount = 0
         // iterative deepening
@@ -55,13 +65,25 @@ export class Search {
                 break
             }
         }
+
         console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
-        console.log("TT collisions ", this.TT.collisions)
+        // console.log("TT collisions ", this.TT.collisions)
+
+        // console.log("TT SIZE AFTER:", this.TT.table.size)
+
+        // console.log("\n root tt entry for next search")
+        // console.log(this.TT.table.get(startHash))
+
         // In case a depth 1 search we pick the best move from move ordering
         if (this.bestMove == null){
             this.MoveGenerator.GenerateMoves(this.board, 0)
             this.bestMove = this.MoveGenerator.moves[0]
         }
+
+        
+     
+        // console.log("TT SIZE AFTER:", this.TT.table.size)
+        // console.log(this.TT)
         
         return this.bestMove
     }
@@ -94,6 +116,7 @@ export class Search {
 
         // Save old hash
         const hash = this.board.hash.Get64BitHash()
+        
 
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
@@ -101,8 +124,13 @@ export class Search {
     
         //transposition table
         const TT = this.TT.Read(hash, ply, depth)
-
+        // if (ply == 0){
+        //     console.log("Root TT hit: ", TT)
+        // }
         if (TT.hit){
+            if (ply == 0 && this.bestMove == null){
+                this.bestMove = TT.move
+            }
             
             // TT position is accurate
             if (TT.flag == "EXACT"){

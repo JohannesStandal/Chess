@@ -11,7 +11,6 @@ export class Transposition_Table {
     }
 
     Store(hash, ply, depth, score, flag, bestMove){
-        return
         // Avoid storing draws as it threefold repetition is history dependent
         // and TT table is state dependant, so it can cause false positives
         if (score == 0) return
@@ -55,8 +54,7 @@ export class Transposition_Table {
             "move": entry.bestMove,
             "score": this.ScoreFromTT(entry.score, ply),
             "flag": entry.flag
-        }
-        
+        }   
     }
 
     ScoreToTT(score, ply){
