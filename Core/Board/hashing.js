@@ -15,6 +15,8 @@ export class zobristHash {
     }
 
     CreateHash(board){
+        this.high = 0
+        this.low = 0
         // Pieces
         for (let i = 0; i<64; i++){
             const piece = board.square[i]
@@ -37,10 +39,13 @@ export class zobristHash {
 
     Get64BitHash(){
 
-        const high = BigInt(this.high >> 0)
-        const low =  BigInt(this.low >> 0)
+        const high = this.high
+        const low =  this.low
 
-        const hash = low | (high << 32n) 
+        const hashHigh = BigInt(high >>> 0)
+        const hashLow = BigInt(low >>> 0)
+
+        const hash = (hashHigh << 32n) | hashLow 
         return hash
     }
 
