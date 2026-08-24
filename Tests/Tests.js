@@ -2,12 +2,14 @@ import { Board } from "../Core/Board/chessboard.js"
 import { MoveGenerator } from "../Core/MoveGeneration/MoveGenerator.js"
 import { Move } from "../Core/Board/move.js"
 import { Engine } from "../Core/Engine/Engine.js"
+import { TT_tests } from "./TT_tests.js"
 
 export class Tests {
     constructor() {
         this.board = new Board()
         this.moveGenerator = new MoveGenerator()
         this.board.Load_Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        this.TT_tests = new TT_tests()
 
     }
 

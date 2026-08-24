@@ -22,4 +22,6 @@ self.onmessage = (e) => {
     if (type === "RESET"){
         engine.Reset()
     }
+
+    
 }

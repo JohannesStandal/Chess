@@ -31,7 +31,7 @@ import { mateTreshold, checkMateScore } from "../Constants/SearchConstants.js"
 
 export class Transposition_Table {
     constructor (mb = 64){
-        this.SetSizeMB(mb)
+        this.table = new Map()
         this.disabled = false
     }
 
@@ -85,21 +85,12 @@ export class Transposition_Table {
             // We can still use the previous bestmove for move ordering
             if (storedDepth < currentDepth) return {"hit": false, "move": bestMove} 
 
-            // Checkmate scaling
-            let mateScaledScore = score
-            
-            if (mateTreshold < score){    
-                mateScaledScore = score - ply
-            }
-            else if (score < -mateTreshold){
-                mateScaledScore = score + ply 
-            }
 
             // console.log("Succsessfull TT read", ply, index)
             return {
                 "hit": true,
                 "move": bestMove,
-                "score": mateScaledScore,
+                "score": this.ScoreFromTT(score, ply),
                 "flag": flag
             }
         }
@@ -122,25 +113,65 @@ export class Transposition_Table {
         const ttHigh = this.hashHigh[index]
         const ttLow = this.hashLow[index]
         const storedDepth = this.depth[index]
+        const storedScore = this.score[index]
         
-        // Entry should not be overwritten
-        if (ttHigh == high && ttLow == low && currentDepth <= storedDepth) return
+        // Entry already exists. Should it be overwritten
+        if (ttHigh == high && ttLow == low){
 
-        // Checkmate scaling
-        let mateScaledScore = score
+            // Current search is shallower than the one we stored
+            if (currentDepth <= storedDepth) return
+            
+            // Stored score is a shallower mate score
+            const storeMateDistance = this.MateInPly(storedScore)
+            const currentMateDistance = this.MateInPly(score)
 
-        if (mateTreshold < mateScaledScore)
-            mateScaledScore += ply
-        else if (mateScaledScore < -mateTreshold)
-            mateScaledScore -= ply
+            if (storeMateDistance < currentMateDistance) return
+            
+        }
+        
+        //
 
+        
         // Store entry
         this.hashHigh[index] = high
         this.hashLow[index] = low
         this.depth[index] = currentDepth
 
-        this.score[index] = mateScaledScore
+        this.score[index] = this.ScoreToTT(score, ply)
         this.flag[index] = flag
         this.bestMove[index] = bestMove
+    }
+
+    ScoreToTT(score, ply){
+        // Checkmate scaling
+        if (mateTreshold < score)
+            return score + ply
+        else if (score < -mateTreshold)
+            return score - ply
+
+        return score
+
+    }
+
+    ScoreFromTT(score, ply){
+        // Checkmate scaling
+        if (mateTreshold < score)
+            return score - ply
+        else if (score < -mateTreshold)
+            return score + ply
+
+        return score
+    }
+
+    MateInPly(score){
+        if (mateTreshold < score){
+            return checkMateScore - score
+        }
+        
+        if (score < -mateTreshold){
+            return checkMateScore + score
+        }
+
+        return 100000
     }
 }

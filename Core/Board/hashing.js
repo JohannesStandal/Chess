@@ -36,10 +36,11 @@ export class zobristHash {
     }
 
     Get64BitHash(){
-        const high = BigInt(this.high)
-        const low = BigInt(this.low)
 
-        const hash = (high << 32) | low 
+        const high = BigInt(this.high >> 0)
+        const low =  BigInt(this.low >> 0)
+
+        const hash = low | (high << 32n) 
         return hash
     }
 

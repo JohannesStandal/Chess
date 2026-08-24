@@ -1,4 +1,4 @@
-import { Transposition_Table } from "./Transposition_Table.js"
+import { Transposition_Table } from "./TT_map.js"
 import { ChessHelper } from "../Utils/Chess_Helper.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
@@ -93,16 +93,14 @@ export class Search {
         }
 
         // Save old hash
-        const hashHigh = (this.board.hash.high >>> 0)
-        const hashLow  = (this.board.hash.low  >>> 0)
-        
+        const hash = this.board.hash.Get64BitHash()
+
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
         const originalAlpha = alpha
-        const originalBeta = beta
-
+    
         //transposition table
-        const TT = this.TT.Read(hashHigh, hashLow, ply, depth)
+        const TT = this.TT.Read(hash, ply, depth)
 
         if (TT.hit){
             
@@ -140,7 +138,7 @@ export class Search {
         if (numMoves == 0){    
             //Checkmate
             if (inCheck){
-                return -checkMateScore + ply
+                return -(checkMateScore - ply)
             }
             
             //Stalemate
@@ -210,7 +208,7 @@ export class Search {
             // exit point for iterative deepening
             if (this.timeManager.cancelSearch) return 0
 
-            // If the best possible outcome exceeds precious search results, overwrite
+            // If the best possible outcome exceeds previous search results, overwrite
             // the best move and the best score in this position
             if (alpha < score){
                 alpha = score
@@ -223,7 +221,7 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= score){
-                this.TT.Store(hashHigh, hashLow, ply, depth, score, "LOWER", bestMoveThisIteration)
+                this.TT.Store(hash, ply, depth, score, "LOWER", bestMoveThisIteration)
                 return score
             }       
         }
@@ -232,10 +230,9 @@ export class Search {
         // Store final result in Transposition Table
         let flag = ""
         if (alpha <= originalAlpha) flag = "UPPER";
-        else if (originalBeta <= alpha) flag = "LOWER";
         else flag = "EXACT";
 
-        this.TT.Store(hashHigh, hashLow, ply, depth, alpha, flag, bestMoveThisIteration)
+        this.TT.Store(hash, ply, depth, alpha, flag, bestMoveThisIteration)
     
         return alpha
     }
