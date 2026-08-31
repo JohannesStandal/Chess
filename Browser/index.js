@@ -16,7 +16,7 @@ import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
 export const chess = new Chess()
 
 export var gameData = {
-    playAsWhite: true, //false betyr at AI speler
+    playAsWhite: !true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
     engineMakeMove: true, 
     showSquareIndexes: false,
@@ -71,6 +71,7 @@ window.UndoLastMove = UndoLastMove
 window.tests = tests
 window.gameData = gameData
 window.RunEngine = RunEngine
+window.PVS = PrincipleVariation
 
 window.chess = chess
 
@@ -92,7 +93,17 @@ function RunEngine(){
         fen: chess.startFen,
         moves: chess.playedMoves,
     })
+
 }
+
+
+function PrincipleVariation(){
+    engine.postMessage({
+        type: "PVS",
+        fen: chess.startFen,
+        moves: chess.playedMoves,
+    })
+} 
 
 
 
@@ -124,7 +135,10 @@ export function GameLoop(){
     }
     
     
-    gameData.playerTurn = (gameData.playAsWhite && chess.board.white_To_Move) || (gameData.playAsBlack && ! chess.board.white_To_Move) 
+    gameData.playerTurn = (
+        (gameData.playAsWhite && chess.board.white_To_Move) || 
+        (gameData.playAsBlack && ! chess.board.white_To_Move)
+    ) 
    
     if (gameData.playerTurn){
         
@@ -135,8 +149,8 @@ export function GameLoop(){
         },300)
     }
 }
-
-StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1")
+StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1")
+// StartGame("8/8/6K1/8/5k2/8/8/4r3 b - - 0 1")
 
 // StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
 // StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")

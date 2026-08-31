@@ -20,6 +20,93 @@ export class Search {
         this.totalNodeCount = 0
     }
 
+    GetPrincipalVariations(depth){
+        const variations = []
+        console.log(this.TT)
+        
+
+        // Generate every move
+        this.MoveGenerator.GenerateMoves(this.board, 0)
+
+        // Get indexes from the move array
+        const numMoves = this.MoveGenerator.count
+
+        const moveStart = this.MoveGenerator.GetMoveIndex(0, 0)
+        const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, 0)
+
+        for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
+            const move = this.MoveGenerator.moves[moveIndex]
+            const uciMove = Move.ToUCI(move)
+
+            const line = []
+            const TTentries = []
+        
+            line.push(uciMove)
+
+
+            this.board.Make_Move(move)
+
+            // Get hash
+            const high = this.board.hash.high >>> 0
+            const low = this.board.hash.low >>> 0
+
+            // Read positon from TT
+            const TT = this.TT.Read(high, low, 1, 0)
+
+           
+
+            // If position doesnt exist we have no PVS
+            if (TT.hit == false){
+                this.board.Unmake_Move(move)
+                console.log("Variation from", uciMove,  " has never been explored")
+                continue
+            }
+            this.GetPV(line, TTentries, depth)
+
+            this.board.Unmake_Move(move)
+
+            variations.push({
+                score: -TT.score,
+                moves: line,
+                TTentries: TTentries,
+            })
+
+            TTentries.forEach(entry => {
+                entry.move = Move.ToUCI(entry.move)
+            });
+
+            break
+        }
+        // Sort variations
+        variations.sort((a, b) => (a.score < b.score) ? 1 : -1)
+        console.log(variations)
+        return variations
+    }
+
+    GetPV(variaton, TTentries, depth){
+        // console.log(variaton)
+        // Get hash
+        const high = this.board.hash.high >>> 0
+        const low = this.board.hash.low >>> 0
+
+        const TT = this.TT.Read(high, low, 0, 0)
+
+        
+        // console.log(TT)
+        if (!TT.hit || depth == 0){
+            // console.log("No hit return")
+            return
+        }
+        
+        const uciMove = Move.ToUCI(TT.move)
+        variaton.push(uciMove)
+        TTentries.push(TT)
+
+        this.board.Make_Move(TT.move)
+        this.GetPV(variaton, TTentries, depth - 1)
+        this.board.Unmake_Move(TT.move)
+    }
+
     IterativeDeepening(){
         console.log("\n New Search ")
         // console.log("TT SIZE BEFORE:", this.TT.table.size)
@@ -128,16 +215,18 @@ export class Search {
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
         const originalAlpha = alpha
-    
+        const originalBeta = beta
+
         //transposition table
         const TT = this.TT.Read(high, low, ply, depth)
-        // if (ply == 0){
-        //     console.log("Root TT hit: ", TT)
+        
+        // // Store TT move as the best move
+        // if (ply == 0 && this.bestMove == null){
+        //     this.bestMove = TT.move
         // }
-        if (TT.hit){
-            if (ply == 0 && this.bestMove == null){
-                this.bestMove = TT.move
-            }
+        
+        if (TT.hit && ply != 0){
+            
             
             // TT position is accurate
             if (TT.flag == "EXACT"){
@@ -145,15 +234,10 @@ export class Search {
             }
 
             // update upper or lower bound
-            if (TT.flag == "UPPER"){
-                beta = Math.min(beta, TT.score)
+            if (TT.flag == "UPPER" && TT.score <= alpha){
+                return TT.score
             }
-            else if (TT.flag == "LOWER"){
-                alpha = Math.max(alpha, TT.score)
-            }
-
-            // early cutoff
-            if (beta <= alpha){
+            else if (TT.flag == "LOWER" && TT.score >= beta){
                 return TT.score
             }
         }
@@ -187,33 +271,34 @@ export class Search {
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
 
-        // Null move pruning 
-        const R = 3
-        const nmpAllowed = (
-                doNull         && // Not already in a null move branch
-                !inCheck       && // Not in check
-                R + 1 <= depth && // Prevents reducing shallow searches
-                0 < ply        && // Avoid NMP at root node
-                this.board.HasNonPawnMaterial() // Avoid zugswang
-            )
+        // // Null move pruning 
+        // const R = 3
+        // const nmpAllowed = (
+        //         doNull         && // Not already in a null move branch
+        //         !inCheck       && // Not in check
+        //         R + 1 <= depth && // Prevents reducing shallow searches
+        //         0 < ply        && // Avoid NMP at root node
+        //         this.board.HasNonPawnMaterial() // Avoid zugswang
+        //     )
         
-        if (nmpAllowed){
-            // Search a null move window
-            this.board.Make_NullMove()
-            const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
-            this.board.Unmake_NullMove()
+        // if (nmpAllowed){
+        //     // Search a null move window
+        //     this.board.Make_NullMove()
+        //     const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
+        //     this.board.Unmake_NullMove()
 
-            // Important exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return 0
+        //     // Important exit point for iterative deepening
+        //     if (this.timeManager.cancelSearch) return 0
 
-            // If the nullmove
-            if (beta <= score){
-                return score
-            }
-        }
+        //     // If the nullmove
+        //     if (beta <= score){
+        //         return score
+        //     }
+        // }
     
         // Iterate over every legal move
         let bestMoveThisIteration = null
+        let bestScoreThisIteration = -checkMateScore
         
         // Get indexes from the move array
         const moveStart = this.MoveGenerator.GetMoveIndex(0, ply)
@@ -244,20 +329,24 @@ export class Search {
             // exit point for iterative deepening
             if (this.timeManager.cancelSearch) return 0
 
-            // If the best possible outcome exceeds previous search results, overwrite
-            // the best move and the best score in this position
-            if (alpha < score){
-                alpha = score
+            // Track best score and move
+            if (bestScoreThisIteration < score){
+                bestScoreThisIteration = score
                 bestMoveThisIteration = move
+
                 // Keep track of the best move from the root position as well
                 if (ply == 0){
                     this.bestMove = bestMoveThisIteration
                 }
             }
+
+            // If the best possible outcome exceeds previous search results, overwrite
+            // the best move and the best score in this position
+            alpha = Math.max(alpha, score)
     
             // lowerbound fail high node
             if (beta <= score){
-                this.TT.Store(high, low, ply, depth, score, "LOWER", bestMoveThisIteration)
+                this.TT.Store(high, low, ply, depth, bestScoreThisIteration , "LOWER", bestMoveThisIteration)
                 return score
             }       
         }
@@ -265,10 +354,11 @@ export class Search {
         
         // Store final result in Transposition Table
         let flag = ""
-        if (alpha <= originalAlpha) flag = "UPPER";
-        else flag = "EXACT";
+        if (alpha <= originalAlpha) flag = "UPPER"
+        else if (alpha >= originalBeta) flag = "LOWER"
+        else flag = "EXACT"
 
-        this.TT.Store(high, low, ply, depth, alpha, flag, bestMoveThisIteration)
+        this.TT.Store(high, low, ply, depth, bestScoreThisIteration, flag, bestMoveThisIteration)
     
         return alpha
     }

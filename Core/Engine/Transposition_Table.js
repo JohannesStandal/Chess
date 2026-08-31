@@ -31,8 +31,8 @@ import { mateTreshold, checkMateScore } from "../Constants/SearchConstants.js"
 
 export class Transposition_Table {
     constructor (mb = 64){
-        this.table = new Map()
         this.disabled = false
+        this.SetSizeMB(64)
     }
 
     SetSizeMB(mb){
@@ -91,7 +91,8 @@ export class Transposition_Table {
                 "hit": true,
                 "move": bestMove,
                 "score": this.ScoreFromTT(score, ply),
-                "flag": flag
+                "flag": flag,
+                "depth": storedDepth
             }
         }
         if (ttHigh != undefined) this.collisions ++
@@ -115,22 +116,19 @@ export class Transposition_Table {
         const storedDepth = this.depth[index]
         const storedScore = this.score[index]
         
-        // Entry already exists. Should it be overwritten
-        if (ttHigh == high && ttLow == low){
+        // // Entry already exists. Should it be overwritten
+        // if (ttHigh == high && ttLow == low){
 
-            // Current search is shallower than the one we stored
-            if (currentDepth <= storedDepth) return
+        //     // Current search is shallower than the one we stored
+        //     if (currentDepth <= storedDepth) return
             
-            // Stored score is a shallower mate score
-            const storeMateDistance = this.MateInPly(storedScore)
-            const currentMateDistance = this.MateInPly(score)
+        //     // // Stored score is a shallower mate score
+        //     // const storeMateDistance = this.MateInPly(storedScore)
+        //     // const currentMateDistance = this.MateInPly(this.ScoreToTT(score))
 
-            if (storeMateDistance < currentMateDistance) return
+        //     // if (storeMateDistance < currentMateDistance) return
             
-        }
-        
-        //
-
+        // }
         
         // Store entry
         this.hashHigh[index] = high

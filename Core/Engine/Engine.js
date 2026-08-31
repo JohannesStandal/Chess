@@ -77,11 +77,16 @@ export class Engine {
         if (depth == 0){
             return this.search.IterativeDeepening()
         }
+
         
         return this.search.fixedDepthSearch(depth)
     }
 
     Stop(){
         this.timeManager.Stop()
+    }
+
+    PVS(){
+        this.search.GetPrincipalVariations(10)
     }
 }
