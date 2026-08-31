@@ -81,12 +81,6 @@ export class Transposition_Table {
 
         // TT hit
         if (ttHigh == high && ttLow  == low){
-            // Is the current search deeper than the one we stored
-            // We can still use the previous bestmove for move ordering
-            if (storedDepth < currentDepth) return {"hit": false, "move": bestMove} 
-
-
-            // console.log("Succsessfull TT read", ply, index)
             return {
                 "hit": true,
                 "move": bestMove,
@@ -95,8 +89,7 @@ export class Transposition_Table {
                 "depth": storedDepth
             }
         }
-        if (ttHigh != undefined) this.collisions ++
-
+        
         return {
             "hit": false, "move": null
         }
@@ -110,6 +103,8 @@ export class Transposition_Table {
 
         const index = (high % this.numEntries)
        
+        // this part is temporarily disabled for debugging
+        
         // Relevant to see if entry is useful
         const ttHigh = this.hashHigh[index]
         const ttLow = this.hashLow[index]

@@ -93,7 +93,7 @@ export class Search {
 
         
         // console.log(TT)
-        if (!TT.hit || depth == 0){
+        if (!TT.hit  || depth == 0){
             // console.log("No hit return")
             return
         }
@@ -108,6 +108,7 @@ export class Search {
     }
 
     IterativeDeepening(){
+        // this.TT.SetSizeMB(64)
         console.log("\n New Search ")
         // console.log("TT SIZE BEFORE:", this.TT.table.size)
         // console.log(this.TT)
@@ -129,7 +130,7 @@ export class Search {
         this.timeManager.Start()
         this.bestMove = null
         this.TT.collisions = 0
-
+    
 
         this.totalNodeCount = 0
         // iterative deepening
@@ -160,6 +161,7 @@ export class Search {
         }
 
         console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
+
         // console.log("TT collisions ", this.TT.collisions)
 
         // console.log("TT SIZE AFTER:", this.TT.table.size)
@@ -174,8 +176,10 @@ export class Search {
             this.bestMove = this.MoveGenerator.moves[0]
         }
 
-        
-     
+        const line = []
+
+        this.GetPV(line, [], 10)
+        console.log(line)
         // console.log("TT SIZE AFTER:", this.TT.table.size)
         // console.log(this.TT)
         
@@ -215,31 +219,24 @@ export class Search {
         // Store the original lowerbound value before starting the search
         // This will be used later when storing results in the transposition table
         const originalAlpha = alpha
-        const originalBeta = beta
-
+        
         //transposition table
         const TT = this.TT.Read(high, low, ply, depth)
         
-        // // Store TT move as the best move
-        // if (ply == 0 && this.bestMove == null){
-        //     this.bestMove = TT.move
-        // }
-        
-        if (TT.hit && ply != 0){
-            
-            
+        if (TT.hit && TT.depth >= depth && ply != 0){
             // TT position is accurate
             if (TT.flag == "EXACT"){
                 return TT.score
             }
 
             // update upper or lower bound
-            if (TT.flag == "UPPER" && TT.score <= alpha){
-                return TT.score
-            }
             else if (TT.flag == "LOWER" && TT.score >= beta){
                 return TT.score
             }
+            else if (TT.flag == "UPPER" && TT.score <= alpha){
+                return TT.score
+            }
+            
         }
 
         // Start quiesence search at leaf nodes
@@ -297,8 +294,8 @@ export class Search {
         // }
     
         // Iterate over every legal move
-        let bestMoveThisIteration = null
-        let bestScoreThisIteration = -checkMateScore
+        let bestMove = null
+        let bestScore = -checkMateScore
         
         // Get indexes from the move array
         const moveStart = this.MoveGenerator.GetMoveIndex(0, ply)
@@ -330,36 +327,36 @@ export class Search {
             if (this.timeManager.cancelSearch) return 0
 
             // Track best score and move
-            if (bestScoreThisIteration < score){
-                bestScoreThisIteration = score
-                bestMoveThisIteration = move
-
-                // Keep track of the best move from the root position as well
-                if (ply == 0){
-                    this.bestMove = bestMoveThisIteration
-                }
+            if (bestScore < score){
+                bestScore = score
+                bestMove  = move
             }
 
-            // If the best possible outcome exceeds previous search results, overwrite
-            // the best move and the best score in this position
+            
             alpha = Math.max(alpha, score)
     
             // lowerbound fail high node
-            if (beta <= score){
-                this.TT.Store(high, low, ply, depth, bestScoreThisIteration , "LOWER", bestMoveThisIteration)
-                return score
+            if (beta <= alpha){
+                // this.TT.Store(high, low, ply, depth, beta, "BETA")
+                break
             }       
         }
+
+        if (ply == 0){
+            this.bestMove = bestMove
+        }
+        
+        
         
         
         // Store final result in Transposition Table
         let flag = ""
-        if (alpha <= originalAlpha) flag = "UPPER"
-        else if (alpha >= originalBeta) flag = "LOWER"
+        if (bestScore <= originalAlpha) flag = "UPPER"
+        else if (bestScore >= beta) flag = "LOWER"
         else flag = "EXACT"
 
-        this.TT.Store(high, low, ply, depth, bestScoreThisIteration, flag, bestMoveThisIteration)
+        this.TT.Store(high, low, ply, depth, bestScore, flag, bestMove)
     
-        return alpha
+        return bestScore
     }
 }
