@@ -18,6 +18,7 @@ export const chess = new Chess()
 export var gameData = {
     playAsWhite: true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
+    engineMakeMove: true, 
     showSquareIndexes: false,
     playerTurn: false,
     active: false, 
@@ -62,24 +63,47 @@ const tests = new Tests()
 window.StartGame = StartGame
 window.EndGame = EndGame
 window.Rematch = Rematch
-window.RenderScene = RenderScene
-window.RenderBoard = RenderBoard
 window.FlipBoard = FlipBoard
 window.UndoLastMove = UndoLastMove
+// window.RenderScene = RenderScene
+// window.RenderBoard = RenderBoard
+
 window.tests = tests
 window.gameData = gameData
+window.RunEngine = RunEngine
+window.PVS = PrincipleVariation
 
 window.chess = chess
 
 const engine = new Worker("./Engine.worker.js", {type: "module"})
+
+window.engine = engine
+
 engine.onmessage = (e) =>{
         if (! gameData.active) return
         const move = e.data.move
         console.log("Engine wants to play the move:", Move.ToUCI(move))
-        Make_Move_On_Board(move)
+        if (gameData.engineMakeMove) Make_Move_On_Board(move)
     }
-window.engine = engine
-tests.board = chess.board
+
+function RunEngine(){
+    // console.log("run engine. Fen + moves ", chess.startFen, chess.playedMoves)
+    engine.postMessage({
+        type: "SEARCH",
+        fen: chess.startFen,
+        moves: chess.playedMoves,
+    })
+
+}
+
+
+function PrincipleVariation(){
+    engine.postMessage({
+        type: "PVS",
+        fen: chess.startFen,
+        moves: chess.playedMoves,
+    })
+} 
 
 
 
@@ -111,28 +135,29 @@ export function GameLoop(){
     }
     
     
-    gameData.playerTurn = (gameData.playAsWhite && chess.board.white_To_Move) || (gameData.playAsBlack && ! chess.board.white_To_Move) 
+    gameData.playerTurn = (
+        (gameData.playAsWhite && chess.board.white_To_Move) || 
+        (gameData.playAsBlack && ! chess.board.white_To_Move)
+    ) 
    
     if (gameData.playerTurn){
         
     }
     else {
         setTimeout(()=>{
-            engine.postMessage({
-                type: "SEARCH",
-                fen: chess.startFen,
-                moves: chess.playedMoves,
-            })
+            RunEngine()
         },300)
     }
 }
 
-StartGame()
+// StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1") // Rook vs king
+StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1") // Pawn Lock
+// StartGame("8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1")
 
-//StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
-//StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
-//StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
-
+// StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
+// StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
+// StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")
+// StartGame("8/3K4/8/8/8/3k4/3r4/3r4 b - - 0 1")
 
 
 /**
@@ -156,6 +181,9 @@ StartGame()
  *  - sacrifice bishop for promotion: "8/2B2kbp/6p1/5p2/8/1pP4P/1P3PP1/6K1 b - - 0 1"
  *  - Stop pawn promotion with queen: "8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1"
  *  - Pawn lock: "8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1"
+ * 
+ * tests:
+ *  - Mate in 2: "r1bq2r1/b4pk1/p1pp1p2/1p2pP2/1P2P1PB/3P4/1PPQ2P1/R3K2R w KQ -"
  *
  */
 //StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1")

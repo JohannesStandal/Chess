@@ -8,11 +8,12 @@ import { Move } from "../Board/move.js"
 
 const moveGenerator = new MoveGenerator()
 
-export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount){
+export function QuiescenceSearch(board, manager, ply, alpha, beta){
     // Genererer bare trekk som er angrep heilt til ingen brikker kan bli kapra lenger.
     // https://www.chessprogramming.org/Quiescence_Search
-    if (timeManager.ExceededTimeLimit()) return 0
-    nodeCount ++
+    if (manager.ExceededTimeLimit()) return 0
+    manager.nodeCount ++
+    manager.SetPlyMax(ply)
     
     // move generation
     let moves;
@@ -51,10 +52,10 @@ export function QuiescenceSearch(board, timeManager, ply, alpha, beta, nodeCount
         const move = moveGenerator.moves[moveIndex]
         
         board.Make_Move(move)
-        let score = - QuiescenceSearch(board, timeManager, ply + 1, -beta, -alpha, nodeCount)
+        let score = - QuiescenceSearch(board, manager, ply + 1, -beta, -alpha)
         board.Unmake_Move(move)
 
-        if (timeManager.cancelSearch) return 0
+        if (manager.cancelSearch) return 0
 
         if (score >= beta) return score
         alpha = Math.max(alpha, score)

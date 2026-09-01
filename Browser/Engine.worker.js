@@ -15,6 +15,16 @@ self.onmessage = (e) => {
         const move = engine.Bestmove()
         self.postMessage({move})
     }
+
+    if (type === "PVS"){
+        // Reconstruct position
+        engine.SetPosition(fen)
+        engine.PlayedMoves(moves)
+
+        // Log the PVS
+        engine.PVS()
+    }
+
     if (type === "STOP"){
         engine.Stop()
     }
@@ -22,4 +32,6 @@ self.onmessage = (e) => {
     if (type === "RESET"){
         engine.Reset()
     }
+
+    
 }

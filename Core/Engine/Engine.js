@@ -32,16 +32,16 @@ TODO:
 
 import { Board } from "../Board/chessboard.js"
 import { Search } from "./Search.js"
-import { TimeManager } from "./TimeManager.js"
+import { SearchManager } from "./SearchManager.js"
 // import { openingBook } from "../Openings/openingBook.js"
 
 export class Engine {
     constructor(thinkingTime=1000){
         this.board = new Board()
         this.book = false
-        this.timeManager = new TimeManager(thinkingTime)
+        this.manager = new SearchManager(thinkingTime)
 
-        this.search = new Search(this.board, this.timeManager)
+        this.search = new Search(this.board, this.manager)
     }
 
     Reset(){
@@ -59,10 +59,11 @@ export class Engine {
     }
 
     ThinkingTime(thinkingTime){
-        this.timeManager.SetTimeLimit(thinkingTime)
+        this.manager.SetTimeLimit(thinkingTime)
     }
 
     Bestmove(depth = 0){
+        this.manager.Reset()
 
         if (this.book){
             const hash = this.board.zobrist.hash
@@ -75,13 +76,21 @@ export class Engine {
         }
 
         if (depth == 0){
-            return this.search.IterativeDeepening()
+            const move = this.search.IterativeDeepening()
+            this.PVS() 
+            return move
         }
+
         
         return this.search.fixedDepthSearch(depth)
     }
 
     Stop(){
-        this.timeManager.Stop()
+        this.manager.Stop()
+    }
+
+    PVS(){
+        const line = this.search.GetPrincipalVariation()
+        console.log(line)
     }
 }

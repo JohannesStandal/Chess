@@ -1,3 +1,4 @@
+import { Piece } from "./piece.js"
 import {
     pieceHashHigh, pieceHashLow, 
     epHashHigh, epHashLow, 
@@ -14,6 +15,8 @@ export class zobristHash {
     }
 
     CreateHash(board){
+        this.high = 0
+        this.low = 0
         // Pieces
         for (let i = 0; i<64; i++){
             const piece = board.square[i]
@@ -35,9 +38,15 @@ export class zobristHash {
     }
 
     Get64BitHash(){
-        const high = this.high >>> 0
-        const low = this.low >>> 0
-        return `${high}${low}`
+
+        const high = this.high
+        const low =  this.low
+
+        const hashHigh = BigInt(high >>> 0)
+        const hashLow = BigInt(low >>> 0)
+
+        const hash = (hashHigh << 32n) | hashLow 
+        return hash
     }
 
     // Add and remove does the same, but this naming makes it far more intuitive to use
@@ -50,6 +59,7 @@ export class zobristHash {
     }
 
     Remove(piece, squareIndex){
+        if (piece == Piece.none) return
         // Removing a piece from the hash
         const index = piece * 64 + squareIndex
         
