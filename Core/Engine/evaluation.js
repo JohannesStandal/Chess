@@ -50,6 +50,7 @@ export class Evaluation {
         const blackMaterial = this.countMaterial(board, false)
 
         const materialScore = whiteMaterial - blackMaterial
+        // console.log("mat: ", materialScore)
 
         // Accumulate the scores
         const generalScore = this.generalScore(board)
@@ -171,11 +172,11 @@ export class Evaluation {
         // Count the total material on the board
         let materialScore = 0
 
-        materialScore += board.pl.Count(Piece.pawn | color) * pawnValue
+        materialScore += board.pl.Count(Piece.pawn   | color) * pawnValue
         materialScore += board.pl.Count(Piece.knight | color) * knightValue
         materialScore += board.pl.Count(Piece.bishop | color) * bishopValue
-        materialScore += board.pl.Count(Piece.rook | color) * rookValue
-        materialScore += board.pl.Count(Piece.queen | color) * queenValue
+        materialScore += board.pl.Count(Piece.rook   | color) * rookValue
+        materialScore += board.pl.Count(Piece.queen  | color) * queenValue
 
         return materialScore
     }
@@ -297,25 +298,30 @@ export class Evaluation {
     
     // Mop up for endgame
     static mopUp(board, materialScore){
-        const mopUpWeigth = 30
+        const mopUpWeigth = 50
 
         let score = 0
 
         // white advantage
         if (300 < materialScore){
             score += this.mopUpScore(board.whiteKingSquare, board.blackKingSquare)
+            // console.log("white")
         }
         
         // black advantage
         if (materialScore < -300){
             score -= this.mopUpScore(board.blackKingSquare, board.whiteKingSquare)
+            // console.log("black")
         }
-
+        // console.log(score * mopUpWeigth)
         return score * mopUpWeigth
     }
 
     static mopUpScore(chasingKing, runningKing){
         let score = 0
+
+        const distanceToCenterWeight = 1
+        const kingDistanceWeight = 2
 
         // The king doing the chasing
         const chasingKingRank = ChessHelper.RankIndex(chasingKing)
@@ -331,7 +337,7 @@ export class Evaluation {
 
         // Give an advantage for manhattan distance to center
         const runningKingDstToCenter = (runningKingDstToCenterRank + runningKingDstToCenterFile)
-        score += runningKingDstToCenter / 7
+        score += (runningKingDstToCenter / 7) * distanceToCenterWeight
         
         
         // Encourage closing manhattan distance between the kings
@@ -339,7 +345,7 @@ export class Evaluation {
         const FileDistance = Math.abs(chasingKingFile - runningKingFile) 
 
         const kingDistance = FileDistance + RankDistance
-        score += (14 - kingDistance) / 14
+        score += ((14 - kingDistance) / 14) * kingDistanceWeight
 
         return score
     }
