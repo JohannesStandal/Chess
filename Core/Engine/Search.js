@@ -7,82 +7,17 @@ import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
 import { AttackDetector } from "../MoveGeneration/Attack.js"
 
 export class Search {
-    constructor(board, timeManager){
+    constructor(board, searchManager){
         this.board = board
         this.MoveGenerator = new MoveGenerator()
-        this.timeManager = timeManager
+        this.manager = searchManager
         this.TT = new Transposition_Table()
         
         this.bestMove = null
-
-        this.nodeCount = 0
         this.totalNodeCount = 0
     }
 
-    GetPrincipalVariations(depth){
-        const variations = []
-        console.log(this.TT)
-        
-
-        // Generate every move
-        this.MoveGenerator.GenerateMoves(this.board, 0)
-
-        // Get indexes from the move array
-        const numMoves = this.MoveGenerator.count
-
-        const moveStart = this.MoveGenerator.GetMoveIndex(0, 0)
-        const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, 0)
-
-        for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
-            const move = this.MoveGenerator.moves[moveIndex]
-            const uciMove = Move.ToUCI(move)
-
-            const line = []
-            const TTentries = []
-        
-            line.push(uciMove)
-
-
-            this.board.Make_Move(move)
-
-            // Get hash
-            const high = this.board.hash.high >>> 0
-            const low = this.board.hash.low >>> 0
-
-            // Read positon from TT
-            const TT = this.TT.Read(high, low, 1, 0)
-
-           
-
-            // If position doesnt exist we have no PVS
-            if (TT.hit == false){
-                this.board.Unmake_Move(move)
-                console.log("Variation from", uciMove,  " has never been explored")
-                continue
-            }
-            this.GetPV(line, TTentries, depth)
-
-            this.board.Unmake_Move(move)
-
-            variations.push({
-                score: -TT.score,
-                moves: line,
-                TTentries: TTentries,
-            })
-
-            TTentries.forEach(entry => {
-                entry.move = Move.ToUCI(entry.move)
-            });
-
-            break
-        }
-        // Sort variations
-        variations.sort((a, b) => (a.score < b.score) ? 1 : -1)
-        console.log(variations)
-        return variations
-    }
-
-    GetPV(variaton, TTentries, depth){
+    GetPrincipalVariation(variaton = [], depth=16){
         // console.log(variaton)
         // Get hash
         const high = this.board.hash.high >>> 0
@@ -90,7 +25,6 @@ export class Search {
 
         const TT = this.TT.Read(high, low, 0, 0)
 
-        
         // console.log(TT)
         if (!TT.hit  || depth == 0){
             // console.log("No hit return")
@@ -99,80 +33,64 @@ export class Search {
         
         const uciMove = Move.ToUCI(TT.move)
         variaton.push(uciMove)
-        TTentries.push(TT)
-
+        
         this.board.Make_Move(TT.move)
-        this.GetPV(variaton, TTentries, depth - 1)
+        this.GetPrincipalVariation(variaton, depth - 1)
         this.board.Unmake_Move(TT.move)
+
+        return variaton
     }
 
     IterativeDeepening(){
-        // this.TT.SetSizeMB(64)
         console.log("\n New Search ")
-        // console.log("TT SIZE BEFORE:", this.TT.table.size)
-        // console.log(this.TT)
-
-        // console.log(this.board.hash)
-        // const startHash = this.board.hash.Get64BitHash()
-        // console.log("hash start: ", startHash)
-        // Save old hash
+        
         const hashStartHigh = this.board.hash.high >>> 0
         const hashStartlow = this.board.hash.low >>> 0
 
-        // this.TT.SetSizeMB(64)
-
-
-        console.log("\n Expected TT hit for this search")
-        console.log(this.TT.Read(hashStartHigh, hashStartlow, 0, 0))
+        // console.log("\n Expected TT hit for this search")
+        // console.log(this.TT.Read(hashStartHigh, hashStartlow, 0, 0))
         
         // start searchtime
-        this.timeManager.Start()
+        this.manager.Start()
         this.bestMove = null
-        this.TT.collisions = 0
     
         let bestScore;
 
         this.totalNodeCount = 0
+
+
         // iterative deepening
-        for (let depth = 1; depth < maxSearchDepth; depth++){
-            // tracking nodes too see improvement
-            this.nodeCount = 0
-                        
+        for (let depth = 1; depth < maxSearchDepth; depth++){        
             // search the position
             const score = this.Negamax(depth, 0, -checkMateScore, checkMateScore, 0, true)
-            this.totalNodeCount += this.nodeCount
+            this.totalNodeCount += this.manager.nodeCount
 
             console.log(
                 "depth: ", depth, 
                 "Bestmove: ", Move.ToUCI(this.bestMove), 
-                "Nodes: ", this.nodeCount, 
+                "Nodes: ", this.manager.nodeCount, 
                 "Score: ", Math.round(score)
             )
 
             
             // stop search if time limit is exceeded
-            if (this.timeManager.cancelSearch){
+            if (this.manager.cancelSearch){
                 break
             }
+
+            this.manager.SetPlyMin(depth)
             bestScore = score
         }
 
-
-        console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
+        console.log(`Finished search ${this.manager.plyMin}/${this.manager.plyMax}`)
+        console.log(this.totalNodeCount, " searced in ", this.manager.timeLimitMS, "ms")
 
         if (mateTreshold <= bestScore){
                 const mateDepth = checkMateScore - bestScore
                 console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
-                this.timeManager.Stop()
+                this.manager.Stop()
             }
 
-        // console.log("TT collisions ", this.TT.collisions)
-
-        // console.log("TT SIZE AFTER:", this.TT.table.size)
-
-        // console.log("\n root tt entry for next search")
-        // console.log(this.TT.Read(hashStartHigh, hashStartlow, 0, 0))
-        
 
         // In case a depth 1 search we pick the best move from move ordering
         if (this.bestMove == null){
@@ -180,12 +98,6 @@ export class Search {
             this.bestMove = this.MoveGenerator.moves[0]
         }
 
-        const line = []
-
-        this.GetPV(line, [], 10)
-        console.log(line)
-        // console.log("TT SIZE AFTER:", this.TT.table.size)
-        // console.log(this.TT)
         
         return this.bestMove
     }
@@ -206,10 +118,10 @@ export class Search {
     }
 
     Negamax(depth, ply, alpha, beta, totalExtensions, doNull){
-        if (this.timeManager.ExceededTimeLimit()){
+        if (this.manager.ExceededTimeLimit()){
             return 0
         }
-        this.nodeCount ++
+        this.manager.nodeCount ++
 
         // check for threefold repetition
         if (this.board.CheckThreeFold()) {
@@ -249,7 +161,7 @@ export class Search {
 
         // Start quiesence search at leaf nodes
         if (depth == 0){
-            return QuiescenceSearch(this.board, this.timeManager, ply, alpha, beta, this.nodeCount)
+            return QuiescenceSearch(this.board, this.manager, ply, alpha, beta, this.nodeCount)
         }
 
         // Generate legal moves
@@ -293,7 +205,7 @@ export class Search {
             this.board.Unmake_NullMove()
 
             // Important exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return 0
+            if (this.manager.cancelSearch) return 0
 
             // If the nullmove
             if (beta <= score){
@@ -332,7 +244,7 @@ export class Search {
             this.board.Unmake_Move(move)
             
             // exit point for iterative deepening
-            if (this.timeManager.cancelSearch) return 0
+            if (this.manager.cancelSearch) return 0
 
             // Track best score and move
             if (bestScore < score){
