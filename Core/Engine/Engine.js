@@ -76,7 +76,9 @@ export class Engine {
         }
 
         if (depth == 0){
-            return this.search.IterativeDeepening()
+            const move = this.search.IterativeDeepening()
+            this.PVS() 
+            return move
         }
 
         
