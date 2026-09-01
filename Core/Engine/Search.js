@@ -131,6 +131,7 @@ export class Search {
         this.bestMove = null
         this.TT.collisions = 0
     
+        let bestScore;
 
         this.totalNodeCount = 0
         // iterative deepening
@@ -149,18 +150,22 @@ export class Search {
                 "Score: ", Math.round(score)
             )
 
-            if (mateTreshold <= score){
-                const mateDepth = checkMateScore - score
-                console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
-                this.timeManager.Stop()
-            }
+            
             // stop search if time limit is exceeded
             if (this.timeManager.cancelSearch){
                 break
             }
+            bestScore = score
         }
 
+
         console.log(this.totalNodeCount, " searced in ", this.timeManager.timeLimitMS, "ms")
+
+        if (mateTreshold <= bestScore){
+                const mateDepth = checkMateScore - bestScore
+                console.log("Found forced checkmate at M" + Math.ceil(mateDepth / 2))
+                this.timeManager.Stop()
+            }
 
         // console.log("TT collisions ", this.TT.collisions)
 
@@ -223,7 +228,11 @@ export class Search {
         //transposition table
         const TT = this.TT.Read(high, low, ply, depth)
         
-        if (TT.hit && TT.depth >= depth && ply != 0){
+        if (TT.hit && TT.depth >= depth){
+            if (ply == 0 && this.bestMove == null){
+                // console.log(this.bestMove, TT.move)
+                this.bestMove = TT.move
+            }
             // TT position is accurate
             if (TT.flag == "EXACT"){
                 return TT.score
@@ -263,35 +272,35 @@ export class Search {
 
         // Moveordering. TT moves comes first, except for in the root node
         // where the best move from the previous search should be considered first
-        MoveOrder(this.board, this.MoveGenerator, ply, TT.bestMove, this.bestMove)
+        MoveOrder(this.board, this.MoveGenerator, ply, TT.move, this.bestMove)
         
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
 
         // // Null move pruning 
-        // const R = 3
-        // const nmpAllowed = (
-        //         doNull         && // Not already in a null move branch
-        //         !inCheck       && // Not in check
-        //         R + 1 <= depth && // Prevents reducing shallow searches
-        //         0 < ply        && // Avoid NMP at root node
-        //         this.board.HasNonPawnMaterial() // Avoid zugswang
-        //     )
+        const R = 3
+        const nmpAllowed = (
+                doNull         && // Not already in a null move branch
+                !inCheck       && // Not in check
+                R + 1 <= depth && // Prevents reducing shallow searches
+                0 < ply        && // Avoid NMP at root node
+                this.board.HasNonPawnMaterial() // Avoid zugswang
+            )
         
-        // if (nmpAllowed){
-        //     // Search a null move window
-        //     this.board.Make_NullMove()
-        //     const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
-        //     this.board.Unmake_NullMove()
+        if (nmpAllowed){
+            // Search a null move window
+            this.board.Make_NullMove()
+            const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
+            this.board.Unmake_NullMove()
 
-        //     // Important exit point for iterative deepening
-        //     if (this.timeManager.cancelSearch) return 0
+            // Important exit point for iterative deepening
+            if (this.timeManager.cancelSearch) return 0
 
-        //     // If the nullmove
-        //     if (beta <= score){
-        //         return score
-        //     }
-        // }
+            // If the nullmove
+            if (beta <= score){
+                return score
+            }
+        }
     
         // Iterate over every legal move
         let bestMove = null

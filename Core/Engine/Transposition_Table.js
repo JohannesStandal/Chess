@@ -104,7 +104,7 @@ export class Transposition_Table {
         const index = (high % this.numEntries)
        
         // this part is temporarily disabled for debugging
-        
+
         // Relevant to see if entry is useful
         const ttHigh = this.hashHigh[index]
         const ttLow = this.hashLow[index]
@@ -112,18 +112,12 @@ export class Transposition_Table {
         const storedScore = this.score[index]
         
         // // Entry already exists. Should it be overwritten
-        // if (ttHigh == high && ttLow == low){
+        if (ttHigh == high && ttLow == low){
 
-        //     // Current search is shallower than the one we stored
-        //     if (currentDepth <= storedDepth) return
+            // Current search is shallower than the one we stored
+            if (currentDepth <= storedDepth) return
             
-        //     // // Stored score is a shallower mate score
-        //     // const storeMateDistance = this.MateInPly(storedScore)
-        //     // const currentMateDistance = this.MateInPly(this.ScoreToTT(score))
-
-        //     // if (storeMateDistance < currentMateDistance) return
-            
-        // }
+        }
         
         // Store entry
         this.hashHigh[index] = high
@@ -154,17 +148,5 @@ export class Transposition_Table {
             return score + ply
 
         return score
-    }
-
-    MateInPly(score){
-        if (mateTreshold < score){
-            return checkMateScore - score
-        }
-        
-        if (score < -mateTreshold){
-            return checkMateScore + score
-        }
-
-        return 100000
     }
 }
