@@ -3,7 +3,7 @@ import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset, UndoLastMove} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 import { Move } from "../Core/Board/move.js"
-import { Evaluation } from "../Core/Engine/evaluation.js"
+import { Evaluation } from "../Core/Engine/Evaluation/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
 import { Chess } from "../Browser/Chess.js"

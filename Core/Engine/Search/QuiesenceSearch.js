@@ -1,9 +1,9 @@
-import { Evaluation } from "./evaluation.js"
+import { Evaluation } from "../Evaluation/evaluation.js"
 import { MoveOrder } from "./MoveOrdering.js"
-import { checkMateScore, exitDetectFrequency } from "../Constants/SearchConstants.js"
-import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
-import { AttackDetector } from "../MoveGeneration/Attack.js"
-import { Move } from "../Board/move.js"
+import { checkMateScore, exitDetectFrequency } from "../../Constants/SearchConstants.js"
+import { MoveGenerator } from "../../MoveGeneration/MoveGenerator.js"
+import { AttackDetector } from "../../MoveGeneration/Attack.js"
+import { Move } from "../../Board/move.js"
 
 
 const moveGenerator = new MoveGenerator()

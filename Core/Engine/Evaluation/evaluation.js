@@ -1,8 +1,7 @@
-import { Piece } from "../Board/piece.js"
-import { ChessHelper } from "../Utils/Chess_Helper.js"
-import { Move } from "../Board/move.js"
-import { PieceSquareTables } from "./PieceSquareTables.js"
-import { AttackDetector } from "../MoveGeneration/Attack.js"
+import { Piece } from "../../Board/piece.js"
+import { ChessHelper } from "../../Utils/Chess_Helper.js"
+import { PieceSquareTables } from "../Evaluation/PieceSquareTables.js"
+import { AttackDetector } from "../../MoveGeneration/Attack.js"
 
 const kingValue = 0
 const pawnValue = 100

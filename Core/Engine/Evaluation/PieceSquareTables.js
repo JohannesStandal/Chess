@@ -1,4 +1,4 @@
-import { Piece } from "../Board/piece.js"
+import { Piece } from "../../Board/piece.js"
 
 export class PieceSquareTables {
     static mirroredBoard = new Array(64)

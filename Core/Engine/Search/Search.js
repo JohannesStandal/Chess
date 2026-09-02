@@ -1,10 +1,10 @@
 import { Transposition_Table } from "./Transposition_Table.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
-import { Move } from "../Board/move.js"
-import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions, exitDetectFrequency} from "../Constants/SearchConstants.js"
-import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
-import { AttackDetector } from "../MoveGeneration/Attack.js"
+import { Move } from "../../Board/move.js"
+import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions, exitDetectFrequency} from "../../Constants/SearchConstants.js"
+import { MoveGenerator } from "../../MoveGeneration/MoveGenerator.js"
+import { AttackDetector } from "../../MoveGeneration/Attack.js"
 
 export class Search {
     constructor(board, searchManager){

@@ -1,6 +1,6 @@
-import { Evaluation } from "./evaluation.js"
-import { PieceSquareTables } from "./PieceSquareTables.js"
-import { Move } from "../Board/move.js"
+import { Evaluation } from "../Evaluation/evaluation.js"
+import { PieceSquareTables } from "../Evaluation/PieceSquareTables.js"
+import { Move } from "../../Board/move.js"
 
 export function MoveOrder(board, moveGenerator, ply, hashMove, prevBestMove){
     // Define the area of the move array we are working with
