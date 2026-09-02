@@ -2,7 +2,7 @@ import { Transposition_Table } from "./Transposition_Table.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
 import { Move } from "../Board/move.js"
-import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions} from "../Constants/SearchConstants.js"
+import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions, exitDetectFrequency} from "../Constants/SearchConstants.js"
 import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
 import { AttackDetector } from "../MoveGeneration/Attack.js"
 
@@ -83,7 +83,7 @@ export class Search {
         }
 
         console.log(`Finished search ${this.manager.plyMin}/${this.manager.plyMax}`)
-        console.log(this.totalNodeCount, " searced in ", this.manager.timeLimitMS, "ms")
+        console.log(this.totalNodeCount, " searced in ", this.manager.elapsedMS, "ms")
 
         if (mateTreshold <= bestScore){
                 const mateDepth = checkMateScore - bestScore
@@ -118,9 +118,14 @@ export class Search {
     }
 
     Negamax(depth, ply, alpha, beta, totalExtensions, doNull){
-        if (this.manager.ExceededTimeLimit()){
+        if (this.manager.nodeCount % exitDetectFrequency == 0){
+            this.manager.ExceededTimeLimit()
+        }
+
+        if (this.manager.cancelSearch){
             return 0
         }
+
         this.manager.nodeCount ++
 
         // check for threefold repetition

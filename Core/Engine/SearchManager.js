@@ -7,6 +7,9 @@ export class SearchManager {
         this.plyMax = 0
 
         this.cancelSearch = false
+        this.start = 0
+        
+        this.elapsedMS = 0
     }
 
     SetTimeLimit(time){
@@ -30,10 +33,10 @@ export class SearchManager {
 
     ExceededTimeLimit(){
         // how much time has elapsed
-        const elapsedMS = performance.now() - this.start
+        this.elapsedMS = performance.now() - this.start
 
         // has the time elapsed overexceeded the timelimit
-        this.cancelSearch = (this.timeLimitMS < elapsedMS)
+        this.cancelSearch = (this.timeLimitMS < this.elapsedMS)
         return this.cancelSearch
     }
 
