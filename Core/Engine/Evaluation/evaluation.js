@@ -3,6 +3,8 @@ import { ChessHelper } from "../../Utils/Chess_Helper.js"
 import { PieceSquareTables } from "../Evaluation/PieceSquareTables.js"
 import { AttackDetector } from "../../MoveGeneration/Attack.js"
 
+import { PawnStructure } from "./PawnStructure.js"
+
 const kingValue = 0
 const pawnValue = 100
 const knightValue = 320
@@ -10,20 +12,23 @@ const bishopValue = 330
 const rookValue = 500
 const queenValue = 900
 
+export const pieceValues = new Array(12)
+
+pieceValues[Piece.none  ] = 0
+pieceValues[Piece.king  ] = kingValue
+pieceValues[Piece.pawn  ] = pawnValue
+pieceValues[Piece.knight] = knightValue 
+pieceValues[Piece.bishop] = bishopValue
+pieceValues[Piece.rook  ] = rookValue
+pieceValues[Piece.queen ] = queenValue
+
 
 export class Evaluation {
-    static pieceValues = new Array(12)
-    static {
-        this.pieceValues[Piece.none  ] = 0
-        this.pieceValues[Piece.king  ] = kingValue
-        this.pieceValues[Piece.pawn  ] = pawnValue
-        this.pieceValues[Piece.knight] = knightValue 
-        this.pieceValues[Piece.bishop] = bishopValue
-        this.pieceValues[Piece.rook  ] = rookValue
-        this.pieceValues[Piece.queen ] = queenValue
+    constructor(){
+        this.pawnStructure = new PawnStructure()
     }
 
-    static evaluate(board){
+    evaluate(board){
         /**
          * Estimate who is winning the position. Positive values for white
          * and negative values for black. Before returing the value it is multiplied by
@@ -72,7 +77,7 @@ export class Evaluation {
         return sign * totalScore
     }
 
-    static generalScore(board){
+    generalScore(board){
         // Evaluation terms that apply for the entire game
         let score = 0
         
@@ -83,7 +88,7 @@ export class Evaluation {
         const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
         const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
         
-        score += this.pawnStructure(whitePawns, blackPawns) 
+        score += this.pawnStructure.Eval(board) 
 
         // bishop pair
         score += this.bishopPair(board)
@@ -91,7 +96,7 @@ export class Evaluation {
         return score
     }
 
-    static midGameScore(board){
+    midGameScore(board){
         // Evaluation terms important for the midgame
         let midGameScore = 0
 
@@ -100,31 +105,26 @@ export class Evaluation {
         const mobilityWeight = 1
         const kingExposureWeight = 1
         const pawnShieldWeight = 2
-        const castleRightWeight = 1
-
+        
         // Piece Square tables
         midGameScore += this.PSTmidgame(board) * PSTweight
         
         // Sliding piece mobility bonus
-        midGameScore += this.mobilityBonus(board, true)  * mobilityWeight
-        midGameScore -= this.mobilityBonus(board, false) * mobilityWeight
+        midGameScore += this.slidingPieceMobility(board, true)  * mobilityWeight
+        midGameScore -= this.slidingPieceMobility(board, false) * mobilityWeight
 
         // King Exposure
-        midGameScore += this.kingExposure(board, board.whiteKingSquare) * kingExposureWeight
-        midGameScore -= this.kingExposure(board, board.blackKingSquare) * kingExposureWeight
+        midGameScore += this.virtualKingMobility(board, board.whiteKingSquare) * kingExposureWeight
+        midGameScore -= this.virtualKingMobility(board, board.blackKingSquare) * kingExposureWeight
 
         // Pawn shields. 
         midGameScore += this.pawnShields(board, board.whiteKingSquare, true)  * pawnShieldWeight
         midGameScore -= this.pawnShields(board, board.blackKingSquare, false) * pawnShieldWeight
 
-        // castle penalty
-        midGameScore += this.lostCastleRightsPenalty(board,  board.white_To_Move) * castleRightWeight
-        midGameScore -= this.lostCastleRightsPenalty(board, !board.white_To_Move) * castleRightWeight
-
         return midGameScore
     }
 
-    static endGameScore(board, materialAdvantage){
+    endGameScore(board, materialAdvantage){
         // Evaluation terms important for the endgame
         let endGameScore = 0
 
@@ -138,7 +138,7 @@ export class Evaluation {
         return endGameScore
     }
 
-    static calculateGamePhase(board){
+    calculateGamePhase(board){
         // Count up non pawn material
         let total = 0
         for (let i = 0; i<64; i++){
@@ -166,7 +166,7 @@ export class Evaluation {
         return total / 24
     }
 
-    static countMaterial(board, white){
+    countMaterial(board, white){
         const color = white ? Piece.white : Piece.black
         // Count the total material on the board
         let materialScore = 0
@@ -181,7 +181,7 @@ export class Evaluation {
     }
 
     // Positioning of individual pieces
-    static PSTmidgame(board){
+    PSTmidgame(board){
         const pieces = [
             Piece.king,
             Piece.pawn,
@@ -212,7 +212,7 @@ export class Evaluation {
         return pstBonus
     }
 
-    static PSTendgame(board){
+    PSTendgame(board){
         const pieces = [
             Piece.king,
             Piece.pawn,
@@ -243,7 +243,7 @@ export class Evaluation {
         return pstBonus
     }
 
-    static mobilityBonus(board, white){
+    slidingPieceMobility(board, white){
         // Reward mobility for sliding pieces
         let mobilityScore = 0
 
@@ -296,7 +296,7 @@ export class Evaluation {
     }
     
     // Mop up for endgame
-    static mopUp(board, materialScore){
+    mopUp(board, materialScore){
         const mopUpWeigth = 50
 
         let score = 0
@@ -316,7 +316,7 @@ export class Evaluation {
         return score * mopUpWeigth
     }
 
-    static mopUpScore(chasingKing, runningKing){
+    mopUpScore(chasingKing, runningKing){
         let score = 0
 
         const distanceToCenterWeight = 1
@@ -350,7 +350,7 @@ export class Evaluation {
     }
 
     // King safety
-    static kingExposure(board, kingSquare){
+    virtualKingMobility(board, kingSquare){
         let score = 0
 
         // Punish having an exposed king, but incentivise an exposed enemy king
@@ -360,7 +360,7 @@ export class Evaluation {
         return score
     }
 
-    static pawnShields(board, kingSquare, white) {
+    pawnShields(board, kingSquare, white) {
         let pawnShieldScore = 0
 
         const isKingside = kingSquare == (white ? 6 : 62)
@@ -400,192 +400,8 @@ export class Evaluation {
         return pawnShieldScore;
     }
 
-    static lostCastleRightsPenalty(board, white){
-        // Gives a penalty if you have lost your ability to castle
-        // if you havent already done so
-        const penalty = -10
-
-        if (white){
-            const kingSquare = board.whiteKingSquare
-            // You have castled, no need for a penalty
-            if (kingSquare == 2 || kingSquare == 6) return 0
-
-            const castleRigths = (board.castlingRights >> 2) & 0b11
-            if (castleRigths == 0) return penalty
-        }
-
-        else {
-            const kingSquare = board.blackKingSquare
-            // You have castled, no need for a penalty
-            if (kingSquare == 58 || kingSquare == 62) return 0
-
-            const castleRigths = (board.castlingRights) & 0b11
-            if (castleRigths == 0) return penalty
-
-        }
-        
-        return 0
-    }
-
-    // Pawn structure
-    static isolatedPawns(numPawnsOnFile){
-        // penalty for an isolated pawn
-        const penalty = -20
-        let totalPenalty = 0
-        
-        for (let file = 0; file < 8; file++){
-            // Check if there is a pawn on this file
-            if (numPawnsOnFile[file] == 0) continue
-
-            let totalPawns = 0
-
-            const fileLeft = Math.max(0, file - 1)
-            const fileRight = Math.min(7, file + 1)            
-
-            if (fileLeft  != file) totalPawns += numPawnsOnFile[fileLeft ]
-            if (fileRight != file) totalPawns += numPawnsOnFile[fileRight]
-
-            if (totalPawns == 0){
-                // console.log("Isolated pawn on file: ", file)
-                totalPenalty += penalty
-            }
-                
-        }
-
-        return totalPenalty
-    }
-
-    static stackedPawns(numPawnsOnFile){
-        // penalties for number of pawns on the same file
-        const penalties = [0, 0, -8, -15, -25, -40, 0, 0]
-        let totalPenalty = 0
-        
-
-        for (let file = 0; file < 8; file++){
-            // sum up the penalty for number of pawns on this file
-            const numPawns = numPawnsOnFile[file]
-            totalPenalty += penalties[numPawns]
-
-            // if (1 < numPawns) console.log(numPawns, "Stacked pawns on file: ", file)
-        }
-
-        return totalPenalty
-    }
-
-    static passedPawns(whitePawnRankOnFile, blackPawnRankOnFile, white){
-        const passedPawnBonus = [0, 10, 10, 20, 40, 80, 120, 0]
-        let score = 0
-
-        // Loop over every file and check for passed pawns 
-        for (let file = 0; file < 8; file++){
-            // Files to the left and right
-            const fileLeft = Math.max(0, file - 1)
-            const fileRight = Math.min(7, file + 1)
-            
-            if (white){
-                const highestWhitePawnRank =  whitePawnRankOnFile[file]
-                if (highestWhitePawnRank < 1) continue
-                
-                const highestBlackPawnRankLeft = blackPawnRankOnFile[fileLeft]
-                const highestBlackPawnRankForward = blackPawnRankOnFile[file]
-                const highestBlackPawnRankRight =  blackPawnRankOnFile[fileRight]
-
-                const passedPawn = (
-                    highestBlackPawnRankLeft    <= highestWhitePawnRank &&
-                    highestBlackPawnRankForward <= highestWhitePawnRank &&
-                    highestBlackPawnRankRight   <= highestWhitePawnRank
-                )
-
-                
-                if (passedPawn){
-                    // console.log("White passed pawn on square: ", ChessHelper.SquareIndex(highestWhitePawnRank, file))
-                    score += passedPawnBonus[highestWhitePawnRank]
-                }
-            }
-            else {
-                const lowestBlackPawnRank =  blackPawnRankOnFile[file]
-                if (6 < lowestBlackPawnRank) continue
-
-                const lowestWhitePawnRankLeft = whitePawnRankOnFile[fileLeft]
-                const lowestWhitePawnRankForward = whitePawnRankOnFile[file]
-                const lowestWhitePawnRankRight =  whitePawnRankOnFile[fileRight]
-
-                const passedPawn = (
-                    lowestBlackPawnRank <= lowestWhitePawnRankLeft    &&
-                    lowestBlackPawnRank <= lowestWhitePawnRankForward &&
-                    lowestBlackPawnRank <= lowestWhitePawnRankRight  
-                )
-
-                if (passedPawn){
-                    // console.log("Black passed pawn on square: ", ChessHelper.SquareIndex(lowestBlackPawnRank, file))
-                    score += passedPawnBonus[8 - lowestBlackPawnRank]
-                }
-            }
-        }
-
-        return score
-    }
-
-    static pawnStructure(whitePawns, blackPawns){
-        // Evaluates the pawnstructure for isolated, passed, and stacked pawns
-        // The heuristic gives a positive score for white and negative for black
-
-        const isolatedWeight = 1
-        const passedPawnWeight = 1
-        const stackedPawnWeight = 1
-
-
-        
-        // Precompute data for pawn structure
-        const highestRankWP = new Array(8).fill(0)
-        const highestRankBP = new Array(8).fill(0)
-        
-        const lowestRankWP  = new Array(8).fill(7)
-        const lowestRankBP  = new Array(8).fill(7)
-
-        const numBlackPawnsOnFile = new Array(8).fill(0)
-        const numWhitePawnsOnFile = new Array(8).fill(0)
-
-        for (const whitePawnIndex of whitePawns){
-            const file = ChessHelper.FileIndex(whitePawnIndex)
-            const rank = ChessHelper.RankIndex(whitePawnIndex)
-
-            highestRankWP[file] = Math.max(rank, highestRankWP[file])
-            lowestRankWP[file]  = Math.min(rank, lowestRankWP[file])
-            
-            numWhitePawnsOnFile[file] ++
-        }
-
-        for (const blackPawnIndex of blackPawns){
-            const file = ChessHelper.FileIndex(blackPawnIndex)
-            const rank = ChessHelper.RankIndex(blackPawnIndex)
-
-            highestRankBP[file] = Math.max(rank, highestRankBP[file])
-            lowestRankBP[file]  = Math.min(rank, lowestRankBP[file])
-            
-            numBlackPawnsOnFile[file] ++
-        }
-
-        // Count total score for pawn structure
-        let score = 0
-
-        // Isolated pawns
-        score += this.isolatedPawns(numWhitePawnsOnFile) * isolatedWeight
-        score -= this.isolatedPawns(numBlackPawnsOnFile) * isolatedWeight
-
-        // Multiple pawns on file
-        score += this.stackedPawns(numWhitePawnsOnFile) * stackedPawnWeight
-        score -= this.stackedPawns(numBlackPawnsOnFile) * stackedPawnWeight
-
-        // Passed pawns
-        score += this.passedPawns(highestRankWP, highestRankBP, true) * passedPawnWeight
-        score -= this.passedPawns(lowestRankWP, lowestRankBP, false ) * passedPawnWeight
-
-        return score
-    }
-
     // Bishop pair
-    static bishopPair(board){
+    bishopPair(board){
         // 30 centipawns for a bishop pair
         let score = 0
 

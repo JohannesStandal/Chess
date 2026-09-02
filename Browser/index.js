@@ -32,10 +32,11 @@ export const sounds = {
         notification: new Audio("Sounds/notify.mp3"),
 }
 
-window.evaluate = Evaluation
 const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
 
+import { evaluation } from "../Core/Engine/Search/QuiesenceSearch.js"
+window.eval = evaluation
 
 function StartGame(fen = startPos){
     gameData.active = true

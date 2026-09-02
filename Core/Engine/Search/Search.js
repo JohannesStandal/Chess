@@ -62,8 +62,10 @@ export class Search {
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){        
             // search the position
+            this.manager.nodeCount = 0
             const score = this.Negamax(depth, 0, -checkMateScore, checkMateScore, 0, true)
             this.totalNodeCount += this.manager.nodeCount
+            
 
             console.log(
                 "depth: ", depth, 
