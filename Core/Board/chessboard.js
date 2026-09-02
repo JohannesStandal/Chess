@@ -30,6 +30,7 @@ export class Board {
         
         // Hash
         this.hash = new zobristHash()
+        this.pawnHash = new zobristHash()
 
         // Track pieces
         this.whiteKingSquare = 0
@@ -120,6 +121,7 @@ export class Board {
 
         // Hash
         this.hash.CreateHash(this)
+        this.pawnHash.CreatePawnHash(this)
 
         this.hashHighHistory[this.ply] = this.hash.high
         this.hashLowHistory [this.ply] = this.hash.low
@@ -193,7 +195,11 @@ export class Board {
         const flag = Move.Flag(move)
 
         const movedPiece = this.square[start]
+        const movedPieceType = (movedPiece & Piece.typeMask)
+
         const capturedPiece = this.square[target]
+        const capturedPieceType = (movedPiece & Piece.typeMask)
+
 
         if (movedPiece == Piece.none){
             console.error("No piece moved in make move WTF")
@@ -230,12 +236,19 @@ export class Board {
         this.hash.Remove(capturedPiece, target)
         this.hash.Move(movedPiece, start, target)
 
+        // Update pawn hash
+        if (movedPieceType == Piece.pawn) this.pawnHash.Move(movedPiece, start, target)
+        if (capturedPieceType == Piece.pawn) this.pawnHash.Remove(capturedPiece, target)
+
         // en-passant capture
         if (flag == Move.flags.epCapture){
             // remove pawn from piece list
             const pawn = this.square[this.enPassantSquare]
-            // Remove pawn from piece list
+            
+            // Remove pawn from piece list, hash, and pawnhash
             this.pl.Remove(pawn, this.enPassantSquare)
+            this.hash.Remove(pawn, this.enPassantSquare)
+            this.pawnHash.Remove(pawn, this.enPassantSquare)
 
             // Remove pawn from board
             this.square[this.enPassantSquare] = 0
@@ -265,17 +278,20 @@ export class Board {
             const pieceType = pieceTypes[flag & 0b0011]
             const color = movedPiece & 0b11000
             
-            const newPiece = color | pieceType
+            const promotedPiece = color | pieceType
 
-            this.square[target] = newPiece
+            this.square[target] = promotedPiece
 
             // Replace pawn with promoted piece in piece lists
             this.pl.Remove(movedPiece, target)
-            this.pl.Add(newPiece, target)
+            this.pl.Add(promotedPiece, target)
 
             // Replace pawn with promoted piece in hash
             this.hash.Remove(movedPiece, target)
-            this.hash.Add(newPiece, target)
+            this.hash.Add(promotedPiece, target)
+
+            // Remove pawn from pawn hash
+            this.pawnHash.Remove(movedPiece, target)
         }
 
         // incremental king tracking (kind of reduntand with pl but meeh)
@@ -341,8 +357,12 @@ export class Board {
         const target = Move.Target(move)
         const flag = Move.Flag(move)
 
-        const capturedPiece = this.capturedPieceHistory[this.ply]
         const movedPiece = this.square[target]
+        const movedPieceType = movedPiece & Piece.typeMask
+        
+        const capturedPiece = this.capturedPieceHistory[this.ply]
+        const capturedPieceType = capturedPiece & Piece.typeMask
+        
 
         if (movedPiece == Piece.none){
             console.error("\n No piece moved in unmakeMove WTF? Line was")
@@ -361,6 +381,10 @@ export class Board {
         this.pl.Move(movedPiece, target, start)
         this.pl.Add(capturedPiece, target)
 
+        // Update pawn hash
+        if (movedPieceType == Piece.pawn) this.pawnHash.Move(movedPiece, target, start)
+        if (capturedPieceType == Piece.pawn) this.pawnHash.Add(capturedPiece, target)
+
         // checking if the moved piece was a promoted pawn
         if (Move.IsPromotion(move)){
             // Replace the promoted piece with a pawn
@@ -370,6 +394,9 @@ export class Board {
             // Replace promoted piece in the piece list
             this.pl.Remove(movedPiece, start)
             this.pl.Add(pawn, start)
+
+            // Add pawn to hash
+            this.pawnHash.Add(pawn, start)
         }
 
         // move rook back in case of castling
@@ -403,6 +430,9 @@ export class Board {
 
             this.square[this.enPassantSquare] = pawn
             this.pl.Add(pawn, this.enPassantSquare)
+
+            // Add to pawn hash
+            this.pawnHash.Add(pawn, this.enPassantSquare)
         }
 
         // incremental king tracking
