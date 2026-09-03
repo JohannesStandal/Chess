@@ -201,8 +201,8 @@ export class Search {
         }
 
         // Oder moves from best to worst based on heuristics
-        const killer1 = null 
-        const killer2 = null
+        const killer1 = this.killerMoves.killer1[ply] 
+        const killer2 = this.killerMoves.killer2[ply]
 
         MoveOrder(this.board, this.MoveGenerator, ply, TT.move, killer1, killer2)
         
