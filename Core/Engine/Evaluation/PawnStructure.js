@@ -84,7 +84,7 @@ export class PawnStructure {
         this.PawnHashTable.Clear()
     }
 
-    Eval(board){
+    PawnStructureEval(board){
         // Evaluates the pawnstructure for isolated, passed, and stacked pawns
         // The heuristic gives a positive score for white and negative for black
 

@@ -36,16 +36,6 @@ export class Evaluation {
          * making it compatible with the negamax algorithm         
          **/
         
-        /**
-         * Todo. 
-         * flip all calculation to the white is winning, black is losing scheme.
-         * 
-         * - pawn shields
-         * - PST
-         * - Castle rights 
-         * - king exposure
-         */
-        
         // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
         const phase = this.calculateGamePhase(board)
         
@@ -54,22 +44,32 @@ export class Evaluation {
         const blackMaterial = this.countMaterial(board, false)
 
         const materialScore = whiteMaterial - blackMaterial
-        // console.log("mat: ", materialScore)
 
-        // Accumulate the scores
-        const generalScore = this.generalScore(board)
-        const midGameScore = this.midGameScore(board) * phase
-        const endGameScore = this.endGameScore(board) * (1 - phase)
+        // PST 
+        const pstScore = PieceSquareTables.PieceSquareTableValue(board, phase)
 
         // Mop up score
         const mopUpScore = this.mopUp(board, materialScore) * (1  - phase)
+
+        // Pawn structure
+        const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
+        const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
+        
+        const pawnStructureScore = this.pawnStructure.PawnStructureEval(board) 
+
+        // bishop pair
+        const bishopPairScore = this.bishopPair(board)
+
+        // Midgame score
+         const midGameScore = this.midGameScore(board) * phase
         
         // Add it all together        
         const totalScore = 
-            materialScore + 
-            generalScore  + 
-            midGameScore  + 
-            endGameScore  + 
+            materialScore       + 
+            pstScore            +
+            pawnStructureScore  +
+            bishopPairScore     +
+            midGameScore        + 
             mopUpScore
         
         const sign = (board.white_To_Move) ? 1 : -1
@@ -77,37 +77,14 @@ export class Evaluation {
         return sign * totalScore
     }
 
-    generalScore(board){
-        // Evaluation terms that apply for the entire game
-        let score = 0
-        
-        const pawnStructureWeight = 1
-        const bishopPairWeight = 1
-        
-        // pawn structure
-        const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
-        const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
-        
-        score += this.pawnStructure.Eval(board) 
-
-        // bishop pair
-        score += this.bishopPair(board)
-        
-        return score
-    }
-
     midGameScore(board){
         // Evaluation terms important for the midgame
         let midGameScore = 0
 
         // Weights
-        const PSTweight = 1 
         const mobilityWeight = 1
         const kingExposureWeight = 1
         const pawnShieldWeight = 2
-        
-        // Piece Square tables
-        midGameScore += this.PSTmidgame(board) * PSTweight
         
         // Sliding piece mobility bonus
         midGameScore += this.slidingPieceMobility(board, true)  * mobilityWeight
@@ -122,20 +99,6 @@ export class Evaluation {
         midGameScore -= this.pawnShields(board, board.blackKingSquare, false) * pawnShieldWeight
 
         return midGameScore
-    }
-
-    endGameScore(board, materialAdvantage){
-        // Evaluation terms important for the endgame
-        let endGameScore = 0
-
-        // Weights for endgame score
-        const PSTweight = 1
-        
-        // PST and mopup eval
-        endGameScore += this.PSTendgame(board) * PSTweight
-        
-
-        return endGameScore
     }
 
     calculateGamePhase(board){
@@ -178,69 +141,6 @@ export class Evaluation {
         materialScore += board.pl.Count(Piece.queen  | color) * queenValue
 
         return materialScore
-    }
-
-    // Positioning of individual pieces
-    PSTmidgame(board){
-        const pieces = [
-            Piece.king,
-            Piece.pawn,
-            Piece.knight,
-            Piece.bishop,
-            Piece.rook,
-            Piece.queen
-        ]
-        const colors = [
-            Piece.white,
-            Piece.black,
-        ]
-
-        let pstBonus = 0
-
-        for (const pieceType of pieces){
-            for (const color of colors){
-
-                const piece = pieceType | color
-                const pieceList = board.pl.listFromPiece[piece]
-
-                for (const squareIndex of pieceList){
-                    pstBonus += PieceSquareTables.MidgameValue(piece, squareIndex)
-                }
-            }
-        }
-
-        return pstBonus
-    }
-
-    PSTendgame(board){
-        const pieces = [
-            Piece.king,
-            Piece.pawn,
-            Piece.knight,
-            Piece.bishop,
-            Piece.rook,
-            Piece.queen
-        ]
-        const colors = [
-            Piece.white,
-            Piece.black,
-        ]
-
-        let pstBonus = 0
-
-        for (const pieceType of pieces){
-            for (const color of colors){
-
-                const piece = pieceType | color
-                const pieceList = board.pl.listFromPiece[piece]
-
-                for (const squareIndex of pieceList){
-                    pstBonus += PieceSquareTables.EndgameValue(piece, squareIndex)
-                }
-            }
-        }
-
-        return pstBonus
     }
 
     slidingPieceMobility(board, white){
