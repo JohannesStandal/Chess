@@ -1,6 +1,6 @@
-import { Evaluation } from "./evaluation.js"
-import { PieceSquareTables } from "./PieceSquareTables.js"
-import { Move } from "../Board/move.js"
+import { pieceValues } from "../Evaluation/evaluation.js"
+import { PieceSquareTables } from "../Evaluation/PieceSquareTables.js"
+import { Move } from "../../Board/move.js"
 
 export function MoveOrder(board, moveGenerator, ply, hashMove, prevBestMove){
     // Define the area of the move array we are working with
@@ -76,9 +76,8 @@ function MVV_LVA(start, target, board){
         const pieceTypeMoved = board.square[start] & 0b0111 
         const pieceTypeAttacked = board.square[target] & 0b0111
 
-        const attackerValue = Evaluation.pieceValues[pieceTypeMoved]
-        const victimValue = Evaluation.pieceValues[pieceTypeAttacked]
-        
+        const attackerValue = pieceValues[pieceTypeMoved]
+        const victimValue = pieceValues[pieceTypeAttacked]
 
         return victimValue - attackerValue
     }

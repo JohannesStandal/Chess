@@ -31,8 +31,8 @@ TODO:
 */
 
 import { Board } from "../Board/chessboard.js"
-import { Search } from "./Search.js"
-import { SearchManager } from "./SearchManager.js"
+import { Search } from "./Search/Search.js"
+import { SearchManager } from "../Engine/Search/SearchManager.js"
 // import { openingBook } from "../Openings/openingBook.js"
 
 export class Engine {

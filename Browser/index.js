@@ -3,7 +3,7 @@ import { RenderScene, EndGame, Rematch} from "./App.js"
 import { RenderBoard, UpdateLegalMovesLookUp, Make_Move_On_Board, FlipBoard, Reset, UndoLastMove} from "./UI.js"
 import { ChessHelper } from "../Core/Utils/Chess_Helper.js"
 import { Move } from "../Core/Board/move.js"
-import { Evaluation } from "../Core/Engine/evaluation.js"
+import { Evaluation } from "../Core/Engine/Evaluation/evaluation.js"
 // Core logic for playing chess
 import { Board } from "../Core/Board/chessboard.js"
 import { Chess } from "../Browser/Chess.js"
@@ -32,10 +32,11 @@ export const sounds = {
         notification: new Audio("Sounds/notify.mp3"),
 }
 
-window.evaluate = Evaluation
 const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
 
+import { evaluation } from "../Core/Engine/Search/QuiesenceSearch.js"
+window.eval = evaluation
 
 function StartGame(fen = startPos){
     gameData.active = true
@@ -151,9 +152,9 @@ export function GameLoop(){
 }
 
 // StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1") // Rook vs king
-StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1") // Pawn Lock
+// StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1") // Pawn Lock
 // StartGame("8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1")
-
+StartGame() 
 // StartGame("6q1/3k1P2/8/8/7p/8/1p4P1/R3K2R w KQ - 0 1")
 // StartGame("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 // StartGame("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1")

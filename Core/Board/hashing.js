@@ -37,6 +37,31 @@ export class zobristHash {
         }
     }
 
+    CreatePawnHash(board){
+        this.high = 0
+        this.low = 0
+        // Pieces
+        for (let i = 0; i<64; i++){
+            const piece = board.square[i] 
+
+            // only add pawns
+            if (piece & Piece.typeMask == Piece.pawn){
+                this.Add(piece, i)
+            }
+        }
+
+        // Castling rights
+        this.CastlingRights(board.castlingRights)
+
+        // Ep square
+        this.EnPassantSquare(board.enPassantSquare)
+
+        // player turn
+        if (board.white_To_Move){
+            this.whiteToMove()
+        }
+    }
+
     Get64BitHash(){
 
         const high = this.high
@@ -51,6 +76,8 @@ export class zobristHash {
 
     // Add and remove does the same, but this naming makes it far more intuitive to use
     Add(piece, squareIndex){
+        if (piece == Piece.none) return
+        
         // Adding a piece to the hash
         const index = piece * 64 + squareIndex
 

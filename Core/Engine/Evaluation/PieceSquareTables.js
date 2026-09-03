@@ -1,4 +1,4 @@
-import { Piece } from "../Board/piece.js"
+import { Piece } from "../../Board/piece.js"
 
 export class PieceSquareTables {
     static mirroredBoard = new Array(64)
@@ -220,5 +220,20 @@ export class PieceSquareTables {
         const mapEnd = this.endMapForPiece[piece]
         const bonusEnd = mapEnd[square]
         return bonusEnd
+    }
+
+    static PieceSquareTableValue(board, gamePhase){
+        let score = 0
+
+        for (const piece of Piece.AllPieces){
+            for (const square of board.pl.listFromPiece[piece]){
+                const midValue = this.MidgameValue(piece, square)
+                const endValue = this.EndgameValue(piece, square)
+
+                score += (midValue * gamePhase + endValue * (1 - gamePhase)) 
+            }
+        }
+
+        return score
     }
 }

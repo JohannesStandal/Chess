@@ -1,4 +1,4 @@
-import { mateTreshold } from "../Constants/SearchConstants.js"
+import { mateTreshold } from "../../Constants/SearchConstants.js"
 
 export class Transposition_Table {
     constructor (mb = 64){

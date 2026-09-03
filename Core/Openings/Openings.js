@@ -72,8 +72,8 @@ function addMoveToBook(hash, move){
 }
 
 function filter(entry){
-    const maxVariations = 8  // Only store N most common variations
-    const minFrequency = 5   // A move must have occured more than X times to be valid
+    const maxVariations = 7  // Only store N most common variations
+    const minFrequency = 3   // A move must have occured more than X times to be valid
 
     // console.log("sort", entry)
     const numVariations = entry.length

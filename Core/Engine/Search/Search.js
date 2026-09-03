@@ -1,10 +1,10 @@
 import { Transposition_Table } from "./Transposition_Table.js"
 import { MoveOrder } from "./MoveOrdering.js"
 import { QuiescenceSearch } from "./QuiesenceSearch.js"
-import { Move } from "../Board/move.js"
-import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions, exitDetectFrequency} from "../Constants/SearchConstants.js"
-import { MoveGenerator } from "../MoveGeneration/MoveGenerator.js"
-import { AttackDetector } from "../MoveGeneration/Attack.js"
+import { Move } from "../../Board/move.js"
+import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions, exitDetectFrequency} from "../../Constants/SearchConstants.js"
+import { MoveGenerator } from "../../MoveGeneration/MoveGenerator.js"
+import { AttackDetector } from "../../MoveGeneration/Attack.js"
 
 export class Search {
     constructor(board, searchManager){
@@ -62,8 +62,10 @@ export class Search {
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){        
             // search the position
+            this.manager.nodeCount = 0
             const score = this.Negamax(depth, 0, -checkMateScore, checkMateScore, 0, true)
             this.totalNodeCount += this.manager.nodeCount
+            
 
             console.log(
                 "depth: ", depth, 
@@ -221,32 +223,63 @@ export class Search {
         // Iterate over every legal move
         let bestMove = null
         let bestScore = -checkMateScore
+        let moveCount = 0
         
         // Get indexes from the move array
         const moveStart = this.MoveGenerator.GetMoveIndex(0, ply)
         const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, ply)
 
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
-
             const move = this.MoveGenerator.moves[moveIndex]
             
             // Check and promotion extension
             const moveIsPromotion = Move.IsPromotion(move)
             const extensions = (canExtend && (inCheck || moveIsPromotion) ) ? 1 : 0
-            
             // Evaluate future position
             this.board.Make_Move(move)
+
+            let score;
+            // Principal Variation Search (PVS)
+            if (moveCount == 0){
+                // Search first move fully
+                score = - this.Negamax(
+                    depth - 1 + extensions, 
+                    ply + 1, 
+                    -beta, 
+                    -alpha, 
+                    totalExtensions + extensions,
+                    doNull,
+                )
+            }
+            // examine the rest of the moves with a null window search
+            else {
+                score = - this.Negamax(
+                    depth - 1 + extensions, 
+                    ply + 1, 
+                    -alpha - 1, 
+                    -alpha, 
+                    totalExtensions + extensions,
+                    doNull,
+                )
+
+                // The line is promising, so we need to research it with a full window search
+                if (alpha < score && score < beta){
+                    score = - this.Negamax(
+                        depth - 1 + extensions, 
+                        ply + 1, 
+                        -beta, 
+                        -alpha, 
+                        totalExtensions + extensions,
+                        doNull,
+                    )
+                }
+                    
+            }
         
-            const score = - this.Negamax(
-                depth - 1 + extensions, 
-                ply + 1, 
-                -beta, 
-                -alpha, 
-                totalExtensions + extensions,
-                doNull,
-            )
             
             this.board.Unmake_Move(move)
+
+            moveCount ++
             
             // exit point for iterative deepening
             if (this.manager.cancelSearch) return 0
