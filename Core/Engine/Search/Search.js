@@ -5,6 +5,7 @@ import { Move } from "../../Board/move.js"
 import { checkMateScore, drawScore, mateTreshold, maxSearchDepth, maxExtensions, exitDetectFrequency} from "../../Constants/SearchConstants.js"
 import { MoveGenerator } from "../../MoveGeneration/MoveGenerator.js"
 import { AttackDetector } from "../../MoveGeneration/Attack.js"
+import { KillerMoves } from "./killerMoves.js"
 
 export class Search {
     constructor(board, searchManager){
@@ -12,6 +13,7 @@ export class Search {
         this.MoveGenerator = new MoveGenerator()
         this.manager = searchManager
         this.TT = new Transposition_Table()
+        this.killerMoves = new KillerMoves()
         
         this.bestMove = null
         this.totalNodeCount = 0
@@ -54,16 +56,27 @@ export class Search {
         this.manager.Start()
         this.bestMove = null
     
-        let bestScore;
-
+        // clear killer moves from previous search
+        this.killerMoves.clear()
+        
+        // log total nodes
         this.totalNodeCount = 0
-
+        let bestScore;
 
         // iterative deepening
         for (let depth = 1; depth < maxSearchDepth; depth++){        
             // search the position
             this.manager.nodeCount = 0
-            const score = this.Negamax(depth, 0, -checkMateScore, checkMateScore, 0, true)
+
+            const score = this.Negamax(
+                depth, 
+                0, 
+                -checkMateScore, 
+                checkMateScore, 
+                0, 
+                true
+            )
+
             this.totalNodeCount += this.manager.nodeCount
             
 
@@ -74,7 +87,6 @@ export class Search {
                 "Score: ", Math.round(score)
             )
 
-            
             // stop search if time limit is exceeded
             if (this.manager.cancelSearch){
                 break
@@ -97,10 +109,10 @@ export class Search {
         // In case a depth 1 search we pick the best move from move ordering
         if (this.bestMove == null){
             this.MoveGenerator.GenerateMoves(this.board, 0)
+            MoveOrder(this.board, this.MoveGenerator, 0, null, null, null)
             this.bestMove = this.MoveGenerator.moves[0]
         }
 
-        
         return this.bestMove
     }
 
@@ -188,9 +200,11 @@ export class Search {
            return drawScore
         }
 
-        // Moveordering. TT moves comes first, except for in the root node
-        // where the best move from the previous search should be considered first
-        MoveOrder(this.board, this.MoveGenerator, ply, TT.move, this.bestMove)
+        // Oder moves from best to worst based on heuristics
+        const killer1 = null 
+        const killer2 = null
+
+        MoveOrder(this.board, this.MoveGenerator, ply, TT.move, killer1, killer2)
         
         // Can the search be extended?
         const canExtend = totalExtensions < maxExtensions 
@@ -295,7 +309,10 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= alpha){
-                // this.TT.Store(high, low, ply, depth, beta, "BETA")
+                if (!Move.IsCapture(move)){
+                    this.killerMoves.store(move, ply)
+                }
+                
                 break
             }       
         }
