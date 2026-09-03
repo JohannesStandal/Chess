@@ -223,30 +223,59 @@ export class Search {
         // Iterate over every legal move
         let bestMove = null
         let bestScore = -checkMateScore
+        let moveCount = 0
         
         // Get indexes from the move array
         const moveStart = this.MoveGenerator.GetMoveIndex(0, ply)
         const moveEnd = this.MoveGenerator.GetMoveIndex(numMoves, ply)
 
         for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
-
             const move = this.MoveGenerator.moves[moveIndex]
             
             // Check and promotion extension
             const moveIsPromotion = Move.IsPromotion(move)
             const extensions = (canExtend && (inCheck || moveIsPromotion) ) ? 1 : 0
-            
             // Evaluate future position
             this.board.Make_Move(move)
+
+            let score;
+            // Principal Variation Search (PVS)
+            if (moveCount == 0){
+                // Search first move fully
+                score = - this.Negamax(
+                    depth - 1 + extensions, 
+                    ply + 1, 
+                    -beta, 
+                    -alpha, 
+                    totalExtensions + extensions,
+                    doNull,
+                )
+            }
+            // examine the rest of the moves with a null window search
+            else {
+                score = - this.Negamax(
+                    depth - 1 + extensions, 
+                    ply + 1, 
+                    -alpha - 1, 
+                    -alpha, 
+                    totalExtensions + extensions,
+                    doNull,
+                )
+
+                // The line is promising, so we need to research it with a full window search
+                if (alpha < score && score < beta){
+                    score = - this.Negamax(
+                        depth - 1 + extensions, 
+                        ply + 1, 
+                        -beta, 
+                        -alpha, 
+                        totalExtensions + extensions,
+                        doNull,
+                    )
+                }
+                    
+            }
         
-            const score = - this.Negamax(
-                depth - 1 + extensions, 
-                ply + 1, 
-                -beta, 
-                -alpha, 
-                totalExtensions + extensions,
-                doNull,
-            )
             
             this.board.Unmake_Move(move)
             
