@@ -278,6 +278,8 @@ export class Search {
         
             
             this.board.Unmake_Move(move)
+
+            moveCount ++
             
             // exit point for iterative deepening
             if (this.manager.cancelSearch) return 0
