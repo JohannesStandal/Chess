@@ -4,6 +4,7 @@ import { PieceSquareTables } from "../Evaluation/PieceSquareTables.js"
 import { AttackDetector } from "../../MoveGeneration/Attack.js"
 
 import { PawnStructure } from "./PawnStructure.js"
+import { drawScore } from "../../Constants/SearchConstants.js"
 
 const kingValue = 0
 const pawnValue = 100
@@ -35,6 +36,9 @@ export class Evaluation {
          * a sign variable so that a positive score correspond to the current player
          * making it compatible with the negamax algorithm         
          **/
+
+        // Insufficient material
+        if (ChessHelper.InsufficientMaterial(board)) return drawScore
         
         // Game phase in the range 0 to 1, where 0 = Endgame, 1 = Mid game
         const phase = this.calculateGamePhase(board)

@@ -104,30 +104,33 @@ export class ChessHelper {
         return rank * 8 + file
     }
 
-    static CalculateEndgameWeight(board){
-        let numOpponentPieces = 0
+    static ColorHasInsufficientMaterial(board, color){
+        const numPawns   = board.pl.Count(color | Piece.pawn  )
+        const numKnights = board.pl.Count(color | Piece.knight)
+        const numBishops = board.pl.Count(color | Piece.bishop)
+        const numRooks   = board.pl.Count(color | Piece.rook  )
+        const numQueens  = board.pl.Count(color | Piece.queen )
 
-        for (let piece of board.square){
-            if (Piece.CheckPieceColor(piece, !board.white_To_Move)){
-                numOpponentPieces ++
-            }
-        }
+        const numTotal = numPawns + numKnights + numBishops + numRooks + numQueens
 
-        return (16 - numOpponentPieces) / 16
+        // King + two pieces or more is always sufficient
+        if (1 < numTotal) return false
+
+        // lone king
+        if (numTotal == 0) return true
+
+        // lone bishop or knight
+        if (numBishops == 1 || numKnights == 1) return true
+
+        // We have enough material
+        return false
     }
 
-    static LocateKings(board){
-        // find kings
-        let whiteKingSquare = 0
-        let blackKingSquare = 0
+    static InsufficientMaterial(board){
+        const white = this.ColorHasInsufficientMaterial(board, Piece.white)
+        const black = this.ColorHasInsufficientMaterial(board, Piece.black)
 
-        for (let i = 0; i<64; i++){
-            const piece = board.square[i]
-            if (piece == (Piece.king | Piece.white)) whiteKingSquare = i
-            if (piece == (Piece.king | Piece.black)) blackKingSquare = i
-        }
-
-        return [whiteKingSquare, blackKingSquare]
+        return (white && black)
     }
     
 }
