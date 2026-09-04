@@ -72,7 +72,7 @@ export class MoveGenerator {
             // Clear arrays
             this.pinMask.fill(0)
             this.checkers.length = 0
-            this.blockingSquares = new Array(64).fill(false)
+            this.blockingSquares.fill(false)
             
             // the squares you can move to in order to resolve a check (either by blocking path or capturing the attacker)
             // This will be countered by a double check in wich we only generate king moves

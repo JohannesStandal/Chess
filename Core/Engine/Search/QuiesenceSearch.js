@@ -55,7 +55,7 @@ export function QuiescenceSearch(board, manager, ply, alpha, beta){
     alpha = Math.max(alpha, standPat)
     
     // Order moves from assumed best to worst based on heuristics
-    MoveOrder(board, moveGenerator, ply, null, null)
+    MoveOrder(board, moveGenerator, ply, null, null, null)
     
     // Recursive search with alpha beta pruning
     for (let moveIndex = moveStart; moveIndex < moveEnd; moveIndex++){
