@@ -19,7 +19,7 @@ export var gameData = {
     playAsWhite: true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
     engineMakeMove: true, 
-    showSquareIndexes: false,
+    showSquareIndexes: !false,
     playerTurn: false,
     active: false, 
     fromWhitePerspective: false,

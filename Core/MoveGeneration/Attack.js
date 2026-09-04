@@ -49,11 +49,78 @@ export class AttackDetector {
                 if (piece == (Piece.pawn | attackerColor)) return true
             }
         }
+
+        // Sliding pieces
+        const bishops = board.pl.listFromPiece[ Piece.bishop | attackerColor ]
+        const rooks   = board.pl.listFromPiece[ Piece.rook   | attackerColor ]
+        const queens  = board.pl.listFromPiece[ Piece.queen  | attackerColor ]
+        
+        const attackedSquareRank = ChessHelper.RankIndex(squareIndex)
+        const attackedSquareFile = ChessHelper.FileIndex(squareIndex) 
+        // directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
+
+        // Bishop
+        for (const bishopSquare of bishops){
+            const displaceMent = (bishopSquare - squareIndex) 
+
+            const diagonal7 = (displaceMent % 7 == 0)
+            const diagonal9 = (displaceMent % 9 == 0)
+            
+            // Rook is not in line with the attacked square
+            if (!diagonal7 && !diagonal9) continue
+
+            let offsetIndex;
+            
+        }
+
+        // Rook
+        for (const rookSquare of rooks){
+            const rookRank = ChessHelper.RankIndex(rookSquare)
+            const rookFile = ChessHelper.FileIndex(rookSquare)
+
+            const horizontal = (rookRank == attackedSquareRank)
+            const vertical   = (rookFile == attackedSquareFile)
+
+            // Rook is not in line with the attacked square
+            if (!horizontal && !vertical) continue
+
+            let offsetIndex;
+            
+            // File distance
+            if (horizontal){
+                offsetIndex = (attackedSquareFile < rookFile) ? 1 : 0 
+            }
+            // Rank distance
+            else if (vertical){
+                offsetIndex = (attackedSquareRank < rookRank) ? 2 : 3
+            }
+
+            const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.rook | attackerColor)
+            if (foundPiece) return true
+        }
+
+        /**
+         *  for Rook in Rooks:
+         *      RookRank == kingRank -> horizontal scan
+         *      RookFile == kingFile -> vertical scan
+         * 
+         *      if (! (horizontal || vertical)) break
+         *      
+         *      if horizontal scan
+         *          offset = (kingFile < RookFile) ? 1 : -1
+         *        
+         *      if vertical scan 
+         *          offset = (kingRank < RookRank) ? 8 : -8
+         * 
+         *      if (scanForPiece (offset, piece)) return true
+         */
+
         
         // Check if a sliding attack is possible
-        const numBishops = board.pl.Count(Piece.bishop | attackerColor)
-        const numRooks   = board.pl.Count(Piece.rook   | attackerColor)
-        const numQueens  = board.pl.Count(Piece.queen  | attackerColor)
+        const numBishops = board.pl.Count( Piece.bishop | attackerColor )
+        const numRooks   = board.pl.Count( Piece.rook   | attackerColor )
+        const numQueens  = board.pl.Count( Piece.queen  | attackerColor )
+        
 
         const needsHorizontalCheck = 0 < (numRooks + numQueens)
         const needsDiagonalCheck   = 0 < (numBishops + numQueens)
@@ -98,6 +165,26 @@ export class AttackDetector {
         }
         // Square is safe if all conditions are met
         return false   
+    }
+
+    static ScanForPiece(board, start, offsetIndex, piece){
+        const numSquaresToEdge = ChessHelper.numSquaresToEdge[start][offsetIndex]
+        const offset = Piece.directionOffsets[offsetIndex]
+
+        for (let i = 0; i < numSquaresToEdge; i++){
+            const squareIndex = start + offset * (i + 1)
+            const pieceOnSquare = board.square[squareIndex]
+            
+            if (pieceOnSquare == Piece.none) continue
+
+            if (pieceOnSquare == piece){
+                return true
+            }
+
+            return false
+        }
+
+        return false
     }
 
     static InCheck(board, white){
