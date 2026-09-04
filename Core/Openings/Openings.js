@@ -20,14 +20,14 @@ for (const line of rawOpeningLines){
     
     // Loop through opening line
     for (const UCImove of line){
-        const hash = board.zobrist.hash
+        const hash = board.hash.Get64BitHash()
         const move = Move.UCItoUINT16(UCImove, board)
         addMoveToBook(hash, move)
         board.Make_Move(move)
     }
     numLines ++
     console.log("adding line nr", numLines)
-    if (numLines == 1500000) break
+    if (numLines == 1400000) break
 }
 
 // Filter all entries 

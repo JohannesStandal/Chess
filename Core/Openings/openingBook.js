@@ -37,7 +37,7 @@ export class openingBook {
         // Accumulate all frequencies in a table
         for (const variation of entry){
             sum += variation[1]
-            console.log(Move.ToUCI(variation[0]), variation[1])
+            // console.log(Move.ToUCI(variation[0]), variation[1])
             const accumulatedFrequency = sum
             lookUp.push(accumulatedFrequency)
         }

@@ -33,12 +33,12 @@ TODO:
 import { Board } from "../Board/chessboard.js"
 import { Search } from "./Search/Search.js"
 import { SearchManager } from "../Engine/Search/SearchManager.js"
-// import { openingBook } from "../Openings/openingBook.js"
+import { openingBook } from "../Openings/openingBook.js"
 
 export class Engine {
     constructor(thinkingTime=1000){
         this.board = new Board()
-        this.book = false
+        this.book = true
         this.manager = new SearchManager(thinkingTime)
 
         this.search = new Search(this.board, this.manager)
@@ -66,7 +66,7 @@ export class Engine {
         this.manager.Reset()
 
         if (this.book){
-            const hash = this.board.zobrist.hash
+            const hash = this.board.hash.Get64BitHash()
             const openingBookMove = openingBook.bookMove(hash)
     
             if (openingBookMove != 0){
