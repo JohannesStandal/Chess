@@ -26,7 +26,7 @@
 <h2>Project description</h2>
 
 <p>
-  Preben is a standard negamax chess engine written in JS and built as a console application 
+  Preben is a standard PVS (negamax) chess engine written in JS and built as a console application 
   using Node.js. Following standard UCI protocol it will take on the bot community of lichess.org. 
   The project is intended as a learning exercise and therefore everything is written from scratch with no
   libraries etc. The hood of the engine is located in Core/Engine. The movegen and chessboard code is also the Core folder. 
@@ -55,12 +55,12 @@
 <h2>Search</h2>
 <ul>
   <li> Opening Book </li>
-  <li> Negamax </li>
+  <li> Iterative deepening </li>
+  <li> PVS (negamax) </li>
   <li> Quiesence search </li>
-  <li> Alpha beta pruning (with Move ordering) </li>
+  <li> Alpha beta pruning </li>
   <li> Null Move Pruning</li>
   <li> Transposition table </li>
-  <li> Iterative deepening </li>
   <li> Search extensions (Checks and promotions)</li>
 </ul>
 
@@ -68,6 +68,7 @@
 <ul>
   <li> Previous Bestmove </li>
   <li> Hash Move </li>
+  <li> Killer moves </li>
   <li> MVV-LVA (capture moves)  </li>
   <li> PST (quiet moves)</li>  
 </ul>
@@ -75,17 +76,19 @@
 <h2>Evaluation (Midgame and Endgame)</h2>
 
 <ul>
+  <li> Insufficient material </li>
+  
   <li> Material count </li>
   <li> Piece Square Tables (MG & EG)</li>
+  <li> Mop Up (winning EG) </li>
 
-  <li> Bishop pair</li>
-  <li> Double stacked pawns penalty </li>
-  <li> Isolated pawn penalty </li>
-  <li> Pawn Shields (MG) </li>
   <li> Passed pawn bonus </li>
+  <li> Isolated pawn penalty </li>
+  <li> Stacked pawns penalty </li>
+  <li> Pawn Shields (MG) </li>
   <li> Virtual King Mobility (MG) </li>
-  <li> Lost castle right penalty (MG) </li>
+  
+  <li> Bishop pair</li>
   <li> Sliding piece mobility (MG) </li>
   <li> Trapped piece penalty (MG) </li>
-  <li> Mop Up (winning EG) </li>
 </ul>
