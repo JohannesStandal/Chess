@@ -57,20 +57,36 @@ export class AttackDetector {
         
         const attackedSquareRank = ChessHelper.RankIndex(squareIndex)
         const attackedSquareFile = ChessHelper.FileIndex(squareIndex) 
-        // directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
-
+        
         // Bishop
         for (const bishopSquare of bishops){
-            const displaceMent = (bishopSquare - squareIndex) 
+            const bishopRank = ChessHelper.RankIndex(bishopSquare)
+            const bishopFile = ChessHelper.FileIndex(bishopSquare)
 
-            const diagonal7 = (displaceMent % 7 == 0)
-            const diagonal9 = (displaceMent % 9 == 0)
-            
-            // Rook is not in line with the attacked square
-            if (!diagonal7 && !diagonal9) continue
+            const rankDst = bishopRank - attackedSquareRank
+            const fileDst = bishopFile - attackedSquareFile
+
+            // Bishop is not on the same diagonal as the attacked square
+            if (Math.abs(rankDst) != Math.abs(fileDst)) continue
 
             let offsetIndex;
-            
+
+            // directionOffsets = [-1, 1, 8, -8, 9, -9, 7, -7]
+
+            // Up
+            if (0 < rankDst){
+                // right (+9) or left (+7)
+                offsetIndex = (0 < fileDst) ? 4 : 6 
+            }
+
+            // Down
+            else {
+                // right (-7) or left (-9)
+                offsetIndex = (0 < fileDst) ? 7 : 5 
+            }
+
+            const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.bishop | attackerColor, ignoreKing)
+            if (foundPiece) return true
         }
 
         // Rook
@@ -95,79 +111,64 @@ export class AttackDetector {
                 offsetIndex = (attackedSquareRank < rookRank) ? 2 : 3
             }
 
-            const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.rook | attackerColor)
+            const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.rook | attackerColor, ignoreKing)
             if (foundPiece) return true
         }
-
-        /**
-         *  for Rook in Rooks:
-         *      RookRank == kingRank -> horizontal scan
-         *      RookFile == kingFile -> vertical scan
-         * 
-         *      if (! (horizontal || vertical)) break
-         *      
-         *      if horizontal scan
-         *          offset = (kingFile < RookFile) ? 1 : -1
-         *        
-         *      if vertical scan 
-         *          offset = (kingRank < RookRank) ? 8 : -8
-         * 
-         *      if (scanForPiece (offset, piece)) return true
-         */
-
         
-        // Check if a sliding attack is possible
-        const numBishops = board.pl.Count( Piece.bishop | attackerColor )
-        const numRooks   = board.pl.Count( Piece.rook   | attackerColor )
-        const numQueens  = board.pl.Count( Piece.queen  | attackerColor )
-        
+        // Queen
+        for (const queenSquare of queens){
+            const queenRank = ChessHelper.RankIndex(queenSquare)
+            const queenFile = ChessHelper.FileIndex(queenSquare)
 
-        const needsHorizontalCheck = 0 < (numRooks + numQueens)
-        const needsDiagonalCheck   = 0 < (numBishops + numQueens)
-        
-        const startIndex = needsHorizontalCheck ? 0 : 4
-        const endIndex = needsDiagonalCheck ? 8 : 4
-        
-        // generate attacking sliding moves
-        for (let i = startIndex; i < endIndex; i++){
-            const offset = Piece.directionOffsets[i]
-            const numSquaresToEdge = ChessHelper.numSquaresToEdge[squareIndex][i]
-            const slidingPiece = (i < 4) ? (Piece.rook | attackerColor) : (Piece.bishop | attackerColor)
+            const horizontal = (queenRank == attackedSquareRank)
+            const vertical   = (queenFile == attackedSquareFile)
 
-            for (let n = 0; n < numSquaresToEdge; n++){
+            const rankDst = queenRank - attackedSquareRank
+            const fileDst = queenFile - attackedSquareFile
+
+
+            let offsetIndex;
+            // Queen is in a straight line with the attacked square
+
+            // On same rank
+            if (horizontal){
+                offsetIndex = (attackedSquareFile < queenFile) ? 1 : 0 
+                const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.queen | attackerColor, ignoreKing)
+                if (foundPiece) return true
+            }
+
+            // On same file
+            else if (vertical){
+                offsetIndex = (attackedSquareRank < queenRank) ? 2 : 3
+                const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.queen | attackerColor, ignoreKing)
+                if (foundPiece) return true
+            }
+            
+            // On the same diagonal
+            else if (Math.abs(rankDst) == Math.abs(fileDst)){
                 
-                const target = squareIndex + offset * (n+1)
-                const pieceOnTargetSquare = board.square[target]
-
-                // Continue if square is empty
-                if (pieceOnTargetSquare == 0){
-                    continue
+                // Up
+                if (0 < rankDst){
+                    // right (+9) or left (+7)
+                    offsetIndex = (0 < fileDst) ? 4 : 6 
                 }
-                
-                // Check for an enemy piece that can move in the given direction
-                else if (
-                    pieceOnTargetSquare == (Piece.queen | attackerColor) ||
-                    pieceOnTargetSquare == slidingPiece
-                    ){
-                    return true
-                }
-                
-                // Ignore friendly king for king move detection
-                else if (pieceOnTargetSquare == (Piece.king | friendlyColor) && ignoreKing){
-                    continue
-                } 
 
-                // Friendly piece means this direction is safe
+                // Down
                 else {
-                    break
+                    // right (-7) or left (-9)
+                    offsetIndex = (0 < fileDst) ? 7 : 5 
                 }
+
+                const foundPiece = this.ScanForPiece(board, squareIndex, offsetIndex, Piece.queen | attackerColor, ignoreKing)
+                if (foundPiece) return true
             }
         }
+
         // Square is safe if all conditions are met
         return false   
     }
 
-    static ScanForPiece(board, start, offsetIndex, piece){
+    static ScanForPiece(board, start, offsetIndex, piece, ignoreKing){
         const numSquaresToEdge = ChessHelper.numSquaresToEdge[start][offsetIndex]
         const offset = Piece.directionOffsets[offsetIndex]
 
@@ -176,6 +177,8 @@ export class AttackDetector {
             const pieceOnSquare = board.square[squareIndex]
             
             if (pieceOnSquare == Piece.none) continue
+
+            if ((pieceOnSquare & Piece.typeMask) == Piece.king && ignoreKing) continue
 
             if (pieceOnSquare == piece){
                 return true
