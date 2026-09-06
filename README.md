@@ -87,6 +87,7 @@
   <li> Stacked pawns penalty </li>
   <li> Pawn Shields (MG) </li>
   <li> Virtual King Mobility (MG) </li>
+  <li> King tropism </li>
   
   <li> Bishop pair</li>
   <li> Sliding piece mobility (MG) </li>

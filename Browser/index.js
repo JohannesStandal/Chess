@@ -16,7 +16,7 @@ import { AttackDetector } from "../Core/MoveGeneration/Attack.js"
 export const chess = new Chess()
 
 export var gameData = {
-    playAsWhite: true, //false betyr at AI speler
+    playAsWhite: !true, //false betyr at AI speler
     playAsBlack: false, // ^ --||--
     engineMakeMove: true, 
     showSquareIndexes: false,
@@ -32,7 +32,7 @@ export const sounds = {
         notification: new Audio("Sounds/notify.mp3"),
 }
 
-// const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
 
 import { evaluation } from "../Core/Engine/Search/QuiesenceSearch.js"
