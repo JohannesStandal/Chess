@@ -2,7 +2,7 @@ import { mateTreshold } from "../../Constants/SearchConstants.js"
 
 export class Transposition_Table {
     constructor (mb = 64){
-        this.disabled = false
+        this.disabled = true
         this.SetSizeMB(mb)
     }
 

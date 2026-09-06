@@ -201,38 +201,38 @@ export class Search {
         }
 
         // Oder moves from best to worst based on heuristics
-        const killer1 = this.killerMoves.killer1[ply] 
-        const killer2 = this.killerMoves.killer2[ply]
+        const killer1 = null // this.killerMoves.killer1[ply] 
+        const killer2 = null // this.killerMoves.killer2[ply]
 
         MoveOrder(this.board, this.MoveGenerator, ply, TT.move, killer1, killer2)
         
         // Can the search be extended?
-        const canExtend = totalExtensions < maxExtensions 
+        const canExtend = false //totalExtensions < maxExtensions 
 
         // // Null move pruning 
-        const R = 3
-        const nmpAllowed = (
-                doNull         && // Not already in a null move branch
-                !inCheck       && // Not in check
-                R + 1 <= depth && // Prevents reducing shallow searches
-                0 < ply        && // Avoid NMP at root node
-                this.board.HasNonPawnMaterial() // Avoid zugswang
-            )
+        // const R = 3
+        // const nmpAllowed = (
+        //         doNull         && // Not already in a null move branch
+        //         !inCheck       && // Not in check
+        //         R + 1 <= depth && // Prevents reducing shallow searches
+        //         0 < ply        && // Avoid NMP at root node
+        //         this.board.HasNonPawnMaterial() // Avoid zugswang
+        //     )
         
-        if (nmpAllowed){
-            // Search a null move window
-            this.board.Make_NullMove()
-            const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
-            this.board.Unmake_NullMove()
+        // if (nmpAllowed){
+        //     // Search a null move window
+        //     this.board.Make_NullMove()
+        //     const score = - this.Negamax(depth - 1 - R, ply + 1, -beta, -beta + 1, totalExtensions, false)
+        //     this.board.Unmake_NullMove()
 
-            // Important exit point for iterative deepening
-            if (this.manager.cancelSearch) return 0
+        //     // Important exit point for iterative deepening
+        //     if (this.manager.cancelSearch) return 0
 
-            // If the nullmove
-            if (beta <= score){
-                return score
-            }
-        }
+        //     // If the nullmove
+        //     if (beta <= score){
+        //         return score
+        //     }
+        // }
     
         // Iterate over every legal move
         let bestMove = null
@@ -254,7 +254,7 @@ export class Search {
 
             let score;
             // Principal Variation Search (PVS)
-            if (moveCount == 0){
+            if (true){ // movecount == 0
                 // Search first move fully
                 score = - this.Negamax(
                     depth - 1 + extensions, 
@@ -265,32 +265,31 @@ export class Search {
                     doNull,
                 )
             }
-            // examine the rest of the moves with a null window search
-            else {
-                score = - this.Negamax(
-                    depth - 1 + extensions, 
-                    ply + 1, 
-                    -alpha - 1, 
-                    -alpha, 
-                    totalExtensions + extensions,
-                    doNull,
-                )
+            // // examine the rest of the moves with a null window search
+            // else {
+            //     score = - this.Negamax(
+            //         depth - 1 + extensions, 
+            //         ply + 1, 
+            //         -alpha - 1, 
+            //         -alpha, 
+            //         totalExtensions + extensions,
+            //         doNull,
+            //     )
 
-                // The line is promising, so we need to research it with a full window search
-                if (alpha < score && score < beta){
-                    score = - this.Negamax(
-                        depth - 1 + extensions, 
-                        ply + 1, 
-                        -beta, 
-                        -alpha, 
-                        totalExtensions + extensions,
-                        doNull,
-                    )
-                }
+            //     // The line is promising, so we need to research it with a full window search
+            //     if (alpha < score && score < beta){
+            //         score = - this.Negamax(
+            //             depth - 1 + extensions, 
+            //             ply + 1, 
+            //             -beta, 
+            //             -alpha, 
+            //             totalExtensions + extensions,
+            //             doNull,
+            //         )
+            //     }
                     
-            }
+            // }
         
-            
             this.board.Unmake_Move(move)
 
             moveCount ++
@@ -309,9 +308,9 @@ export class Search {
     
             // lowerbound fail high node
             if (beta <= alpha){
-                if (!Move.IsCapture(move)){
-                    this.killerMoves.store(move, ply)
-                }
+                // if (!Move.IsCapture(move)){
+                //     this.killerMoves.store(move, ply)
+                // }
                 
                 break
             }       
@@ -322,15 +321,13 @@ export class Search {
         }
         
         
-        
-        
-        // Store final result in Transposition Table
-        let flag = ""
-        if (bestScore <= originalAlpha) flag = "UPPER"
-        else if (bestScore >= beta) flag = "LOWER"
-        else flag = "EXACT"
+        // // Store final result in Transposition Table
+        // let flag = ""
+        // if (bestScore <= originalAlpha) flag = "UPPER"
+        // else if (bestScore >= beta) flag = "LOWER"
+        // else flag = "EXACT"
 
-        this.TT.Store(high, low, ply, depth, bestScore, flag, bestMove)
+        // this.TT.Store(high, low, ply, depth, bestScore, flag, bestMove)
     
         return bestScore
     }

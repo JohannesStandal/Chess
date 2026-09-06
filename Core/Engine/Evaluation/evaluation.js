@@ -56,21 +56,21 @@ export class Evaluation {
         const mopUpScore = this.mopUp(board, materialScore) * (1  - phase)
 
         // Pawn structure
-        const pawnStructureScore = this.pawnStructure.PawnStructureEval(board) 
+        // const pawnStructureScore = this.pawnStructure.PawnStructureEval(board) 
 
         // Bishop pair
-        const bishopPairScore = this.bishopPair(board)
+        // const bishopPairScore = this.bishopPair(board)
 
         // Midgame score
-         const midGameScore = this.midGameScore(board) * phase
+        //  const midGameScore = this.midGameScore(board) * phase
         
         // Add it all together        
         const totalScore = 
             materialScore       + 
             pstScore            +
-            pawnStructureScore  +
-            bishopPairScore     +
-            midGameScore        + 
+            // pawnStructureScore  +
+            // bishopPairScore     +
+            // midGameScore        + 
             mopUpScore
         
         const sign = (board.white_To_Move) ? 1 : -1
