@@ -143,7 +143,7 @@ export class Search {
         this.manager.nodeCount ++
 
         // check for threefold repetition
-        if (this.board.CheckThreeFold()) {
+        if (this.board.CheckThreeFold(2)) {
            return drawScore
         }
 

@@ -488,7 +488,7 @@ export class Board {
         return 0 < (numBishops + numRooks + numQueens)
     }
 
-    CheckThreeFold(){
+    CheckThreeFold(num=3){
 
         const currentHigh = this.hash.high
         const currentLow = this.hash.low
@@ -503,7 +503,7 @@ export class Board {
             if (currentHigh == high && currentLow == low){
                 frequency ++
             }
-            if (2 < frequency){
+            if (num <= frequency){
                 return true
             }
         }
