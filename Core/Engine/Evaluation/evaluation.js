@@ -312,8 +312,8 @@ export class Evaluation {
         const tropismBonuses = [0, 50, 30, 20, 10, 5, 0, 0]
         let score = 0
 
-        const friendlyColor = board.white_To_Move ? Piece.white : Piece.black
-        const kingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
+        const friendlyColor = white ? Piece.white : Piece.black
+        const kingSquare = white ? board.blackKingSquare : board.whiteKingSquare
         
         // knights
         for (const knight in board.pl.listFromPiece[Piece.knight | friendlyColor]){
