@@ -12,7 +12,7 @@ export class Search {
         this.board = board
         this.MoveGenerator = new MoveGenerator()
         this.manager = searchManager
-        this.TT = new Transposition_Table()
+        this.TT = new Transposition_Table(64)
         this.killerMoves = new KillerMoves()
         
         this.bestMove = null
@@ -156,7 +156,7 @@ export class Search {
         const originalAlpha = alpha
         
         //transposition table
-        const TT = this.TT.Read(high, low, ply, depth)
+        const TT = this.TT.Read(high, low, ply)
         
         if (TT.hit && TT.depth >= depth){
             if (ply == 0 && this.bestMove == null){

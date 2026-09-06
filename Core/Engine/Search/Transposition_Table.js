@@ -3,7 +3,7 @@ import { mateTreshold } from "../../Constants/SearchConstants.js"
 export class Transposition_Table {
     constructor (mb = 64){
         this.disabled = false
-        this.SetSizeMB(64)
+        this.SetSizeMB(mb)
     }
 
     SetSizeMB(mb){
@@ -20,7 +20,7 @@ export class Transposition_Table {
         this.flag = new Array(this.numEntries)           // 16 byte
     }
 
-    Read(high, low, ply, currentDepth){
+    Read(high, low, ply){
         if (this.disabled) return {"hit": false, "move": null}
 
         const index = (high % this.numEntries)
