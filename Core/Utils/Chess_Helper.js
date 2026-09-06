@@ -126,6 +126,17 @@ export class ChessHelper {
         return false
     }
 
+    static manhattanDistance(square1, square2){
+        const file1 = this.FileIndex(square1)
+        const rank1 = this.RankIndex(square1)
+
+        const file2 = this.FileIndex(square2)
+        const rank2 = this.RankIndex(square2)
+
+        const dst = Math.abs(file1 - file2) + Math.abs(rank1 - rank2)
+        return dst
+    }
+
     static InsufficientMaterial(board){
         const white = this.ColorHasInsufficientMaterial(board, Piece.white)
         const black = this.ColorHasInsufficientMaterial(board, Piece.black)

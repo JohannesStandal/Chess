@@ -56,12 +56,9 @@ export class Evaluation {
         const mopUpScore = this.mopUp(board, materialScore) * (1  - phase)
 
         // Pawn structure
-        const whitePawns = board.pl.listFromPiece[Piece.white | Piece.pawn]
-        const blackPawns = board.pl.listFromPiece[Piece.black | Piece.pawn]
-        
         const pawnStructureScore = this.pawnStructure.PawnStructureEval(board) 
 
-        // bishop pair
+        // Bishop pair
         const bishopPairScore = this.bishopPair(board)
 
         // Midgame score
@@ -89,6 +86,7 @@ export class Evaluation {
         const mobilityWeight = 1
         const kingExposureWeight = 1
         const pawnShieldWeight = 2
+        const kingTropismWeight = 1
         
         // Sliding piece mobility bonus
         midGameScore += this.slidingPieceMobility(board, true)  * mobilityWeight
@@ -101,6 +99,10 @@ export class Evaluation {
         // Pawn shields. 
         midGameScore += this.pawnShields(board, board.whiteKingSquare, true)  * pawnShieldWeight
         midGameScore -= this.pawnShields(board, board.blackKingSquare, false) * pawnShieldWeight
+
+        // King tropism
+        midGameScore += this.kingTropism(board, true)
+        midGameScore -= this.kingTropism(board, false)
 
         return midGameScore
     }
@@ -304,6 +306,50 @@ export class Evaluation {
         return pawnShieldScore;
     }
 
+    kingTropism(board, white){
+        // King tropism describes how many pieces are near the opposing king. 
+        // Pieces are weighed agains their own value to help build up attacks against the king
+        const tropismBonuses = [0, 50, 30, 20, 10, 5, 0, 0]
+        let score = 0
+
+        const friendlyColor = board.white_To_Move ? Piece.white : Piece.black
+        const kingSquare = board.white_To_Move ? board.blackKingSquare : board.whiteKingSquare
+        
+        // knights
+        for (const knight in board.pl.listFromPiece[Piece.knight | friendlyColor]){
+            const dst = Math.min(ChessHelper.manhattanDistance(kingSquare, knight), 7)
+            score += tropismBonuses[dst] * 2
+        }
+
+        // bishops
+        for (const bishop in board.pl.listFromPiece[Piece.bishop | friendlyColor]){
+            const dst = Math.min(ChessHelper.manhattanDistance(kingSquare, bishop), 7)
+            score += tropismBonuses[dst] * 2
+        }
+
+        // rooks 
+        for (const rook in board.pl.listFromPiece[Piece.rook | friendlyColor]){
+            const dst = Math.min(ChessHelper.manhattanDistance(kingSquare, rook), 7)
+            score += tropismBonuses[dst] * 3
+        }
+
+        // queens
+        for (const queen in board.pl.listFromPiece[Piece.queen | friendlyColor]){
+            const dst = Math.min(ChessHelper.manhattanDistance(kingSquare, queen), 7)
+            score += tropismBonuses[dst] * 4
+        }
+
+        return score
+
+        
+
+        
+        
+
+
+
+    }
+
     // Bishop pair
     bishopPair(board){
         // 30 centipawns for a bishop pair
@@ -316,5 +362,5 @@ export class Evaluation {
         if (1 < numBP) score -= 30
 
         return score
-    }   
+    } 
 }

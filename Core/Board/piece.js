@@ -13,6 +13,24 @@ export class Piece {
     static white   = 8 //01_000
     static black  = 16 //10_000
 
+    static whitePieces = [
+        this.white | this.king,
+        this.white | this.queen,
+        this.white | this.rook,
+        this.white | this.bishop,
+        this.white | this.knight,
+        this.white | this.pawn
+    ]
+
+    static blackPieces = [
+        this.black | this.king,
+        this.black | this.queen,
+        this.black | this.rook,
+        this.black | this.bishop,
+        this.black | this.knight,
+        this.black | this.pawn
+    ]
+
     static AllPieces = [
         this.white | this.king,
         this.white | this.queen,
