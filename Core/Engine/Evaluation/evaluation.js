@@ -101,8 +101,8 @@ export class Evaluation {
         midGameScore -= this.pawnShields(board, board.blackKingSquare, false) * pawnShieldWeight
 
         // King tropism
-        midGameScore += this.kingTropism(board, true)
-        midGameScore -= this.kingTropism(board, false)
+        midGameScore += this.kingTropism(board, true ) * kingTropismWeight
+        midGameScore -= this.kingTropism(board, false) * kingTropismWeight
 
         return midGameScore
     }
