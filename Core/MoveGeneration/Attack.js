@@ -171,6 +171,7 @@ export class AttackDetector {
     static ScanForPiece(board, start, offsetIndex, piece, ignoreKing){
         const numSquaresToEdge = ChessHelper.numSquaresToEdge[start][offsetIndex]
         const offset = Piece.directionOffsets[offsetIndex]
+        const friendlyColor = board.white_To_Move ? Piece.white : Piece.black
 
         for (let i = 0; i < numSquaresToEdge; i++){
             const squareIndex = start + offset * (i + 1)
@@ -178,7 +179,7 @@ export class AttackDetector {
             
             if (pieceOnSquare == Piece.none) continue
 
-            if ((pieceOnSquare & Piece.typeMask) == Piece.king && ignoreKing) continue
+            if (pieceOnSquare == (Piece.king | friendlyColor) && ignoreKing) continue
 
             if (pieceOnSquare == piece){
                 return true

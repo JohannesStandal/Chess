@@ -32,7 +32,7 @@ export const sounds = {
         notification: new Audio("Sounds/notify.mp3"),
 }
 
-const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+// const startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 var rootPos = ""
 
 import { evaluation } from "../Core/Engine/Search/QuiesenceSearch.js"
@@ -157,7 +157,7 @@ export function GameLoop(){
     }
 }
 
-StartGame("8/3K4/8/8/8B/P3k4/8/3n4 b - - 0 1") // Rook vs king
+StartGame("8/3K4/8/8/8/3k4/8/3r4 b - - 0 1") // Rook vs king
 // StartGame("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1") // Pawn Lock
 // StartGame("8/3KP3/8/8/8/2q5/4k3/8 b - - 0 1")
 // StartGame() 
